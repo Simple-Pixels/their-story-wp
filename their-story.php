@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Their Story
  * Description: A basic WordPress plugin to power Their Story
- * Version: 1.0.1
+ * Version: 1.0.3
  * Author: Simple Pixels
 
  */
@@ -25,7 +25,8 @@ add_action('plugins_loaded', 'their_story_init');
 
 register_activation_hook(__FILE__, 'their_story_activate');
 function their_story_activate() {
-    flush_rewrite_rules();
+    $their_story = new Their_Story();
+    $their_story->flush_rewrite_rules();
 }
 
 register_deactivation_hook(__FILE__, 'their_story_deactivate');

@@ -45,6 +45,19 @@ if (!defined('ABSPATH')) {
                 </div>
             </div>
         </div>
+        <div class="their-story-stat-card">
+            <div class="their-story-stat-content">
+                <div class="their-story-stat-icon their-story-stat-icon-orange">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="their-story-stat-text">
+                    <h3 class="their-story-stat-label"><?php echo esc_html__('Pending Submissions', 'their-story'); ?></h3>
+                    <p class="their-story-stat-number"><?php echo esc_html($pending_count); ?></p>
+                </div>
+            </div>
+        </div>
     </div>
     
     <div class="their-story-list">
@@ -64,7 +77,6 @@ if (!defined('ABSPATH')) {
                             <th><?php echo esc_html__('Storyteller', 'their-story'); ?></th>
                             <th><?php echo esc_html__('Status', 'their-story'); ?></th>
                             <th><?php echo esc_html__('Unique Link', 'their-story'); ?></th>
-                            <th><?php echo esc_html__('Password Protected', 'their-story'); ?></th>
                             <th><?php echo esc_html__('Created', 'their-story'); ?></th>
                             <th><?php echo esc_html__('Actions', 'their-story'); ?></th>
                         </tr>
@@ -100,10 +112,13 @@ if (!defined('ABSPATH')) {
                                     </span>
                                 </td>
                                 <td>
-                                    <?php if ($story->unique_link) : ?>
+                                    <?php 
+                                    $their_story = new Their_Story();
+                                    $obfuscated_url = $their_story->get_story_url_from_link($story->unique_link);
+                                    if ($story->unique_link && $obfuscated_url) : ?>
                                         <div class="their-story-link-group">
-                                            <code class="their-story-code"><?php echo esc_html($story->unique_link); ?></code>
-                                            <button type="button" class="copy-link-btn their-story-btn-small" data-link="<?php echo esc_attr($story->unique_link); ?>">
+                                            <code class="their-story-code"><?php echo esc_html($obfuscated_url); ?></code>
+                                            <button type="button" class="copy-link-btn their-story-btn-small" data-link="<?php echo esc_attr($obfuscated_url); ?>">
                                                 <?php echo esc_html__('Copy', 'their-story'); ?>
                                             </button>
                                         </div>
@@ -111,33 +126,22 @@ if (!defined('ABSPATH')) {
                                         <span class="their-story-muted"><?php echo esc_html__('Not generated yet', 'their-story'); ?></span>
                                     <?php endif; ?>
                                 </td>
-                                <td>
-                                    <div class="their-story-icon-group">
-                                        <?php if ($story->is_password_protected) : ?>
-                                            <svg class="their-story-icon-small their-story-icon-lock" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
-                                            </svg>
-                                            <span><?php echo esc_html__('Yes', 'their-story'); ?></span>
-                                        <?php else : ?>
-                                            <svg class="their-story-icon-small their-story-icon-unlock" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                            </svg>
-                                            <span class="their-story-muted"><?php echo esc_html__('No', 'their-story'); ?></span>
-                                        <?php endif; ?>
-                                    </div>
-                                </td>
                                 <td class="their-story-muted">
                                     <?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($story->post_date))); ?>
                                 </td>
                                 <td>
                                     <div class="their-story-actions-inline">
-                                        <a href="<?php echo esc_url(admin_url('post.php?post=' . $story->ID . '&action=edit')); ?>" class="their-story-link">
-                                            <?php echo esc_html__('Edit', 'their-story'); ?>
-                                        </a>
-                                        <span class="their-story-divider">|</span>
                                         <a href="<?php echo esc_url($story_url); ?>" target="_blank" class="their-story-link">
                                             <?php echo esc_html__('View', 'their-story'); ?>
                                         </a>
+                                        <span class="their-story-divider">|</span>
+                                        <button type="button" class="their-story-link their-story-password-btn" data-story-id="<?php echo esc_attr($story->ID); ?>" data-story-title="<?php echo esc_attr($story->post_title); ?>" style="cursor: pointer; background: none; border: none; padding: 0; text-decoration: underline;">
+                                            <?php echo esc_html__('Change Password', 'their-story'); ?>
+                                        </button>
+                                        <span class="their-story-divider">|</span>
+                                        <button type="button" class="their-story-link their-story-delete-btn" data-story-id="<?php echo esc_attr($story->ID); ?>" data-story-title="<?php echo esc_attr($story->post_title); ?>" style="color: #dc3232; cursor: pointer; background: none; border: none; padding: 0; text-decoration: underline;">
+                                            <?php echo esc_html__('Delete', 'their-story'); ?>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>

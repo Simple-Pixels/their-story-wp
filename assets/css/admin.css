@@ -245,6 +245,11 @@
     color: #059669;
 }
 
+.their-story-stat-icon-orange {
+    background-color: #fed7aa;
+    color: #ea580c;
+}
+
 .their-story-stat-text {
     margin-left: 1rem;
 }
