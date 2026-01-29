@@ -9,6 +9,9 @@ $story_id = $post->ID;
 $current_user = wp_get_current_user();
 $storyteller_id = get_post_meta($story_id, '_storyteller_id', true);
 $can_moderate = in_array('administrator', $current_user->roles);
+$is_storyteller = in_array('storyteller', $current_user->roles) && ($storyteller_id == $current_user->ID);
+$can_close_story = $can_moderate || $is_storyteller;
+$is_story_closed = get_post_meta($story_id, '_story_closed', true) === '1';
 
 $all_submissions = Their_Story::get_story_submissions_static($story_id, false);
 $approved_submissions = Their_Story::get_story_submissions_static($story_id, true);
@@ -25,6 +28,7 @@ $obfuscated_url = $their_story->get_story_url_from_link($unique_link);
 
 <div class="their-story-page-content">
     
+    <?php if (!$is_story_closed) : ?>
     <div class="their-story-form-section">
         <h2 class="their-story-section-title"><?php echo esc_html__('Share Your Message', 'their-story'); ?></h2>
         <form id="their-story-submission-form" class="their-story-submission-form">
@@ -62,8 +66,15 @@ $obfuscated_url = $their_story->get_story_url_from_link($unique_link);
             <div id="submission-status-message" class="their-story-message" style="display: none;"></div>
         </form>
     </div>
+    <?php else : ?>
+    <div class="their-story-form-section">
+        <div class="their-story-notice" style="background-color: #fef2f2; border: 1px solid #fee2e2; color: #991b1b; padding: 1rem; border-radius: 0.5rem;">
+            <p style="margin: 0; font-weight: 500;"><?php echo esc_html__('This story is closed. No new messages can be added.', 'their-story'); ?></p>
+        </div>
+    </div>
+    <?php endif; ?>
     
-    <?php if ($can_moderate && !empty($pending_submissions)) : ?>
+    <?php if ($can_moderate && !empty($pending_submissions) && !$is_story_closed) : ?>
     <div class="their-story-moderation-section">
         <h2 class="their-story-section-title"><?php echo esc_html__('Pending Submissions', 'their-story'); ?></h2>
         <div class="their-story-pending-list">
@@ -114,7 +125,7 @@ $obfuscated_url = $their_story->get_story_url_from_link($unique_link);
                     $image_id = $submission->submission_image_id ? $submission->submission_image_id : get_post_meta($submission->ID, '_submission_image_id', true);
                     $image_url = $image_id ? wp_get_attachment_image_url($image_id, 'large') : '';
                 ?>
-                    <div class="their-story-submission-item their-story-approved">
+                    <div class="their-story-submission-item their-story-approved" data-submission-id="<?php echo esc_attr($submission->ID); ?>">
                         <div class="their-story-submission-header">
                             <h3 class="their-story-submission-name"><?php echo esc_html($submission_name); ?></h3>
                             <span class="their-story-submission-date"><?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($submission->post_date))); ?></span>
@@ -127,9 +138,9 @@ $obfuscated_url = $their_story->get_story_url_from_link($unique_link);
                                 <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr($submission_name); ?>" />
                             </div>
                         <?php endif; ?>
-                        <?php if ($can_moderate) : ?>
+                        <?php if ($can_moderate && !$is_story_closed) : ?>
                             <div class="their-story-submission-actions">
-                                <button type="button" class="their-story-btn their-story-btn-delete" data-submission-id="<?php echo esc_attr($submission->ID); ?>" data-action="delete">
+                                <button type="button" class="their-story-btn their-story-btn-delete" data-action="delete">
                                     <?php echo esc_html__('Delete', 'their-story'); ?>
                                 </button>
                             </div>
@@ -164,6 +175,16 @@ $obfuscated_url = $their_story->get_story_url_from_link($unique_link);
             </div>
             <?php endif; ?>
         </div>
+        <?php if ($can_close_story && !$is_story_closed) : ?>
+        <div class="their-story-close-section" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+            <button type="button" id="close-story-btn" class="their-story-btn" style="background-color: #dc2626; color: #ffffff;">
+                <?php echo esc_html__('Close Story', 'their-story'); ?>
+            </button>
+            <p class="their-story-help-text" style="margin-top: 0.5rem; color: #6b7280; font-size: 0.875rem;">
+                <?php echo esc_html__('Closing the story will prevent any more messages from being added.', 'their-story'); ?>
+            </p>
+        </div>
+        <?php endif; ?>
     </div>
     
 </div>

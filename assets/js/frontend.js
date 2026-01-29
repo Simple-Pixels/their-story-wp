@@ -199,5 +199,46 @@
                 }, 2000);
             });
         });
+
+        // Handle close story button
+        const closeStoryBtn = document.getElementById('close-story-btn');
+        if (closeStoryBtn && theirStoryFrontend.canCloseStory) {
+            closeStoryBtn.addEventListener('click', function() {
+                if (!confirm('Are you sure you want to close this story? This will prevent any more messages from being added.')) {
+                    return;
+                }
+
+                const originalText = closeStoryBtn.textContent;
+                closeStoryBtn.disabled = true;
+                closeStoryBtn.textContent = 'Closing...';
+
+                const body = new URLSearchParams({
+                    action: 'their_story_close_story',
+                    story_id: theirStoryFrontend.storyId,
+                    nonce: theirStoryFrontend.closeNonce
+                });
+
+                fetch(theirStoryFrontend.ajaxUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: body.toString()
+                })
+                .then(function(response) { return response.json(); })
+                .then(function(response) {
+                    if (response.success) {
+                        window.location.href = '/todo';
+                    } else {
+                        alert(response.data.message || 'Error closing story. Please try again.');
+                        closeStoryBtn.disabled = false;
+                        closeStoryBtn.textContent = originalText;
+                    }
+                })
+                .catch(function() {
+                    alert('An error occurred. Please try again.');
+                    closeStoryBtn.disabled = false;
+                    closeStoryBtn.textContent = originalText;
+                });
+            });
+        }
     });
 })();

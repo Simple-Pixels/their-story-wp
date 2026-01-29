@@ -81,7 +81,6 @@ $current_user = wp_get_current_user();
                     <thead>
                         <tr>
                             <th><?php echo esc_html__('Title', 'their-story'); ?></th>
-                            <th><?php echo esc_html__('Status', 'their-story'); ?></th>
                             <th><?php echo esc_html__('Unique Link', 'their-story'); ?></th>
                             <th><?php echo esc_html__('Created', 'their-story'); ?></th>
                             <th><?php echo esc_html__('Actions', 'their-story'); ?></th>
@@ -102,11 +101,6 @@ $current_user = wp_get_current_user();
                                             <?php echo esc_html($story->post_title); ?>
                                         </a>
                                     </div>
-                                </td>
-                                <td>
-                                    <span class="story-status status-<?php echo esc_attr($story->post_status); ?>">
-                                        <?php echo esc_html(ucfirst($story->post_status)); ?>
-                                    </span>
                                 </td>
                                 <td>
                                     <?php if ($unique_link && $obfuscated_url) : ?>

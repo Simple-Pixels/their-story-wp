@@ -107,8 +107,14 @@ if (!defined('ABSPATH')) {
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <span class="story-status status-<?php echo esc_attr($story->post_status); ?>">
-                                        <?php echo esc_html(ucfirst($story->post_status)); ?>
+                                    <?php
+                                    $is_closed = isset($story->is_closed) ? $story->is_closed : (get_post_meta($story->ID, '_story_closed', true) === '1');
+                                    $is_active = ($story->post_status === 'publish' && !$is_closed);
+                                    $status_class = $is_active ? 'active' : 'closed';
+                                    $status_text = $is_active ? __('Active', 'their-story') : __('Closed', 'their-story');
+                                    ?>
+                                    <span class="story-status status-<?php echo esc_attr($status_class); ?>">
+                                        <?php echo esc_html($status_text); ?>
                                     </span>
                                 </td>
                                 <td>

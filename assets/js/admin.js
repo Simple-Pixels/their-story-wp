@@ -203,6 +203,130 @@
                 });
             });
         });
+        
+        const approveSubmissionBtns = document.querySelectorAll('.their-story-approve-submission-btn');
+        approveSubmissionBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const submissionId = this.dataset.submissionId;
+                
+                if (!submissionId) {
+                    return;
+                }
+                
+                const self = this;
+                const originalText = self.textContent;
+                self.disabled = true;
+                self.textContent = 'Approving...';
+                
+                const formData = new FormData();
+                formData.append('action', 'their_story_moderate_submission');
+                formData.append('submission_id', submissionId);
+                formData.append('moderate_action', 'approve');
+                formData.append('nonce', theirStoryAdmin.moderateNonce);
+                
+                fetch(theirStoryAdmin.ajaxUrl, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    if (data.success) {
+                        const row = self.closest('tr');
+                        if (row) {
+                            const statusBadge = row.querySelector('.story-status');
+                            if (statusBadge) {
+                                statusBadge.className = 'story-status status-publish';
+                                statusBadge.textContent = 'Publish';
+                            }
+                            
+                            const approveBtn = row.querySelector('.their-story-approve-submission-btn');
+                            if (approveBtn) {
+                                const divider = approveBtn.nextElementSibling;
+                                if (divider && divider.classList.contains('their-story-divider')) {
+                                    divider.remove();
+                                }
+                                approveBtn.remove();
+                            }
+                            
+                            row.className = row.className.replace('submission-status-pending', 'submission-status-publish');
+                        }
+                        alert(data.data.message || 'Submission approved.');
+                    } else {
+                        alert(data.data.message || 'Error approving submission. Please try again.');
+                        self.disabled = false;
+                        self.textContent = originalText;
+                    }
+                })
+                .catch(function() {
+                    alert('An error occurred. Please try again.');
+                    self.disabled = false;
+                    self.textContent = originalText;
+                });
+            });
+        });
+        
+        const deleteSubmissionBtns = document.querySelectorAll('.their-story-delete-submission-btn');
+        deleteSubmissionBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const submissionId = this.dataset.submissionId;
+                
+                if (!submissionId) {
+                    return;
+                }
+                
+                if (!confirm('Are you sure you want to delete this submission? This action cannot be undone.')) {
+                    return;
+                }
+                
+                const self = this;
+                const originalText = self.textContent;
+                self.disabled = true;
+                self.textContent = 'Deleting...';
+                
+                const formData = new FormData();
+                formData.append('action', 'their_story_moderate_submission');
+                formData.append('submission_id', submissionId);
+                formData.append('moderate_action', 'delete');
+                formData.append('nonce', theirStoryAdmin.moderateNonce);
+                
+                fetch(theirStoryAdmin.ajaxUrl, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    if (data.success) {
+                        const row = self.closest('tr');
+                        if (row) {
+                            row.style.opacity = '0.5';
+                            setTimeout(function() {
+                                row.remove();
+                                
+                                const tbody = document.querySelector('.their-story-table tbody');
+                                if (tbody && tbody.children.length === 0) {
+                                    location.reload();
+                                }
+                            }, 300);
+                        } else {
+                            location.reload();
+                        }
+                    } else {
+                        alert(data.data.message || 'Error deleting submission. Please try again.');
+                        self.disabled = false;
+                        self.textContent = originalText;
+                    }
+                })
+                .catch(function() {
+                    alert('An error occurred. Please try again.');
+                    self.disabled = false;
+                    self.textContent = originalText;
+                });
+            });
+        });
     });
     
 })();

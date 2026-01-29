@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Their Story
- * Description: A basic WordPress plugin to power Their Story
- * Version: 1.0.3
+ * Description: A WordPress plugin to power Their Story
+ * Version: 1.0.4
  * Author: Simple Pixels
 
  */

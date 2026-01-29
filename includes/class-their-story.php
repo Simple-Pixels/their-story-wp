@@ -24,8 +24,11 @@ class Their_Story {
         add_action('wp_ajax_their_story_submit_message', array($this, 'ajax_submit_message'));
         add_action('wp_ajax_nopriv_their_story_submit_message', array($this, 'ajax_submit_message'));
         add_action('wp_ajax_their_story_moderate_submission', array($this, 'ajax_moderate_submission'));
+        add_action('wp_ajax_their_story_close_story', array($this, 'ajax_close_story'));
         add_action('admin_init', array($this, 'restrict_admin_access'));
         add_filter('show_admin_bar', array($this, 'hide_admin_bar_for_storytellers'));
+        add_action('admin_head', array($this, 'hide_admin_bar_in_admin'));
+        add_action('admin_footer', array($this, 'hide_admin_footer_for_storytellers'));
         add_filter('the_content', array($this, 'add_story_page_content'));
     }
     
@@ -118,6 +121,15 @@ class Their_Story {
                 'dashicons-book',
                 30
             );
+            
+            add_submenu_page(
+                'their-story-admin',
+                __('Submissions', 'their-story'),
+                __('Submissions', 'their-story'),
+                'manage_options',
+                'their-story-submissions',
+                array($this, 'render_submissions_page')
+            );
         }
     }
     
@@ -174,6 +186,20 @@ class Their_Story {
         return $show;
     }
     
+    public function hide_admin_bar_in_admin() {
+        $current_user = wp_get_current_user();
+        if (in_array('storyteller', $current_user->roles)) {
+            echo '<style>#wpadminbar { display: none !important; }</style>';
+        }
+    }
+    
+    public function hide_admin_footer_for_storytellers() {
+        $current_user = wp_get_current_user();
+        if (in_array('storyteller', $current_user->roles)) {
+            echo '<style>#wpfooter { display: none !important; }</style>';
+        }
+    }
+    
     public function render_storyteller_dashboard() {
         $current_user = wp_get_current_user();
         $user_id = $current_user->ID;
@@ -185,6 +211,11 @@ class Their_Story {
         $stories = $this->get_all_stories();
         $pending_count = $this->get_pending_submissions_count();
         include THEIR_STORY_PLUGIN_DIR . 'templates/admin-dashboard.php';
+    }
+    
+    public function render_submissions_page() {
+        $submissions = $this->get_all_submissions();
+        include THEIR_STORY_PLUGIN_DIR . 'templates/admin-submissions.php';
     }
     
     public function get_pending_submissions_count() {
@@ -239,6 +270,7 @@ class Their_Story {
             $storyteller_id = get_post_meta($story->ID, '_storyteller_id', true);
             $story->storyteller = get_userdata($storyteller_id);
             $story->unique_link = get_post_meta($story->ID, '_story_unique_link', true);
+            $story->is_closed = get_post_meta($story->ID, '_story_closed', true) === '1';
         }
         
         return $stories;
@@ -385,7 +417,8 @@ class Their_Story {
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('their_story_create_story'),
             'deleteNonce' => wp_create_nonce('their_story_delete_story'),
-            'passwordNonce' => wp_create_nonce('their_story_update_password')
+            'passwordNonce' => wp_create_nonce('their_story_update_password'),
+            'moderateNonce' => wp_create_nonce('their_story_moderate_submission')
         ));
     }
     
@@ -416,12 +449,18 @@ class Their_Story {
                 $current_user = wp_get_current_user();
                 $can_moderate = in_array('administrator', $current_user->roles);
                 
+                $storyteller_id = get_post_meta($post->ID, '_storyteller_id', true);
+                $is_storyteller = in_array('storyteller', $current_user->roles) && ($storyteller_id == $current_user->ID);
+                $can_close_story = $can_moderate || $is_storyteller;
+                
                 wp_localize_script('their-story-frontend', 'theirStoryFrontend', array(
                     'ajaxUrl' => admin_url('admin-ajax.php'),
                     'storyId' => $post->ID,
                     'submitNonce' => wp_create_nonce('their_story_submit_message'),
                     'moderateNonce' => wp_create_nonce('their_story_moderate_submission'),
-                    'canModerate' => $can_moderate
+                    'closeNonce' => wp_create_nonce('their_story_close_story'),
+                    'canModerate' => $can_moderate,
+                    'canCloseStory' => $can_close_story
                 ));
             }
         }
@@ -527,6 +566,11 @@ class Their_Story {
             wp_send_json_error(array('message' => __('Story not found.', 'their-story')));
         }
         
+        $is_closed = get_post_meta($story_id, '_story_closed', true) === '1';
+        if ($is_closed) {
+            wp_send_json_error(array('message' => __('This story is closed. No new messages can be added.', 'their-story')));
+        }
+        
         $image_id = 0;
         if (!empty($_FILES['image']['name'])) {
             require_once(ABSPATH . 'wp-admin/includes/file.php');
@@ -594,6 +638,18 @@ class Their_Story {
             wp_send_json_error(array('message' => __('You do not have permission to moderate this submission.', 'their-story')));
         }
         
+        $story_id = get_post_meta($submission_id, '_submission_story_id', true);
+        if ($story_id) {
+            $is_closed = get_post_meta($story_id, '_story_closed', true) === '1';
+            if ($is_closed) {
+                if ($action === 'approve') {
+                    wp_send_json_error(array('message' => __('This story is closed. Submissions cannot be approved.', 'their-story')));
+                } elseif ($action === 'delete') {
+                    wp_send_json_error(array('message' => __('This story is closed. Submissions cannot be deleted.', 'their-story')));
+                }
+            }
+        }
+        
         if ($action === 'approve') {
             wp_update_post(array(
                 'ID' => $submission_id,
@@ -638,6 +694,71 @@ class Their_Story {
         }
         
         return $submissions;
+    }
+    
+    public function get_all_submissions() {
+        $args = array(
+            'post_type' => 'story_submission',
+            'post_status' => array('publish', 'pending'),
+            'posts_per_page' => -1,
+            'orderby' => 'date',
+            'order' => 'DESC'
+        );
+        
+        $submissions = get_posts($args);
+        
+        foreach ($submissions as $submission) {
+            $submission->submission_name = get_post_meta($submission->ID, '_submission_name', true);
+            $submission->submission_image_id = get_post_meta($submission->ID, '_submission_image_id', true);
+            $story_id = get_post_meta($submission->ID, '_submission_story_id', true);
+            $submission->story_id = $story_id;
+            if ($story_id) {
+                $story = get_post($story_id);
+                $submission->story = $story;
+                $storyteller_id = get_post_meta($story_id, '_storyteller_id', true);
+                if ($storyteller_id) {
+                    $submission->storyteller = get_userdata($storyteller_id);
+                }
+            }
+        }
+        
+        return $submissions;
+    }
+    
+    public function ajax_close_story() {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'their_story_close_story')) {
+            wp_send_json_error(array('message' => __('Security check failed.', 'their-story')));
+        }
+        
+        $current_user = wp_get_current_user();
+        $story_id = isset($_POST['story_id']) ? intval($_POST['story_id']) : 0;
+        
+        if (!$story_id) {
+            wp_send_json_error(array('message' => __('Invalid story ID.', 'their-story')));
+        }
+        
+        $story = get_post($story_id);
+        if (!$story) {
+            wp_send_json_error(array('message' => __('Story not found.', 'their-story')));
+        }
+        
+        $can_close = false;
+        if (in_array('administrator', $current_user->roles)) {
+            $can_close = true;
+        } elseif (in_array('storyteller', $current_user->roles)) {
+            $storyteller_id = get_post_meta($story_id, '_storyteller_id', true);
+            if ($storyteller_id == $current_user->ID) {
+                $can_close = true;
+            }
+        }
+        
+        if (!$can_close) {
+            wp_send_json_error(array('message' => __('You do not have permission to close this story.', 'their-story')));
+        }
+        
+        update_post_meta($story_id, '_story_closed', '1');
+        
+        wp_send_json_success(array('message' => __('Story closed successfully.', 'their-story')));
     }
 }
 
