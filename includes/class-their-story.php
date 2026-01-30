@@ -25,11 +25,13 @@ class Their_Story {
         add_action('wp_ajax_nopriv_their_story_submit_message', array($this, 'ajax_submit_message'));
         add_action('wp_ajax_their_story_moderate_submission', array($this, 'ajax_moderate_submission'));
         add_action('wp_ajax_their_story_close_story', array($this, 'ajax_close_story'));
+        add_action('wp_ajax_their_story_reopen_story', array($this, 'ajax_reopen_story'));
         add_action('admin_init', array($this, 'restrict_admin_access'));
         add_filter('show_admin_bar', array($this, 'hide_admin_bar_for_storytellers'));
         add_action('admin_head', array($this, 'hide_admin_bar_in_admin'));
         add_action('admin_footer', array($this, 'hide_admin_footer_for_storytellers'));
-        add_filter('the_content', array($this, 'add_story_page_content'));
+        add_filter('the_content', array($this, 'add_story_page_content'), 20);
+        add_filter('post_password_required', array($this, 'bypass_password_for_owner'), 10, 2);
     }
     
     public function add_storyteller_role() {
@@ -418,7 +420,8 @@ class Their_Story {
             'nonce' => wp_create_nonce('their_story_create_story'),
             'deleteNonce' => wp_create_nonce('their_story_delete_story'),
             'passwordNonce' => wp_create_nonce('their_story_update_password'),
-            'moderateNonce' => wp_create_nonce('their_story_moderate_submission')
+            'moderateNonce' => wp_create_nonce('their_story_moderate_submission'),
+            'reopenNonce' => wp_create_nonce('their_story_reopen_story')
         ));
     }
     
@@ -466,6 +469,24 @@ class Their_Story {
         }
     }
     
+    public function bypass_password_for_owner($required, $post) {
+        if (!$required || !$post) {
+            return $required;
+        }
+        
+        $current_user = wp_get_current_user();
+        if (!$current_user || !$current_user->ID) {
+            return $required;
+        }
+        
+        $storyteller_id = get_post_meta($post->ID, '_storyteller_id', true);
+        if ($storyteller_id && $storyteller_id == $current_user->ID) {
+            return false;
+        }
+        
+        return $required;
+    }
+    
     public function add_story_page_content($content) {
         if (!is_page() || !is_singular()) {
             return $content;
@@ -485,6 +506,10 @@ class Their_Story {
         ob_start();
         include THEIR_STORY_PLUGIN_DIR . 'templates/story-page-content.php';
         $story_content = ob_get_clean();
+        
+        if (empty(trim($story_content))) {
+            return $content;
+        }
         
         return $content . $story_content;
     }
@@ -783,6 +808,34 @@ class Their_Story {
         update_post_meta($story_id, '_story_closed', '1');
         
         wp_send_json_success(array('message' => __('Story closed successfully.', 'their-story')));
+    }
+    
+    public function ajax_reopen_story() {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'their_story_reopen_story')) {
+            wp_send_json_error(array('message' => __('Security check failed.', 'their-story')));
+        }
+        
+        $current_user = wp_get_current_user();
+        $story_id = isset($_POST['story_id']) ? intval($_POST['story_id']) : 0;
+        
+        if (!$story_id) {
+            wp_send_json_error(array('message' => __('Invalid story ID.', 'their-story')));
+        }
+        
+        $story = get_post($story_id);
+        if (!$story) {
+            wp_send_json_error(array('message' => __('Story not found.', 'their-story')));
+        }
+        
+        $can_reopen = in_array('administrator', $current_user->roles);
+        
+        if (!$can_reopen) {
+            wp_send_json_error(array('message' => __('You do not have permission to reopen this story.', 'their-story')));
+        }
+        
+        delete_post_meta($story_id, '_story_closed');
+        
+        wp_send_json_success(array('message' => __('Story reopened successfully.', 'their-story')));
     }
 }
 

@@ -1,5 +1,4 @@
 <?php
-
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -24,9 +23,7 @@ $story_url = get_permalink($story_id);
 $password = $post->post_password;
 $their_story = new Their_Story();
 $obfuscated_url = $their_story->get_story_url_from_link($unique_link);
-?>
-
-<div class="their-story-page-content">
+?><div class="their-story-page-content">
     
     <?php if (!$is_story_closed) : ?>
     <div class="their-story-form-section">
@@ -69,6 +66,7 @@ $obfuscated_url = $their_story->get_story_url_from_link($unique_link);
         <div class="their-story-notice" style="background-color: #fef2f2; border: 1px solid #fee2e2; color: #991b1b; padding: 1rem; border-radius: 0.5rem;">
             <p style="margin: 0; font-weight: 500;"><?php echo esc_html__('This story is closed. No new messages can be added.', 'their-story'); ?></p>
         </div>
+        <?php if ($is_storyteller) : ?>
         <div class="their-story-shop-section" style="margin-top: 1.5rem; padding: 1.5rem; background-color: #f0f6fc; border: 1px solid #c3d4e6; border-radius: 0.5rem;">
             <p style="margin: 0 0 1rem 0; font-size: 1rem; color: #333;"><?php echo esc_html__('Next step - add your messages to a book', 'their-story'); ?></p>
             <?php
@@ -83,6 +81,7 @@ $obfuscated_url = $their_story->get_story_url_from_link($unique_link);
                 <?php echo esc_html__('Shop Now', 'their-story'); ?>
             </a>
         </div>
+        <?php endif; ?>
     </div>
     <?php endif; ?>
     

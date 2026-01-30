@@ -328,6 +328,50 @@
             });
         });
         
+        const reopenStoryBtns = document.querySelectorAll('.their-story-reopen-btn');
+        reopenStoryBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const storyId = this.dataset.storyId;
+                const storyTitle = this.dataset.storyTitle || 'this story';
+                
+                if (!confirm('Are you sure you want to re-open "' + storyTitle + '"? This will allow new messages to be added.')) {
+                    return;
+                }
+                
+                const self = this;
+                const originalText = self.textContent;
+                self.disabled = true;
+                self.textContent = 'Re-opening...';
+                
+                const formData = new FormData();
+                formData.append('action', 'their_story_reopen_story');
+                formData.append('story_id', storyId);
+                formData.append('nonce', theirStoryAdmin.reopenNonce);
+                
+                fetch(theirStoryAdmin.ajaxUrl, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.data.message || 'Error reopening story. Please try again.');
+                        self.disabled = false;
+                        self.textContent = originalText;
+                    }
+                })
+                .catch(function() {
+                    alert('An error occurred. Please try again.');
+                    self.disabled = false;
+                    self.textContent = originalText;
+                });
+            });
+        });
+        
         const lightboxTriggers = document.querySelectorAll('.their-story-lightbox-trigger');
         let lightbox = null;
         
@@ -362,7 +406,6 @@
             const lb = createLightbox();
             const img = lb.querySelector('.their-story-lightbox-image');
             
-            // Handle multiple images or single image
             let imageUrls = [];
             if (Array.isArray(imageUrlOrArray)) {
                 imageUrls = imageUrlOrArray;

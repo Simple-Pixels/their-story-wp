@@ -145,6 +145,12 @@ if (!defined('ABSPATH')) {
                                             <?php echo esc_html__('Change Password', 'their-story'); ?>
                                         </button>
                                         <span class="their-story-divider">|</span>
+                                        <?php if ($is_closed) : ?>
+                                            <button type="button" class="their-story-link their-story-reopen-btn" data-story-id="<?php echo esc_attr($story->ID); ?>" data-story-title="<?php echo esc_attr($story->post_title); ?>" style="color: #46b450; cursor: pointer; background: none; border: none; padding: 0; text-decoration: underline;">
+                                                <?php echo esc_html__('Re-open Story', 'their-story'); ?>
+                                            </button>
+                                            <span class="their-story-divider">|</span>
+                                        <?php endif; ?>
                                         <button type="button" class="their-story-link their-story-delete-btn" data-story-id="<?php echo esc_attr($story->ID); ?>" data-story-title="<?php echo esc_attr($story->post_title); ?>" style="color: #dc3232; cursor: pointer; background: none; border: none; padding: 0; text-decoration: underline;">
                                             <?php echo esc_html__('Delete', 'their-story'); ?>
                                         </button>
