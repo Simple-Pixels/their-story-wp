@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Their Story
  * Description: A WordPress plugin to power Their Story
- * Version: 1.0.4
+ * Version: 1.0.5
  * Author: Simple Pixels
 
  */
