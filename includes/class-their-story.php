@@ -571,23 +571,41 @@ class Their_Story {
             wp_send_json_error(array('message' => __('This story is closed. No new messages can be added.', 'their-story')));
         }
         
-        $image_id = 0;
-        if (!empty($_FILES['image']['name'])) {
+        $image_ids = array();
+        
+        // Handle multiple image uploads (up to 5)
+        if (!empty($_FILES['images']['name']) && is_array($_FILES['images']['name'])) {
             require_once(ABSPATH . 'wp-admin/includes/file.php');
             require_once(ABSPATH . 'wp-admin/includes/media.php');
             require_once(ABSPATH . 'wp-admin/includes/image.php');
             
-            $upload = wp_handle_upload($_FILES['image'], array('test_form' => false));
-            if (!isset($upload['error'])) {
-                $attachment = array(
-                    'post_mime_type' => $upload['type'],
-                    'post_title' => sanitize_file_name(pathinfo($upload['file'], PATHINFO_FILENAME)),
-                    'post_content' => '',
-                    'post_status' => 'inherit'
-                );
-                $image_id = wp_insert_attachment($attachment, $upload['file'], $story_id);
-                $attach_data = wp_generate_attachment_metadata($image_id, $upload['file']);
-                wp_update_attachment_metadata($image_id, $attach_data);
+            $file_count = count($_FILES['images']['name']);
+            $file_count = min($file_count, 5); // Limit to 5 images
+            
+            for ($i = 0; $i < $file_count; $i++) {
+                if (!empty($_FILES['images']['name'][$i])) {
+                    $file = array(
+                        'name' => $_FILES['images']['name'][$i],
+                        'type' => $_FILES['images']['type'][$i],
+                        'tmp_name' => $_FILES['images']['tmp_name'][$i],
+                        'error' => $_FILES['images']['error'][$i],
+                        'size' => $_FILES['images']['size'][$i]
+                    );
+                    
+                    $upload = wp_handle_upload($file, array('test_form' => false));
+                    if (!isset($upload['error'])) {
+                        $attachment = array(
+                            'post_mime_type' => $upload['type'],
+                            'post_title' => sanitize_file_name(pathinfo($upload['file'], PATHINFO_FILENAME)),
+                            'post_content' => '',
+                            'post_status' => 'inherit'
+                        );
+                        $image_id = wp_insert_attachment($attachment, $upload['file'], $story_id);
+                        $attach_data = wp_generate_attachment_metadata($image_id, $upload['file']);
+                        wp_update_attachment_metadata($image_id, $attach_data);
+                        $image_ids[] = $image_id;
+                    }
+                }
             }
         }
         
@@ -607,8 +625,8 @@ class Their_Story {
         
         update_post_meta($submission_id, '_submission_name', $name);
         update_post_meta($submission_id, '_submission_story_id', $story_id);
-        if ($image_id) {
-            update_post_meta($submission_id, '_submission_image_id', $image_id);
+        if (!empty($image_ids)) {
+            update_post_meta($submission_id, '_submission_image_ids', $image_ids);
         }
         
         wp_send_json_success(array('message' => __('Your message has been submitted and is awaiting approval.', 'their-story')));
@@ -657,9 +675,13 @@ class Their_Story {
             ));
             wp_send_json_success(array('message' => __('Submission approved.', 'their-story')));
         } elseif ($action === 'delete') {
-            $image_id = get_post_meta($submission_id, '_submission_image_id', true);
-            if ($image_id) {
-                wp_delete_attachment($image_id, true);
+            $image_ids = get_post_meta($submission_id, '_submission_image_ids', true);
+            if (!empty($image_ids) && is_array($image_ids)) {
+                foreach ($image_ids as $image_id) {
+                    if ($image_id) {
+                        wp_delete_attachment($image_id, true);
+                    }
+                }
             }
             wp_delete_post($submission_id, true);
             wp_send_json_success(array('message' => __('Submission deleted.', 'their-story')));
@@ -690,7 +712,8 @@ class Their_Story {
         
         foreach ($submissions as $submission) {
             $submission->submission_name = get_post_meta($submission->ID, '_submission_name', true);
-            $submission->submission_image_id = get_post_meta($submission->ID, '_submission_image_id', true);
+            $image_ids = get_post_meta($submission->ID, '_submission_image_ids', true);
+            $submission->submission_image_ids = (!empty($image_ids) && is_array($image_ids)) ? $image_ids : array();
         }
         
         return $submissions;
@@ -709,7 +732,8 @@ class Their_Story {
         
         foreach ($submissions as $submission) {
             $submission->submission_name = get_post_meta($submission->ID, '_submission_name', true);
-            $submission->submission_image_id = get_post_meta($submission->ID, '_submission_image_id', true);
+            $image_ids = get_post_meta($submission->ID, '_submission_image_ids', true);
+            $submission->submission_image_ids = (!empty($image_ids) && is_array($image_ids)) ? $image_ids : array();
             $story_id = get_post_meta($submission->ID, '_submission_story_id', true);
             $submission->story_id = $story_id;
             if ($story_id) {

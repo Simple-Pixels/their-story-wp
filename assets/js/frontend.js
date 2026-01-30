@@ -2,34 +2,84 @@
     'use strict';
 
     document.addEventListener('DOMContentLoaded', function() {
-        const imageInput = document.getElementById('submission-image');
-        const previewImg = document.getElementById('preview-img');
-        const imagePreview = document.getElementById('image-preview');
-        const removeImageBtn = document.getElementById('remove-image');
+        const imagesInput = document.getElementById('submission-images');
+        const imagesPreview = document.getElementById('images-preview');
         const form = document.getElementById('their-story-submission-form');
+        let selectedFiles = [];
 
-        if (imageInput) {
-            imageInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        if (previewImg) previewImg.src = e.target.result;
-                        if (imagePreview) {
-                            imagePreview.style.display = 'inline-block';
-                        }
-                    };
-                    reader.readAsDataURL(file);
+        if (imagesInput) {
+            imagesInput.addEventListener('change', function(e) {
+                const files = Array.from(e.target.files);
+                
+                if (files.length > 5) {
+                    alert('You can only upload up to 5 images. Please select 5 or fewer images.');
+                    files.splice(5);
+                    e.target.files = createFileList(files);
                 }
+                
+                selectedFiles = Array.from(e.target.files);
+                
+                if (imagesPreview) {
+                    imagesPreview.innerHTML = '';
+                }
+                
+                selectedFiles.forEach(function(file, index) {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const previewItem = document.createElement('div');
+                            previewItem.className = 'their-story-preview-item';
+                            previewItem.innerHTML = `
+                                <img src="${e.target.result}" alt="Preview ${index + 1}" />
+                                <button type="button" class="their-story-btn-small their-story-remove-preview" data-index="${index}">Remove</button>
+                            `;
+                            if (imagesPreview) {
+                                imagesPreview.appendChild(previewItem);
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
             });
         }
 
-        if (removeImageBtn) {
-            removeImageBtn.addEventListener('click', function() {
-                if (imageInput) imageInput.value = '';
-                if (imagePreview) imagePreview.style.display = 'none';
-                if (previewImg) previewImg.src = '';
+        if (imagesPreview) {
+            imagesPreview.addEventListener('click', function(e) {
+                if (e.target.classList.contains('their-story-remove-preview')) {
+                    const index = parseInt(e.target.dataset.index);
+                    const previewItem = e.target.closest('.their-story-preview-item');
+                    
+                    selectedFiles.splice(index, 1);
+                    
+                    const dt = new DataTransfer();
+                    selectedFiles.forEach(function(file) {
+                        dt.items.add(file);
+                    });
+                    if (imagesInput) {
+                        imagesInput.files = dt.files;
+                    }
+                    
+                    if (previewItem) {
+                        previewItem.remove();
+                    }
+                    
+                    const remainingPreviews = imagesPreview.querySelectorAll('.their-story-preview-item');
+                    remainingPreviews.forEach(function(item, newIndex) {
+                        const removeBtn = item.querySelector('.their-story-remove-preview');
+                        if (removeBtn) {
+                            removeBtn.dataset.index = newIndex;
+                        }
+                    });
+                }
             });
+        }
+        
+        function createFileList(files) {
+            const dt = new DataTransfer();
+            files.forEach(function(file) {
+                dt.items.add(file);
+            });
+            return dt.files;
         }
 
         if (form) {
@@ -61,9 +111,11 @@
                 formData.append('message', message);
                 formData.append('nonce', theirStoryFrontend.submitNonce);
 
-                const imageFile = imageInput && imageInput.files[0];
-                if (imageFile) {
-                    formData.append('image', imageFile);
+                const imagesInput = document.getElementById('submission-images');
+                if (imagesInput && imagesInput.files.length > 0) {
+                    for (let i = 0; i < imagesInput.files.length; i++) {
+                        formData.append('images[]', imagesInput.files[i]);
+                    }
                 }
 
                 if (submitBtn) {
@@ -85,7 +137,8 @@
                             messageDiv.style.display = 'block';
                         }
                         form.reset();
-                        if (imagePreview) imagePreview.style.display = 'none';
+                        if (imagesPreview) imagesPreview.innerHTML = '';
+                        selectedFiles = [];
 
                         setTimeout(function() {
                             location.reload();
@@ -200,7 +253,6 @@
             });
         });
 
-        // Handle close story button
         const closeStoryBtn = document.getElementById('close-story-btn');
         if (closeStoryBtn && theirStoryFrontend.canCloseStory) {
             closeStoryBtn.addEventListener('click', function() {
@@ -226,7 +278,7 @@
                 .then(function(response) { return response.json(); })
                 .then(function(response) {
                     if (response.success) {
-                        window.location.href = '/todo';
+                        location.reload();
                     } else {
                         alert(response.data.message || 'Error closing story. Please try again.');
                         closeStoryBtn.disabled = false;
@@ -240,5 +292,61 @@
                 });
             });
         }
+        
+        const galleryImages = document.querySelectorAll('.their-story-gallery-image');
+        let lightbox = null;
+        
+        function createLightbox() {
+            if (lightbox) return lightbox;
+            
+            lightbox = document.createElement('div');
+            lightbox.className = 'their-story-lightbox';
+            lightbox.innerHTML = `
+                <div class="their-story-lightbox-overlay"></div>
+                <button class="their-story-lightbox-close" aria-label="Close lightbox">&times;</button>
+                <div class="their-story-lightbox-content">
+                    <img class="their-story-lightbox-image" src="" alt="" />
+                </div>
+            `;
+            document.body.appendChild(lightbox);
+            
+            lightbox.querySelector('.their-story-lightbox-overlay').addEventListener('click', closeLightbox);
+            
+            lightbox.querySelector('.their-story-lightbox-close').addEventListener('click', closeLightbox);
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && lightbox && lightbox.classList.contains('active')) {
+                    closeLightbox();
+                }
+            });
+            
+            return lightbox;
+        }
+        
+        function openLightbox(imageUrl) {
+            const lb = createLightbox();
+            const img = lb.querySelector('.their-story-lightbox-image');
+            img.src = imageUrl;
+            img.alt = 'Full size image';
+            lb.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeLightbox() {
+            if (lightbox) {
+                lightbox.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+        
+        galleryImages.forEach(function(img) {
+            img.addEventListener('click', function(e) {
+                e.preventDefault();
+                const fullImageUrl = this.dataset.fullImage || this.src;
+                if (fullImageUrl) {
+                    openLightbox(fullImageUrl);
+                }
+            });
+        });
     });
 })();

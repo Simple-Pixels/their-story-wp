@@ -86,8 +86,7 @@ if (!defined('ABSPATH')) {
                     <tbody>
                         <?php foreach ($submissions as $submission) : 
                             $submission_name = $submission->submission_name ? $submission->submission_name : get_post_meta($submission->ID, '_submission_name', true);
-                            $image_id = $submission->submission_image_id ? $submission->submission_image_id : get_post_meta($submission->ID, '_submission_image_id', true);
-                            $image_url = $image_id ? wp_get_attachment_image_url($image_id, 'thumbnail') : '';
+                            $image_ids = isset($submission->submission_image_ids) ? $submission->submission_image_ids : array();
                             $story = $submission->story;
                             $storyteller = isset($submission->storyteller) ? $submission->storyteller : null;
                             $story_url = $story ? get_permalink($story->ID) : '';
@@ -97,9 +96,19 @@ if (!defined('ABSPATH')) {
                                 <td>
                                     <div class="their-story-table-cell">
                                         <div class="their-story-submission-preview">
-                                            <?php if ($image_url) : ?>
+                                            <?php if (!empty($image_ids)) : 
+                                                $first_image_id = $image_ids[0];
+                                                $image_url = wp_get_attachment_image_url($first_image_id, 'thumbnail');
+                                                $full_image_urls = array();
+                                                foreach ($image_ids as $img_id) {
+                                                    $full_image_urls[] = wp_get_attachment_image_url($img_id, 'full');
+                                                }
+                                            ?>
                                                 <div class="their-story-submission-thumb">
-                                                    <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr($submission_name); ?>" />
+                                                    <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr($submission_name); ?>" class="their-story-lightbox-trigger" data-full-images="<?php echo esc_attr(json_encode($full_image_urls)); ?>" style="cursor: pointer;" />
+                                                    <?php if (count($image_ids) > 1) : ?>
+                                                        <span class="their-story-image-count">+<?php echo esc_html(count($image_ids) - 1); ?></span>
+                                                    <?php endif; ?>
                                                 </div>
                                             <?php endif; ?>
                                             <div class="their-story-submission-info">
@@ -135,8 +144,17 @@ if (!defined('ABSPATH')) {
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <span class="story-status status-<?php echo esc_attr($submission->post_status); ?>">
-                                        <?php echo esc_html(ucfirst($submission->post_status)); ?>
+                                    <span class="story-status status-<?php echo esc_attr($is_story_closed ? 'closed' : $submission->post_status); ?>">
+                                        <?php 
+                                        if ($is_story_closed) {
+                                            $status_display = 'Closed';
+                                        } elseif ($submission->post_status === 'publish') {
+                                            $status_display = 'Approved';
+                                        } else {
+                                            $status_display = ucfirst($submission->post_status);
+                                        }
+                                        echo esc_html($status_display); 
+                                        ?>
                                     </span>
                                 </td>
                                 <td class="their-story-muted">

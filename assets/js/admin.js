@@ -238,7 +238,7 @@
                             const statusBadge = row.querySelector('.story-status');
                             if (statusBadge) {
                                 statusBadge.className = 'story-status status-publish';
-                                statusBadge.textContent = 'Publish';
+                                statusBadge.textContent = 'Approved';
                             }
                             
                             const approveBtn = row.querySelector('.their-story-approve-submission-btn');
@@ -325,6 +325,140 @@
                     self.disabled = false;
                     self.textContent = originalText;
                 });
+            });
+        });
+        
+        const lightboxTriggers = document.querySelectorAll('.their-story-lightbox-trigger');
+        let lightbox = null;
+        
+        function createLightbox() {
+            if (lightbox) return lightbox;
+            
+            lightbox = document.createElement('div');
+            lightbox.className = 'their-story-lightbox';
+            lightbox.innerHTML = `
+                <div class="their-story-lightbox-overlay"></div>
+                <button class="their-story-lightbox-close" aria-label="Close lightbox">&times;</button>
+                <div class="their-story-lightbox-content">
+                    <img class="their-story-lightbox-image" src="" alt="" />
+                </div>
+            `;
+            document.body.appendChild(lightbox);
+            
+            lightbox.querySelector('.their-story-lightbox-overlay').addEventListener('click', closeLightbox);
+            
+            lightbox.querySelector('.their-story-lightbox-close').addEventListener('click', closeLightbox);
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && lightbox && lightbox.classList.contains('active')) {
+                    closeLightbox();
+                }
+            });
+            
+            return lightbox;
+        }
+        
+        function openLightbox(imageUrlOrArray) {
+            const lb = createLightbox();
+            const img = lb.querySelector('.their-story-lightbox-image');
+            
+            // Handle multiple images or single image
+            let imageUrls = [];
+            if (Array.isArray(imageUrlOrArray)) {
+                imageUrls = imageUrlOrArray;
+            } else if (typeof imageUrlOrArray === 'string') {
+                imageUrls = [imageUrlOrArray];
+            }
+            
+            if (imageUrls.length === 0) return;
+            
+            let currentIndex = 0;
+            img.src = imageUrls[0];
+            img.alt = 'Full size image';
+            lb.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            if (imageUrls.length > 1) {
+                let prevBtn = lb.querySelector('.their-story-lightbox-prev');
+                let nextBtn = lb.querySelector('.their-story-lightbox-next');
+                
+                if (!prevBtn) {
+                    prevBtn = document.createElement('button');
+                    prevBtn.className = 'their-story-lightbox-prev';
+                    prevBtn.innerHTML = '&larr;';
+                    prevBtn.setAttribute('aria-label', 'Previous image');
+                    lb.querySelector('.their-story-lightbox-content').appendChild(prevBtn);
+                }
+                
+                if (!nextBtn) {
+                    nextBtn = document.createElement('button');
+                    nextBtn.className = 'their-story-lightbox-next';
+                    nextBtn.innerHTML = '&rarr;';
+                    nextBtn.setAttribute('aria-label', 'Next image');
+                    lb.querySelector('.their-story-lightbox-content').appendChild(nextBtn);
+                }
+                
+                prevBtn.style.display = 'flex';
+                nextBtn.style.display = 'flex';
+                
+                function showImage(index) {
+                    if (index < 0) index = imageUrls.length - 1;
+                    if (index >= imageUrls.length) index = 0;
+                    currentIndex = index;
+                    img.src = imageUrls[currentIndex];
+                }
+                
+                prevBtn.onclick = function() {
+                    showImage(currentIndex - 1);
+                };
+                
+                nextBtn.onclick = function() {
+                    showImage(currentIndex + 1);
+                };
+                
+                document.addEventListener('keydown', function handleKey(e) {
+                    if (!lb.classList.contains('active')) {
+                        document.removeEventListener('keydown', handleKey);
+                        return;
+                    }
+                    if (e.key === 'ArrowLeft') {
+                        showImage(currentIndex - 1);
+                    } else if (e.key === 'ArrowRight') {
+                        showImage(currentIndex + 1);
+                    }
+                });
+            } else {
+                const prevBtn = lb.querySelector('.their-story-lightbox-prev');
+                const nextBtn = lb.querySelector('.their-story-lightbox-next');
+                if (prevBtn) prevBtn.style.display = 'none';
+                if (nextBtn) nextBtn.style.display = 'none';
+            }
+        }
+        
+        function closeLightbox() {
+            if (lightbox) {
+                lightbox.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+        
+        lightboxTriggers.forEach(function(trigger) {
+            trigger.addEventListener('click', function(e) {
+                e.preventDefault();
+                const fullImagesJson = this.dataset.fullImages;
+                if (fullImagesJson) {
+                    try {
+                        const imageUrls = JSON.parse(fullImagesJson);
+                        openLightbox(imageUrls);
+                    } catch (e) {
+                        console.error('Error parsing image URLs:', e);
+                    }
+                } else {
+                    const fullImageUrl = this.dataset.fullImage;
+                    if (fullImageUrl) {
+                        openLightbox(fullImageUrl);
+                    }
+                }
             });
         });
     });

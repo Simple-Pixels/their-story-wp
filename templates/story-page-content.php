@@ -49,14 +49,12 @@ $obfuscated_url = $their_story->get_story_url_from_link($unique_link);
             </div>
             
             <div class="their-story-form-field">
-                <label for="submission-image" class="their-story-label">
-                    <?php echo esc_html__('Image (Optional)', 'their-story'); ?>
+                <label for="submission-images" class="their-story-label">
+                    <?php echo esc_html__('Images (Optional, up to 5)', 'their-story'); ?>
                 </label>
-                <input type="file" id="submission-image" name="image" accept="image/*" class="their-story-file-input" />
-                <div id="image-preview" class="their-story-image-preview" style="display: none;">
-                    <img id="preview-img" src="" alt="Preview" />
-                    <button type="button" id="remove-image" class="their-story-btn-small"><?php echo esc_html__('Remove', 'their-story'); ?></button>
-                </div>
+                <input type="file" id="submission-images" name="images[]" accept="image/*" multiple class="their-story-file-input" />
+                <p class="their-story-help-text"><?php echo esc_html__('You can upload up to 5 images.', 'their-story'); ?></p>
+                <div id="images-preview" class="their-story-images-preview"></div>
             </div>
             
             <button type="submit" class="their-story-btn their-story-btn-primary">
@@ -71,6 +69,20 @@ $obfuscated_url = $their_story->get_story_url_from_link($unique_link);
         <div class="their-story-notice" style="background-color: #fef2f2; border: 1px solid #fee2e2; color: #991b1b; padding: 1rem; border-radius: 0.5rem;">
             <p style="margin: 0; font-weight: 500;"><?php echo esc_html__('This story is closed. No new messages can be added.', 'their-story'); ?></p>
         </div>
+        <div class="their-story-shop-section" style="margin-top: 1.5rem; padding: 1.5rem; background-color: #f0f6fc; border: 1px solid #c3d4e6; border-radius: 0.5rem;">
+            <p style="margin: 0 0 1rem 0; font-size: 1rem; color: #333;"><?php echo esc_html__('Next step - add your messages to a book', 'their-story'); ?></p>
+            <?php
+            $message_count = count($approved_submissions);
+            $shop_url = home_url('/shop');
+            $shop_url = add_query_arg(array(
+                'story' => $story_id,
+                'messages' => $message_count
+            ), $shop_url);
+            ?>
+            <a href="<?php echo esc_url($shop_url); ?>" class="their-story-btn their-story-btn-primary" style="display: inline-block; text-decoration: none;">
+                <?php echo esc_html__('Shop Now', 'their-story'); ?>
+            </a>
+        </div>
     </div>
     <?php endif; ?>
     
@@ -80,8 +92,7 @@ $obfuscated_url = $their_story->get_story_url_from_link($unique_link);
         <div class="their-story-pending-list">
             <?php foreach ($pending_submissions as $submission) : 
                 $submission_name = $submission->submission_name ? $submission->submission_name : get_post_meta($submission->ID, '_submission_name', true);
-                $image_id = $submission->submission_image_id ? $submission->submission_image_id : get_post_meta($submission->ID, '_submission_image_id', true);
-                $image_url = $image_id ? wp_get_attachment_image_url($image_id, 'medium') : '';
+                $image_ids = isset($submission->submission_image_ids) ? $submission->submission_image_ids : array();
             ?>
                 <div class="their-story-submission-item their-story-pending" data-submission-id="<?php echo esc_attr($submission->ID); ?>">
                     <div class="their-story-submission-content">
@@ -90,11 +101,31 @@ $obfuscated_url = $their_story->get_story_url_from_link($unique_link);
                             <span class="their-story-submission-date"><?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($submission->post_date))); ?></span>
                         </div>
                         <div class="their-story-submission-message">
-                            <?php echo wp_kses_post(nl2br($submission->post_content)); ?>
+                            <?php 
+                            $content = $submission->post_content;
+                            $lines = explode("\n", $content);
+                            $lines = array_map('trim', $lines);
+                            $lines = array_filter($lines, function($line) {
+                                return $line !== '';
+                            });
+                            $content = implode("\n", $lines);
+                            $content = nl2br($content);
+                            echo wp_kses_post($content); 
+                            ?>
                         </div>
-                        <?php if ($image_url) : ?>
-                            <div class="their-story-submission-image">
-                                <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr($submission_name); ?>" />
+                        <?php if (!empty($image_ids)) : ?>
+                            <div class="their-story-submission-gallery">
+                                <?php foreach ($image_ids as $image_id) : 
+                                    $image_url = wp_get_attachment_image_url($image_id, 'medium');
+                                    $full_image_url = wp_get_attachment_image_url($image_id, 'full');
+                                    if ($image_url) :
+                                ?>
+                                    <div class="their-story-gallery-item">
+                                        <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr($submission_name); ?>" class="their-story-gallery-image" data-full-image="<?php echo esc_url($full_image_url); ?>" />
+                                    </div>
+                                <?php 
+                                    endif;
+                                endforeach; ?>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -122,8 +153,7 @@ $obfuscated_url = $their_story->get_story_url_from_link($unique_link);
             <div class="their-story-messages-list">
                 <?php foreach ($approved_submissions as $submission) : 
                     $submission_name = $submission->submission_name ? $submission->submission_name : get_post_meta($submission->ID, '_submission_name', true);
-                    $image_id = $submission->submission_image_id ? $submission->submission_image_id : get_post_meta($submission->ID, '_submission_image_id', true);
-                    $image_url = $image_id ? wp_get_attachment_image_url($image_id, 'large') : '';
+                    $image_ids = isset($submission->submission_image_ids) ? $submission->submission_image_ids : array();
                 ?>
                     <div class="their-story-submission-item their-story-approved" data-submission-id="<?php echo esc_attr($submission->ID); ?>">
                         <div class="their-story-submission-header">
@@ -131,11 +161,31 @@ $obfuscated_url = $their_story->get_story_url_from_link($unique_link);
                             <span class="their-story-submission-date"><?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($submission->post_date))); ?></span>
                         </div>
                         <div class="their-story-submission-message">
-                            <?php echo wp_kses_post(nl2br($submission->post_content)); ?>
+                            <?php 
+                            $content = $submission->post_content;
+                            $lines = explode("\n", $content);
+                            $lines = array_map('trim', $lines);
+                            $lines = array_filter($lines, function($line) {
+                                return $line !== '';
+                            });
+                            $content = implode("\n", $lines);
+                            $content = nl2br($content);
+                            echo wp_kses_post($content); 
+                            ?>
                         </div>
-                        <?php if ($image_url) : ?>
-                            <div class="their-story-submission-image">
-                                <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr($submission_name); ?>" />
+                        <?php if (!empty($image_ids)) : ?>
+                            <div class="their-story-submission-gallery">
+                                <?php foreach ($image_ids as $image_id) : 
+                                    $image_url = wp_get_attachment_image_url($image_id, 'large');
+                                    $full_image_url = wp_get_attachment_image_url($image_id, 'full');
+                                    if ($image_url) :
+                                ?>
+                                    <div class="their-story-gallery-item">
+                                        <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr($submission_name); ?>" class="their-story-gallery-image" data-full-image="<?php echo esc_url($full_image_url); ?>" />
+                                    </div>
+                                <?php 
+                                    endif;
+                                endforeach; ?>
                             </div>
                         <?php endif; ?>
                         <?php if ($can_moderate && !$is_story_closed) : ?>
