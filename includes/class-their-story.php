@@ -16,6 +16,7 @@ class Their_Story {
         add_action('init', array($this, 'add_rewrite_rules'));
         add_filter('query_vars', array($this, 'add_query_vars'));
         add_action('template_redirect', array($this, 'handle_story_link_redirect'));
+        add_action('template_redirect', array($this, 'handle_book_closed_page'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_assets'));
         add_action('wp_ajax_their_story_create_story', array($this, 'ajax_create_story'));
@@ -32,6 +33,18 @@ class Their_Story {
         add_action('admin_footer', array($this, 'hide_admin_footer_for_storytellers'));
         add_filter('the_content', array($this, 'add_story_page_content'), 20);
         add_filter('post_password_required', array($this, 'bypass_password_for_owner'), 10, 2);
+        
+        if (class_exists('WooCommerce')) {
+            add_filter('woocommerce_prevent_admin_access', array($this, 'allow_storyteller_admin_access'));
+            add_filter('woocommerce_add_to_cart_redirect', array($this, 'preserve_story_id_in_cart_redirect'));
+            add_action('woocommerce_add_to_cart', array($this, 'store_story_id_in_cart_item'), 10, 6);
+            add_action('woocommerce_before_single_product', array($this, 'preserve_story_id_on_product_page'));
+            add_action('woocommerce_before_add_to_cart_button', array($this, 'display_story_info_on_product_page'));
+            add_filter('woocommerce_cart_item_name', array($this, 'add_story_name_to_cart_item'), 10, 3);
+            add_action('woocommerce_before_single_product_summary', array($this, 'auto_select_variation_by_message_count'), 5);
+            add_action('woocommerce_checkout_create_order_line_item', array($this, 'save_story_id_to_order_item'), 10, 4);
+            add_action('woocommerce_new_order', array($this, 'add_story_details_to_order_note'), 10, 1);
+        }
     }
     
     public function add_storyteller_role() {
@@ -59,6 +72,7 @@ class Their_Story {
     
     public function add_rewrite_rules() {
         add_rewrite_rule('^story/([^/]+)/?$', 'index.php?their_story_link=$matches[1]', 'top');
+        add_rewrite_rule('^book-closed/?$', 'index.php?their_story_book_closed=1', 'top');
     }
     
     public function flush_rewrite_rules() {
@@ -68,6 +82,7 @@ class Their_Story {
     
     public function add_query_vars($vars) {
         $vars[] = 'their_story_link';
+        $vars[] = 'their_story_book_closed';
         return $vars;
     }
     
@@ -94,6 +109,27 @@ class Their_Story {
                 exit;
             } else {
                 wp_die(__('Story not found.', 'their-story'), __('Not Found', 'their-story'), array('response' => 404));
+            }
+        }
+    }
+    
+    public function handle_book_closed_page() {
+        $book_closed = get_query_var('their_story_book_closed');
+        if ($book_closed) {
+            $story_id = isset($_GET['story']) ? intval($_GET['story']) : 0;
+            $message_count = isset($_GET['messages']) ? intval($_GET['messages']) : 0;
+            
+            if ($story_id) {
+                setcookie('their_story_id', $story_id, time() + (86400 * 30), '/'); 
+                $_COOKIE['their_story_id'] = $story_id;
+            }
+            
+            $template_path = THEIR_STORY_PLUGIN_DIR . 'templates/book-closed.php';
+            if (file_exists($template_path)) {
+                include $template_path;
+                exit;
+            } else {
+                wp_die(__('Book closed page template not found.', 'their-story'), __('Not Found', 'their-story'), array('response' => 404));
             }
         }
     }
@@ -598,14 +634,13 @@ class Their_Story {
         
         $image_ids = array();
         
-        // Handle multiple image uploads (up to 5)
         if (!empty($_FILES['images']['name']) && is_array($_FILES['images']['name'])) {
             require_once(ABSPATH . 'wp-admin/includes/file.php');
             require_once(ABSPATH . 'wp-admin/includes/media.php');
             require_once(ABSPATH . 'wp-admin/includes/image.php');
             
             $file_count = count($_FILES['images']['name']);
-            $file_count = min($file_count, 5); // Limit to 5 images
+            $file_count = min($file_count, 5);
             
             for ($i = 0; $i < $file_count; $i++) {
                 if (!empty($_FILES['images']['name'][$i])) {
@@ -836,6 +871,289 @@ class Their_Story {
         delete_post_meta($story_id, '_story_closed');
         
         wp_send_json_success(array('message' => __('Story reopened successfully.', 'their-story')));
+    }
+    
+    public function preserve_story_id_in_cart_redirect($url) {
+        $story_id = isset($_GET['story']) ? intval($_GET['story']) : (isset($_COOKIE['their_story_id']) ? intval($_COOKIE['their_story_id']) : 0);
+        if ($story_id) {
+            $url = add_query_arg('story', $story_id, $url);
+        }
+        return $url;
+    }
+    
+    public function store_story_id_in_cart_item($cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data) {
+        $story_id = isset($_GET['story']) ? intval($_GET['story']) : (isset($_COOKIE['their_story_id']) ? intval($_COOKIE['their_story_id']) : 0);
+        if ($story_id) {
+            WC()->cart->cart_contents[$cart_item_key]['their_story_id'] = $story_id;
+            setcookie('their_story_id', $story_id, time() + (86400 * 30), '/');
+        }
+    }
+    
+    public function preserve_story_id_on_product_page() {
+        $story_id = isset($_GET['story']) ? intval($_GET['story']) : (isset($_COOKIE['their_story_id']) ? intval($_COOKIE['their_story_id']) : 0);
+        if ($story_id) {
+            setcookie('their_story_id', $story_id, time() + (86400 * 30), '/');
+            $_COOKIE['their_story_id'] = $story_id;
+            
+            add_action('wp_footer', function() use ($story_id) {
+                ?>
+                <script>
+                (function() {
+                    const storyId = <?php echo intval($story_id); ?>;
+                    
+                    const addToCartForms = document.querySelectorAll('form.cart, form.variations_form');
+                    addToCartForms.forEach(function(form) {
+                        let storyInput = form.querySelector('input[name="story"]');
+                        if (!storyInput) {
+                            storyInput = document.createElement('input');
+                            storyInput.type = 'hidden';
+                            storyInput.name = 'story';
+                            form.appendChild(storyInput);
+                        }
+                        storyInput.value = storyId;
+                    });
+                    
+                    const productLinks = document.querySelectorAll('a[href*="/product/"]');
+                    productLinks.forEach(function(link) {
+                        try {
+                            const url = new URL(link.href);
+                            if (!url.searchParams.has('story')) {
+                                url.searchParams.set('story', storyId);
+                                link.href = url.toString();
+                            }
+                        } catch(e) {
+                        }
+                    });
+                })();
+                </script>
+                <?php
+            }, 999);
+        }
+    }
+    
+    public function display_story_info_on_product_page() {
+        $story_id = isset($_GET['story']) ? intval($_GET['story']) : (isset($_COOKIE['their_story_id']) ? intval($_COOKIE['their_story_id']) : 0);
+        if ($story_id) {
+            $story = get_post($story_id);
+            if ($story) {
+                $story_title = get_the_title($story_id);
+                $story_title = str_replace('Protected: ', '', $story_title);
+                $message_count = isset($_GET['messages']) ? intval($_GET['messages']) : 0;
+                if (!$message_count) {
+                    $approved_submissions = Their_Story::get_story_submissions_static($story_id, true);
+                    $message_count = count($approved_submissions);
+                }
+                ?>
+                <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+                <div class="their-story-product-info" style="background: #f0f6fc; border: 1px solid #c3d4e6; border-radius: 8px; padding: 20px; margin-bottom: 20px; font-family: 'Poppins', sans-serif;">
+                    <p style="margin: 0 0 10px 0; font-size: 1.125rem; font-weight: 600; color: #1a1a1a;">
+                        <?php echo esc_html__('Book for:', 'their-story'); ?> <strong><?php echo esc_html($story_title); ?></strong>
+                    </p>
+                    <?php if ($message_count > 0) : ?>
+                        <p style="margin: 0; font-size: 0.875rem; color: #666;">
+                            <?php printf(esc_html__('This story contains %d message(s).', 'their-story'), $message_count); ?>
+                        </p>
+                    <?php endif; ?>
+                </div>
+                <?php
+            }
+        }
+    }
+    
+    public function add_story_name_to_cart_item($name, $cart_item, $cart_item_key) {
+        if (isset($cart_item['their_story_id']) && $cart_item['their_story_id']) {
+            $story_id = $cart_item['their_story_id'];
+            $story = get_post($story_id);
+            if ($story) {
+                $story_title = get_the_title($story_id);
+                $story_title = str_replace('Protected: ', '', $story_title);
+                $name .= '<br><small style="color: #666; font-size: 0.875rem;">' . esc_html__('Story:', 'their-story') . ' <strong>' . esc_html($story_title) . '</strong></small>';
+            }
+        }
+        return $name;
+    }
+    
+    public function auto_select_variation_by_message_count() {
+        $story_id = isset($_GET['story']) ? intval($_GET['story']) : (isset($_COOKIE['their_story_id']) ? intval($_COOKIE['their_story_id']) : 0);
+        if (!$story_id) {
+            return;
+        }
+        
+        global $product;
+        if (!$product || !$product->is_type('variable')) {
+            return;
+        }
+        
+        $message_count = isset($_GET['messages']) ? intval($_GET['messages']) : 0;
+        if (!$message_count) {
+            $approved_submissions = Their_Story::get_story_submissions_static($story_id, true);
+            $message_count = count($approved_submissions);
+        }
+        
+        if ($message_count <= 0) {
+            return;
+        }
+        
+        $variations = $product->get_available_variations();
+        $selected_variation = null;
+        $selected_attributes = array();
+        $closest_diff = PHP_INT_MAX;
+        
+        foreach ($variations as $variation_data) {
+            $variation_id = $variation_data['variation_id'];
+            $variation = wc_get_product($variation_id);
+            
+            if (!$variation) {
+                continue;
+            }
+            
+            $variation_name = $variation->get_name();
+            $variation_attributes = $variation->get_attributes();
+            
+            preg_match('/\((\d+)\s*[Mm]essages?\)/', $variation_name, $matches);
+            if (empty($matches)) {
+                foreach ($variation_attributes as $attr_value) {
+                    if (is_string($attr_value)) {
+                        preg_match('/\((\d+)\s*[Mm]essages?\)/', $attr_value, $attr_matches);
+                        if (!empty($attr_matches)) {
+                            $matches = $attr_matches;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (!empty($matches)) {
+                $variation_message_count = intval($matches[1]);
+                $diff = abs($variation_message_count - $message_count);
+                
+                if ($diff < $closest_diff) {
+                    $closest_diff = $diff;
+                    $selected_variation = $variation_data;
+                    $selected_attributes = $variation_data['attributes'];
+                }
+            }
+        }
+        
+        if ($selected_variation && !empty($selected_attributes)) {
+            add_action('wp_footer', function() use ($selected_attributes, $message_count) {
+                ?>
+                <script>
+                (function() {
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const attributes = <?php echo json_encode($selected_attributes); ?>;
+                        const messageCount = <?php echo intval($message_count); ?>;
+                        
+                        setTimeout(function() {
+                            const variationForm = document.querySelector('form.variations_form');
+                            if (variationForm && attributes) {
+                                Object.keys(attributes).forEach(function(attrName) {
+                                    const attrValue = attributes[attrName];
+                                    if (attrValue) {
+                                        const select = variationForm.querySelector('select[name="attribute_' + attrName + '"]');
+                                        if (select) {
+                                            select.value = attrValue;
+                                            select.dispatchEvent(new Event('change', { bubbles: true }));
+                                        } else {
+                                            const radio = variationForm.querySelector('input[type="radio"][name="attribute_' + attrName + '"][value="' + attrValue + '"]');
+                                            if (radio) {
+                                                radio.checked = true;
+                                                radio.dispatchEvent(new Event('change', { bubbles: true }));
+                                            }
+                                        }
+                                    }
+                                });
+                                
+                                const checkVariationsEvent = new Event('check_variations', { bubbles: true });
+                                variationForm.dispatchEvent(checkVariationsEvent);
+                                
+                                const foundVariationEvent = new Event('found_variation', { bubbles: true });
+                                variationForm.dispatchEvent(foundVariationEvent);
+                            }
+                        }, 1000);
+                    });
+                })();
+                </script>
+                <?php
+            }, 999);
+        }
+    }
+    
+    public function allow_storyteller_admin_access($prevent_access) {
+        $current_user = wp_get_current_user();
+        
+        if ($current_user && (in_array('storyteller', $current_user->roles) || in_array('administrator', $current_user->roles))) {
+            return false;
+        }
+        
+        return $prevent_access; 
+    }
+    
+    public function save_story_id_to_order_item($item, $cart_item_key, $values, $order) {
+        if (isset($values['their_story_id']) && $values['their_story_id']) {
+            $item->add_meta_data('_their_story_id', $values['their_story_id'], true);
+        }
+    }
+    
+    public function add_story_details_to_order_note($order_id) {
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            return;
+        }
+        
+        $story_ids = array();
+        $story_details = array();
+        
+        foreach ($order->get_items() as $item_id => $item) {
+            $story_id = $item->get_meta('_their_story_id');
+            if ($story_id && !in_array($story_id, $story_ids)) {
+                $story_ids[] = $story_id;
+                
+                $story = get_post($story_id);
+                if ($story) {
+                    $story_title = get_the_title($story_id);
+                    $story_title = str_replace('Protected: ', '', $story_title);
+                    
+                    $storyteller_id = get_post_meta($story_id, '_storyteller_id', true);
+                    $storyteller = $storyteller_id ? get_userdata($storyteller_id) : null;
+                    $storyteller_name = $storyteller ? $storyteller->display_name : __('Unknown', 'their-story');
+                    
+                    $approved_submissions = Their_Story::get_story_submissions_static($story_id, true);
+                    $message_count = count($approved_submissions);
+                    
+                    $unique_link = get_post_meta($story_id, '_story_unique_link', true);
+                    $story_url = '';
+                    if ($unique_link) {
+                        $their_story = new Their_Story();
+                        $story_url = $their_story->get_story_url_from_link($unique_link);
+                    }
+                    
+                    $story_details[] = array(
+                        'title' => $story_title,
+                        'storyteller' => $storyteller_name,
+                        'message_count' => $message_count,
+                        'url' => $story_url
+                    );
+                }
+            }
+        }
+        
+        if (!empty($story_details)) {
+            $note_content = __('Story Details:', 'their-story') . "\n\n";
+            
+            foreach ($story_details as $index => $details) {
+                $note_content .= sprintf(__('Story %d:', 'their-story'), $index + 1) . "\n";
+                $note_content .= __('Title:', 'their-story') . ' ' . $details['title'] . "\n";
+                $note_content .= __('Storyteller:', 'their-story') . ' ' . $details['storyteller'] . "\n";
+                $note_content .= __('Messages:', 'their-story') . ' ' . $details['message_count'] . "\n";
+                if ($details['url']) {
+                    $note_content .= __('Story URL:', 'their-story') . ' ' . $details['url'] . "\n";
+                }
+                $note_content .= "\n";
+            }
+            
+            $order->add_order_note($note_content);
+        }
     }
 }
 

@@ -71,13 +71,13 @@ $obfuscated_url = $their_story->get_story_url_from_link($unique_link);
             <p style="margin: 0 0 1rem 0; font-size: 1rem; color: #333;"><?php echo esc_html__('Next step - add your messages to a book', 'their-story'); ?></p>
             <?php
             $message_count = count($approved_submissions);
-            $shop_url = home_url('/shop');
-            $shop_url = add_query_arg(array(
+            $book_closed_url = home_url('/book-closed');
+            $book_closed_url = add_query_arg(array(
                 'story' => $story_id,
                 'messages' => $message_count
-            ), $shop_url);
+            ), $book_closed_url);
             ?>
-            <a href="<?php echo esc_url($shop_url); ?>" class="their-story-btn their-story-btn-primary" style="display: inline-block; text-decoration: none;">
+            <a href="<?php echo esc_url($book_closed_url); ?>" class="their-story-btn their-story-btn-primary" style="display: inline-block; text-decoration: none;">
                 <?php echo esc_html__('Shop Now', 'their-story'); ?>
             </a>
         </div>

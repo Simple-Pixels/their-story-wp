@@ -1,8 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
 .their-story-dashboard .wrap,
 .their-story-admin-dashboard .wrap {
     margin: 0;
     padding: 0;
     max-width: 1200px;
+    font-family: 'Poppins', sans-serif;
 }
 
 .their-story-header-section {
