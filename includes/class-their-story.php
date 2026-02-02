@@ -511,7 +511,7 @@ class Their_Story {
             return $content;
         }
         
-        return $content . $story_content;
+        return $story_content;
     }
     
     public function ajax_update_password() {
