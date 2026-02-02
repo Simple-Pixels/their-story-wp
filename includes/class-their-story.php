@@ -1263,9 +1263,6 @@ class Their_Story {
     }
     
     private function export_story_csv($story_id) {
-        if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'their_story_csv_export_' . $story_id)) {
-            wp_die(__('Security check failed.', 'their-story'));
-        }
         
         $story = get_post($story_id);
         if (!$story) {
