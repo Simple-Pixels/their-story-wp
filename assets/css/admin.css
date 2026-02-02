@@ -522,6 +522,8 @@
 
 .copy-link-btn {
     transition: all 0.2s ease-in-out;
+    min-width: 60px;
+    text-align: center;
 }
 
 .copy-link-btn:hover {
@@ -623,39 +625,6 @@
 
 .submission-status-publish {
     background-color: #ffffff;
-}
-
-@media (max-width: 768px) {
-    .their-story-actions {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-    
-    .their-story-stats-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .their-story-table-wrapper {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        display: block;
-        width: 100%;
-    }
-    
-    .their-story-table {
-        min-width: 600px;
-        display: table;
-    }
-    
-    .their-story-submission-preview {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .their-story-table td:first-child {
-        max-width: 100%;
-    }
 }
 
 .their-story-lightbox {
@@ -777,4 +746,83 @@
 .their-story-lightbox-trigger:hover {
     transform: scale(1.05);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+    .their-story-actions {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .their-story-stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .their-story-table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        display: block;
+        width: 100%;
+    }
+    
+    .their-story-table {
+        min-width: 600px;
+        display: table;
+    }
+    
+    .their-story-submission-preview {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .their-story-table td:first-child {
+        max-width: 100%;
+    }
+    
+    .their-story-link-group {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .their-story-code {
+        word-break: break-all;
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .their-story-actions-inline {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .their-story-action-btn {
+        flex-shrink: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .their-story-table {
+        min-width: 500px;
+    }
+    
+    .their-story-table th,
+    .their-story-table td {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+    
+    .their-story-link-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .copy-link-btn {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .their-story-actions-inline {
+        justify-content: center;
+    }
 }
