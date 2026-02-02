@@ -17,6 +17,7 @@ class Their_Story {
         add_filter('query_vars', array($this, 'add_query_vars'));
         add_action('template_redirect', array($this, 'handle_story_link_redirect'));
         add_action('template_redirect', array($this, 'handle_book_closed_page'));
+        add_action('template_redirect', array($this, 'handle_csv_export'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_assets'));
         add_action('wp_ajax_their_story_create_story', array($this, 'ajax_create_story'));
@@ -44,6 +45,7 @@ class Their_Story {
             add_action('woocommerce_before_single_product_summary', array($this, 'auto_select_variation_by_message_count'), 5);
             add_action('woocommerce_checkout_create_order_line_item', array($this, 'save_story_id_to_order_item'), 10, 4);
             add_action('woocommerce_new_order', array($this, 'add_story_details_to_order_note'), 10, 1);
+            add_action('woocommerce_email_order_details', array($this, 'add_story_details_to_email'), 20, 4);
         }
     }
     
@@ -689,6 +691,8 @@ class Their_Story {
             update_post_meta($submission_id, '_submission_image_ids', $image_ids);
         }
         
+        $this->invalidate_csv_cache($story_id);
+        
         wp_send_json_success(array('message' => __('Your message has been submitted and is awaiting approval.', 'their-story')));
     }
     
@@ -733,6 +737,11 @@ class Their_Story {
                 'ID' => $submission_id,
                 'post_status' => 'publish'
             ));
+            
+            if ($story_id) {
+                $this->invalidate_csv_cache($story_id);
+            }
+            
             wp_send_json_success(array('message' => __('Submission approved.', 'their-story')));
         } elseif ($action === 'delete') {
             $image_ids = get_post_meta($submission_id, '_submission_image_ids', true);
@@ -744,6 +753,11 @@ class Their_Story {
                 }
             }
             wp_delete_post($submission_id, true);
+            
+            if ($story_id) {
+                $this->invalidate_csv_cache($story_id);
+            }
+            
             wp_send_json_success(array('message' => __('Submission deleted.', 'their-story')));
         }
     }
@@ -1101,6 +1115,30 @@ class Their_Story {
             return;
         }
         
+        $story_details = $this->get_story_details_from_order($order);
+        
+        if (!empty($story_details)) {
+            $note_content = __('Story Details:', 'their-story') . "\n\n";
+            
+            foreach ($story_details as $details) {
+                $note_content .= __('Title:', 'their-story') . ' ' . $details['title'] . "\n";
+                $note_content .= __('Storyteller:', 'their-story') . ' ' . $details['storyteller'] . "\n";
+                $note_content .= __('Messages:', 'their-story') . ' ' . $details['message_count'] . "\n";
+                if ($details['url']) {
+                    $note_content .= __('Story URL:', 'their-story') . ' ' . $details['url'] . "\n";
+                }
+                $note_content .= "\n";
+            }
+            
+            $order->add_order_note($note_content);
+        }
+    }
+    
+    private function get_story_details_from_order($order) {
+        if (!$order) {
+            return array();
+        }
+        
         $story_ids = array();
         $story_details = array();
         
@@ -1132,28 +1170,189 @@ class Their_Story {
                         'title' => $story_title,
                         'storyteller' => $storyteller_name,
                         'message_count' => $message_count,
-                        'url' => $story_url
+                        'url' => $story_url,
+                        'story_id' => $story_id
                     );
                 }
             }
         }
         
-        if (!empty($story_details)) {
-            $note_content = __('Story Details:', 'their-story') . "\n\n";
+        return $story_details;
+    }
+    
+    public function add_story_details_to_email($order, $sent_to_admin, $plain_text, $email) {
+        $story_details = $this->get_story_details_from_order($order);
+        
+        if (empty($story_details)) {
+            return;
+        }
+        
+        if ($plain_text) {
+            echo "\n\n" . __('Story Details:', 'their-story') . "\n\n";
             
-            foreach ($story_details as $index => $details) {
-                $note_content .= sprintf(__('Story %d:', 'their-story'), $index + 1) . "\n";
-                $note_content .= __('Title:', 'their-story') . ' ' . $details['title'] . "\n";
-                $note_content .= __('Storyteller:', 'their-story') . ' ' . $details['storyteller'] . "\n";
-                $note_content .= __('Messages:', 'their-story') . ' ' . $details['message_count'] . "\n";
+            foreach ($story_details as $details) {
+                echo __('Title:', 'their-story') . ' ' . $details['title'] . "\n";
+                echo __('Storyteller:', 'their-story') . ' ' . $details['storyteller'] . "\n";
+                echo __('Messages:', 'their-story') . ' ' . $details['message_count'] . "\n";
                 if ($details['url']) {
-                    $note_content .= __('Story URL:', 'their-story') . ' ' . $details['url'] . "\n";
+                    echo __('View Your Story:', 'their-story') . ' ' . $details['url'] . "\n";
                 }
-                $note_content .= "\n";
+                
+                if ($sent_to_admin && isset($details['story_id'])) {
+                    $csv_url = $this->get_csv_export_url($details['story_id']);
+                    echo __('Download CSV:', 'their-story') . ' ' . $csv_url . "\n";
+                }
+                
+                echo "\n";
+            }
+        } else {
+            echo '<div style="margin: 20px 0; padding: 15px; background-color: #f0f6fc; border: 1px solid #c3d4e6; border-radius: 8px;">';
+            echo '<h2 style="margin: 0 0 15px 0; font-size: 1.25rem; font-weight: 600; color: #1a1a1a;">' . esc_html__('Story Details:', 'their-story') . '</h2>';
+            
+            foreach ($story_details as $details) {
+                echo '<div style="margin-bottom: 15px;">';
+                echo '<p style="margin: 5px 0;"><strong>' . esc_html__('Title:', 'their-story') . '</strong> ' . esc_html($details['title']) . '</p>';
+                echo '<p style="margin: 5px 0;"><strong>' . esc_html__('Storyteller:', 'their-story') . '</strong> ' . esc_html($details['storyteller']) . '</p>';
+                echo '<p style="margin: 5px 0;"><strong>' . esc_html__('Messages:', 'their-story') . '</strong> ' . esc_html($details['message_count']) . '</p>';
+                if ($details['url']) {
+                    echo '<p style="margin: 5px 0;"><strong>' . esc_html__('View Your Story:', 'their-story') . '</strong> <a href="' . esc_url($details['url']) . '" style="color: #0073aa;">' . esc_html__('View Your Story', 'their-story') . '</a></p>';
+                }
+                
+                if ($sent_to_admin && isset($details['story_id'])) {
+                    $csv_url = $this->get_csv_export_url($details['story_id']);
+                    echo '<p style="margin: 5px 0;"><strong>' . esc_html__('Download CSV:', 'their-story') . '</strong> <a href="' . esc_url($csv_url) . '" style="color: #0073aa;">' . esc_html__('Download Messages as CSV', 'their-story') . '</a></p>';
+                }
+                
+                echo '</div>';
             }
             
-            $order->add_order_note($note_content);
+            echo '</div>';
         }
+    }
+    
+    public function handle_csv_export() {
+        if (!isset($_GET['their_story_export_csv']) || !isset($_GET['story_id'])) {
+            return;
+        }
+        
+        $story_id = intval($_GET['story_id']);
+        if (!$story_id) {
+            wp_die(__('Invalid story ID.', 'their-story'));
+        }
+        
+        $current_user = wp_get_current_user();
+        if (!in_array('administrator', $current_user->roles)) {
+            wp_die(__('You do not have permission to export this story.', 'their-story'));
+        }
+        
+        $this->export_story_csv($story_id);
+    }
+    
+    public function get_csv_export_url($story_id) {
+        $nonce = wp_create_nonce('their_story_csv_export_' . $story_id);
+        return add_query_arg(array(
+            'their_story_export_csv' => '1',
+            'story_id' => $story_id,
+            'nonce' => $nonce
+        ), home_url('/'));
+    }
+    
+    private function invalidate_csv_cache($story_id) {
+        $cache_key = 'their_story_csv_' . $story_id;
+        delete_transient($cache_key);
+    }
+    
+    private function export_story_csv($story_id) {
+        if (!isset($_GET['nonce']) || !wp_verify_nonce($_GET['nonce'], 'their_story_csv_export_' . $story_id)) {
+            wp_die(__('Security check failed.', 'their-story'));
+        }
+        
+        $story = get_post($story_id);
+        if (!$story) {
+            wp_die(__('Story not found.', 'their-story'));
+        }
+        
+        $cache_key = 'their_story_csv_' . $story_id;
+        $cache_time = 3600; 
+        $cached_data = get_transient($cache_key);
+        
+        if ($cached_data === false) {
+            $submissions = Their_Story::get_story_submissions_static($story_id, false);
+            
+            $csv_data = array();
+            
+            foreach ($submissions as $submission) {
+                $submission_name = get_post_meta($submission->ID, '_submission_name', true);
+                $message = wp_strip_all_tags($submission->post_content);
+                $message = str_replace(array("\r\n", "\r", "\n"), ' ', $message);
+                $message = trim($message);
+                
+                $image_ids = get_post_meta($submission->ID, '_submission_image_ids', true);
+                $image_urls = array();
+                
+                if (!empty($image_ids) && is_array($image_ids)) {
+                    foreach ($image_ids as $image_id) {
+                        if ($image_id) {
+                            $image_url = wp_get_attachment_url($image_id);
+                            if ($image_url) {
+                                $image_urls[] = $image_url;
+                            }
+                        }
+                    }
+                }
+                
+                $csv_data[] = array(
+                    'name' => $submission_name,
+                    'message' => $message,
+                    'image_urls' => implode(' | ', $image_urls),
+                    'date' => date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($submission->post_date)),
+                    'status' => $submission->post_status === 'publish' ? __('Approved', 'their-story') : __('Pending', 'their-story')
+                );
+            }
+            
+            set_transient($cache_key, $csv_data, $cache_time);
+            $cached_data = $csv_data;
+        }
+        
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        $story_title = get_the_title($story_id);
+        $story_title = str_replace('Protected: ', '', $story_title);
+        $story_title = sanitize_file_name($story_title);
+        
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="story-' . $story_title . '-' . date('Y-m-d') . '.csv"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        
+        $output = fopen('php://output', 'w');
+        
+        fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+        
+        $headers = array(
+            __('Name', 'their-story'),
+            __('Message', 'their-story'),
+            __('Image URLs', 'their-story'),
+            __('Date Submitted', 'their-story'),
+            __('Status', 'their-story')
+        );
+        
+        fputcsv($output, $headers);
+        
+        foreach ($cached_data as $row) {
+            fputcsv($output, array(
+                $row['name'],
+                $row['message'],
+                $row['image_urls'],
+                $row['date'],
+                $row['status']
+            ));
+        }
+        
+        fclose($output);
+        exit;
     }
 }
 
