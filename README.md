@@ -1,17 +1,18 @@
 # Their Story WordPress Plugin
 
-A WordPress plugin for story creation, moderation, and collection. Stories can be turned into pre-built books for sale.
+A WordPress plugin for story creation, moderation, and collection. Stories can be turned into pre-built books for sale via WooCommerce integration.
 
 ## User Roles
 
-- **Storyteller**: Can create and manage their own stories, view submissions, and close stories
-- **Administrator**: Can view all stories, moderate submissions, manage storytellers, and close any story
+- **Storyteller**: Can create and manage their own stories, view submissions, close stories, and access their own password-protected stories without entering a password
+- **Administrator**: Can view all stories, moderate submissions, manage storytellers, close/reopen any story, and export CSV files
 
 ## Installation
 
 1. Upload the plugin files to `/wp-content/plugins/their-story-wp/`
 2. Activate the plugin through the WordPress admin panel
 3. Create storyteller user accounts with the "Storyteller" role
+4. Install WooCommerce for book ordering functionality
 
 ## Usage
 
@@ -22,6 +23,7 @@ A WordPress plugin for story creation, moderation, and collection. Stories can b
 3. Share the unique story link with visitors
 4. View and manage submissions on the story page
 5. Close the story when ready to prevent new submissions
+6. After closing, use "Shop Now" to select a book format
 
 ### For Administrators
 
@@ -29,6 +31,8 @@ A WordPress plugin for story creation, moderation, and collection. Stories can b
 2. Use "Submissions" to review and moderate pending submissions
 3. Approve or delete submissions from the submissions page or story page
 4. View submission images in a lightbox with navigation
+5. Download CSV exports of story messages 
+6. Reopen closed stories if needed
 
 ### For Visitors
 
@@ -38,11 +42,21 @@ A WordPress plugin for story creation, moderation, and collection. Stories can b
 4. View approved messages and images in the gallery
 5. Click images to view in full-screen lightbox
 
+## WooCommerce Integration
+
+When WooCommerce is installed:
+- Stories can be linked to variable products for book ordering
+- Story details are automatically included in order confirmation emails
+- CSV download links are included in admin order emails
+- Product variations are auto-selected based on message count
+- Story information is preserved throughout the cart and checkout process
+
 ## Technical Details
 
 - Stories are stored as WordPress pages with custom meta fields
 - Submissions use custom post type `story_submission`
 - Images are stored as WordPress attachments
 - Unique links use rewrite rules: `/story/{unique-link}/`
+- CSV exports are cached for 1 hour to reduce database load
 - AJAX-powered interactions throughout
 - Responsive design for mobile and desktop
