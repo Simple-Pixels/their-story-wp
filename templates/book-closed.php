@@ -45,15 +45,25 @@ function their_story_product_url($product_id, $story_id) {
     }
     return $url;
 }
+
+add_filter(
+    'body_class',
+    static function ($classes) {
+        $classes[] = 'their-story-book-closed-page';
+        return $classes;
+    }
+);
 ?>
 <?php
 get_header();
 ?>
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     body.their-story-book-closed-page,
     .their-story-book-closed-page {
-        font-family: 'Poppins', sans-serif;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        background-color: #faf4f0;
+        color: #000000;
     }
     .their-story-book-closed-container {
         max-width: 1200px;
@@ -67,12 +77,12 @@ get_header();
     .their-story-book-closed-title {
         font-size: 2.5rem;
         font-weight: 700;
-        color: #1a1a1a;
+        color: #000000;
         margin: 0 0 1rem 0;
     }
     .their-story-book-closed-subtitle {
         font-size: 1.25rem;
-        color: #666;
+        color: rgba(0, 0, 0, 0.55);
         margin: 0;
     }
     .their-story-book-products-grid {
@@ -83,9 +93,10 @@ get_header();
     }
     .their-story-book-product-card {
         background: #fff;
-        border-radius: 8px;
+        border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(230, 179, 161, 0.35);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
         transition: transform 0.2s, box-shadow 0.2s;
         text-decoration: none;
         color: inherit;
@@ -93,7 +104,7 @@ get_header();
     }
     .their-story-book-product-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
         text-decoration: none;
         color: inherit;
     }
@@ -101,7 +112,7 @@ get_header();
         width: 100%;
         height: 300px;
         object-fit: cover;
-        background: #f0f0f0;
+        background: #faf4f0;
     }
     .their-story-book-product-content {
         padding: 20px;
@@ -109,30 +120,45 @@ get_header();
     .their-story-book-product-title {
         font-size: 1.25rem;
         font-weight: 600;
-        color: #1a1a1a;
+        color: #000000;
         margin: 0 0 10px 0;
     }
     .their-story-book-product-price {
         font-size: 1.125rem;
         font-weight: 600;
-        color: #2563eb;
+        color: #000000;
         margin: 0;
     }
+    .their-story-book-product-price .woocommerce-Price-amount {
+        color: #e6b3a1;
+    }
     .their-story-story-info {
-        background: #f0f6fc;
-        border: 1px solid #c3d4e6;
-        border-radius: 8px;
+        background: #ffffff;
+        border: 1px solid rgba(230, 179, 161, 0.35);
+        border-radius: 12px;
         padding: 20px;
         margin-bottom: 30px;
         text-align: center;
     }
     .their-story-story-info-text {
         margin: 0;
-        color: #333;
+        color: #000000;
         font-size: 1rem;
     }
     .their-story-story-info strong {
-        color: #2563eb;
+        color: #e6b3a1;
+    }
+    .their-story-book-empty {
+        text-align: center;
+        padding: 60px 20px;
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid rgba(230, 179, 161, 0.35);
+    }
+    .their-story-book-empty p {
+        font-size: 1.125rem;
+        color: rgba(0, 0, 0, 0.55);
+        margin: 0;
     }
 </style>
 <div class="their-story-book-closed-page">
@@ -181,8 +207,8 @@ get_header();
                 <?php endforeach; ?>
             </div>
         <?php else : ?>
-            <div style="text-align: center; padding: 60px 20px; background: #fff; border-radius: 8px;">
-                <p style="font-size: 1.125rem; color: #666; margin: 0;">
+            <div class="their-story-book-empty">
+                <p>
                     <?php echo esc_html__('No book products available at this time.', 'their-story'); ?>
                 </p>
             </div>

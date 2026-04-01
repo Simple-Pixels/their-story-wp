@@ -1,0 +1,333 @@
+body.their-story-storyteller-screen {
+    --their-story-brand-bg: #faf4f0;
+    --their-story-brand-accent: #e6b3a1;
+    --their-story-brand-accent-hover: #d49a87;
+    --their-story-brand-text: #000000;
+    --their-story-brand-muted: rgba(0, 0, 0, 0.55);
+    --their-story-brand-ring: rgba(230, 179, 161, 0.45);
+}
+
+html.wp-toolbar body.their-story-storyteller-screen {
+    padding-top: 0 !important;
+}
+
+body.their-story-storyteller-screen,
+body.their-story-storyteller-screen #wpwrap {
+    background-color: var(--their-story-brand-bg) !important;
+    min-height: 100vh;
+}
+
+body.their-story-storyteller-screen #adminmenuback,
+body.their-story-storyteller-screen #adminmenuwrap,
+body.their-story-storyteller-screen #adminmenumain {
+    display: none !important;
+}
+
+body.their-story-storyteller-screen #wpadminbar {
+    display: none !important;
+}
+
+body.their-story-storyteller-screen #wpcontent,
+body.their-story-storyteller-screen.auto-fold #wpcontent,
+body.their-story-storyteller-screen.folded #wpcontent {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    float: none;
+    width: auto;
+    max-width: none;
+    background-color: var(--their-story-brand-bg) !important;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+body.their-story-storyteller-screen #wpbody {
+    padding-top: 0 !important;
+}
+
+body.their-story-storyteller-screen #wpbody-content {
+    float: none;
+    width: auto;
+    margin: 0;
+    padding-top: 1.5rem !important;
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+    padding-bottom: 6.5rem !important;
+    min-height: 100vh;
+    box-sizing: border-box;
+    background-color: var(--their-story-brand-bg) !important;
+}
+
+body.their-story-storyteller-screen #wpfooter {
+    display: none !important;
+}
+
+body.their-story-storyteller-screen #screen-meta,
+body.their-story-storyteller-screen #screen-meta-links {
+    display: none !important;
+}
+
+body.their-story-storyteller-screen #wpwrap .notice,
+body.their-story-storyteller-screen #wpwrap .update-nag,
+body.their-story-storyteller-screen #wpwrap .update-message,
+body.their-story-storyteller-screen #wpwrap div.error,
+body.their-story-storyteller-screen #wpwrap div.updated,
+body.their-story-storyteller-screen #wpwrap #message,
+body.their-story-storyteller-screen #wpwrap .notice-info,
+body.their-story-storyteller-screen #wpwrap .notice-warning,
+body.their-story-storyteller-screen #wpwrap .notice-error,
+body.their-story-storyteller-screen #wpwrap .notice-success,
+body.their-story-storyteller-screen #wpwrap .woocommerce-message,
+body.their-story-storyteller-screen #wpwrap .woocommerce-error,
+body.their-story-storyteller-screen #wpwrap .woocommerce-info {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    position: absolute !important;
+    width: 1px !important;
+}
+
+body.their-story-storyteller-screen .their-story-dashboard.wrap {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 1200px;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: var(--their-story-brand-text);
+}
+
+body.their-story-storyteller-screen .their-story-brand-header {
+    text-align: center;
+    margin: 0 0 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #000000;
+}
+
+body.their-story-storyteller-screen .their-story-brand-logo-link {
+    display: inline-block;
+    line-height: 0;
+    text-decoration: none;
+}
+
+body.their-story-storyteller-screen .their-story-brand-logo-link:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--their-story-brand-ring);
+    border-radius: 0.5rem;
+}
+
+body.their-story-storyteller-screen .their-story-brand-logo {
+    max-width: min(280px, 85vw);
+    height: auto;
+    width: auto;
+    display: block;
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-section-title,
+body.their-story-storyteller-screen .their-story-dashboard .their-story-form-title,
+body.their-story-storyteller-screen .their-story-dashboard .their-story-table-cell,
+body.their-story-storyteller-screen .their-story-dashboard .their-story-empty-text {
+    color: var(--their-story-brand-text);
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-section-lede {
+    margin: 0.35rem 0 0;
+    font-size: 0.9375rem;
+    line-height: 1.45;
+    color: var(--their-story-brand-muted);
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-actions-text {
+    min-width: 0;
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-muted,
+body.their-story-storyteller-screen .their-story-dashboard .their-story-help-text,
+body.their-story-storyteller-screen .their-story-dashboard .their-story-empty-subtext,
+body.their-story-storyteller-screen .their-story-dashboard .their-story-table th {
+    color: var(--their-story-brand-muted);
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-label {
+    color: var(--their-story-brand-text);
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-btn {
+    border-radius: 9999px;
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-btn-primary {
+    background-color: var(--their-story-brand-accent);
+    color: var(--their-story-brand-text);
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-btn-primary:hover {
+    background-color: var(--their-story-brand-accent-hover);
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-btn-primary:focus {
+    box-shadow: 0 0 0 3px var(--their-story-brand-ring);
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-btn-secondary {
+    background-color: #ffffff;
+    color: var(--their-story-brand-text);
+    border-color: var(--their-story-brand-accent);
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-btn-secondary:hover {
+    background-color: #fff8f5;
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-btn-small,
+body.their-story-storyteller-screen .their-story-dashboard .copy-link-btn {
+    border-radius: 9999px;
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-form,
+body.their-story-storyteller-screen .their-story-dashboard .their-story-empty,
+body.their-story-storyteller-screen .their-story-dashboard .their-story-table-wrapper {
+    background: #ffffff;
+    border-color: rgba(230, 179, 161, 0.35);
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-input,
+body.their-story-storyteller-screen .their-story-dashboard #story-title,
+body.their-story-storyteller-screen .their-story-dashboard #story-password {
+    border-radius: 9999px;
+    color: var(--their-story-brand-text);
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9375rem;
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-input:focus,
+body.their-story-storyteller-screen .their-story-dashboard #story-title:focus,
+body.their-story-storyteller-screen .their-story-dashboard #story-password:focus {
+    border-color: var(--their-story-brand-accent);
+    box-shadow: 0 0 0 3px var(--their-story-brand-ring);
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-link {
+    color: var(--their-story-brand-accent);
+    font-weight: 600;
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-link:hover {
+    color: var(--their-story-brand-accent-hover);
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-code {
+    border-radius: 9999px;
+    background-color: var(--their-story-brand-bg);
+    color: var(--their-story-brand-text);
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-table thead {
+    background-color: var(--their-story-brand-bg);
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-table th {
+    border-bottom-color: rgba(230, 179, 161, 0.25);
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-table td {
+    border-bottom-color: rgba(230, 179, 161, 0.2);
+    color: var(--their-story-brand-text);
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-table tbody tr:hover {
+    background-color: transparent;
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-table tbody tr:hover td {
+    background-color: transparent;
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-action-btn {
+    border-radius: 50%;
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-empty-icon {
+    color: var(--their-story-brand-accent);
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-icon {
+    color: inherit;
+}
+
+body.their-story-storyteller-screen .their-story-dashboard-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100000;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    padding: 1.25rem 1.5rem calc(1.25rem + env(safe-area-inset-bottom, 0));
+    background-color: var(--their-story-brand-bg);
+    box-sizing: border-box;
+}
+
+body.their-story-storyteller-screen .their-story-logout-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.65rem 1.35rem;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25;
+    text-decoration: none;
+    color: var(--their-story-brand-text);
+    background-color: var(--their-story-brand-accent);
+    border: 1px solid transparent;
+    border-radius: 9999px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+body.their-story-storyteller-screen .their-story-logout-btn:hover,
+body.their-story-storyteller-screen .their-story-logout-btn:focus {
+    background-color: var(--their-story-brand-accent-hover);
+    color: var(--their-story-brand-text);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+body.their-story-storyteller-screen .their-story-logout-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--their-story-brand-ring);
+}
+
+body.their-story-storyteller-screen .their-story-help-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.65rem 1.35rem;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25;
+    text-decoration: none;
+    color: #000000;
+    background-color: transparent;
+    border: 1px solid #000000;
+    border-radius: 9999px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+body.their-story-storyteller-screen .their-story-help-btn:hover,
+body.their-story-storyteller-screen .their-story-help-btn:focus {
+    color: #000000;
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+body.their-story-storyteller-screen .their-story-help-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.15);
+}

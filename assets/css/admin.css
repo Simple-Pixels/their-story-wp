@@ -520,6 +520,19 @@
     color: #374151;
 }
 
+.story-status.status-trash {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.their-story-story-pages-intro {
+    max-width: 720px;
+}
+
+.their-story-story-pages-table-wrap {
+    margin-top: 1.5rem;
+}
+
 .copy-link-btn {
     transition: all 0.2s ease-in-out;
     min-width: 60px;

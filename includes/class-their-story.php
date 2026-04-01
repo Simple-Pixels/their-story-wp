@@ -9,7 +9,7 @@ class Their_Story {
     public function init() {
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_action('admin_menu', array($this, 'remove_admin_menu_items'), 999);
-        add_action('user_register', array($this, 'redirect_after_registration'));
+        add_action('pre_get_posts', array($this, 'exclude_story_pages_from_admin_pages_list'));
         add_filter('login_redirect', array($this, 'redirect_after_login'), 10, 3);
         add_action('init', array($this, 'add_storyteller_role'));
         add_action('init', array($this, 'register_story_submission_post_type'));
@@ -19,6 +19,7 @@ class Their_Story {
         add_action('template_redirect', array($this, 'handle_book_closed_page'));
         add_action('template_redirect', array($this, 'handle_csv_export'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
+        add_filter('admin_body_class', array($this, 'storyteller_dashboard_body_class'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_assets'));
         add_action('wp_ajax_their_story_create_story', array($this, 'ajax_create_story'));
         add_action('wp_ajax_their_story_delete_story', array($this, 'ajax_delete_story'));
@@ -30,8 +31,7 @@ class Their_Story {
         add_action('wp_ajax_their_story_reopen_story', array($this, 'ajax_reopen_story'));
         add_action('admin_init', array($this, 'restrict_admin_access'));
         add_filter('show_admin_bar', array($this, 'hide_admin_bar_for_storytellers'));
-        add_action('admin_head', array($this, 'hide_admin_bar_in_admin'));
-        add_action('admin_footer', array($this, 'hide_admin_footer_for_storytellers'));
+        add_action('in_admin_header', array($this, 'suppress_storyteller_dashboard_notices'), 99999);
         add_filter('the_content', array($this, 'add_story_page_content'), 20);
         add_filter('post_password_required', array($this, 'bypass_password_for_owner'), 10, 2);
         
@@ -170,7 +170,70 @@ class Their_Story {
                 'their-story-submissions',
                 array($this, 'render_submissions_page')
             );
+
+            add_submenu_page(
+                'their-story-admin',
+                __('Story pages', 'their-story'),
+                __('Story pages', 'their-story'),
+                'manage_options',
+                'their-story-story-pages',
+                array($this, 'render_story_pages_list')
+            );
         }
+    }
+
+    /**
+     * Hide Their Story pages from the main Pages admin list (they remain editable here and via direct URL).
+     */
+    public function exclude_story_pages_from_admin_pages_list($query) {
+        if (!is_admin() || !$query->is_main_query()) {
+            return;
+        }
+        global $pagenow;
+        if ($pagenow !== 'edit.php') {
+            return;
+        }
+        $post_type = isset($_GET['post_type']) ? sanitize_key(wp_unslash($_GET['post_type'])) : 'post';
+        if ($post_type !== 'page') {
+            return;
+        }
+        if (!current_user_can('edit_pages')) {
+            return;
+        }
+        $exclude = array(
+            'key' => '_storyteller_id',
+            'compare' => 'NOT EXISTS',
+        );
+        $existing = $query->get('meta_query');
+        if (empty($existing)) {
+            $query->set('meta_query', array($exclude));
+            return;
+        }
+        $query->set('meta_query', array(
+            'relation' => 'AND',
+            $existing,
+            $exclude,
+        ));
+    }
+
+    public function render_story_pages_list() {
+        if (!current_user_can('manage_options')) {
+            wp_die(esc_html__('You do not have permission to access this page.', 'their-story'));
+        }
+        $stories = get_posts(array(
+            'post_type' => 'page',
+            'post_status' => 'any',
+            'posts_per_page' => -1,
+            'orderby' => 'modified',
+            'order' => 'DESC',
+            'meta_query' => array(
+                array(
+                    'key' => '_storyteller_id',
+                    'compare' => 'EXISTS',
+                ),
+            ),
+        ));
+        include THEIR_STORY_PLUGIN_DIR . 'templates/admin-story-pages.php';
     }
     
     public function remove_admin_menu_items() {
@@ -219,25 +282,35 @@ class Their_Story {
     }
     
     public function hide_admin_bar_for_storytellers($show) {
-        $current_user = wp_get_current_user();
-        if (in_array('storyteller', $current_user->roles)) {
+        $user = wp_get_current_user();
+        if ($user->ID && in_array('storyteller', (array) $user->roles, true)) {
             return false;
         }
         return $show;
     }
-    
-    public function hide_admin_bar_in_admin() {
-        $current_user = wp_get_current_user();
-        if (in_array('storyteller', $current_user->roles)) {
-            echo '<style>#wpadminbar { display: none !important; }</style>';
+
+    /**
+     * Whether the current request is the Storyteller My Stories admin screen.
+     */
+    private function is_storyteller_dashboard_screen() {
+        if (!is_user_logged_in()) {
+            return false;
         }
+        if (!in_array('storyteller', (array) wp_get_current_user()->roles, true)) {
+            return false;
+        }
+        $page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
+        return $page === 'their-story-dashboard';
     }
-    
-    public function hide_admin_footer_for_storytellers() {
-        $current_user = wp_get_current_user();
-        if (in_array('storyteller', $current_user->roles)) {
-            echo '<style>#wpfooter { display: none !important; }</style>';
+
+    public function suppress_storyteller_dashboard_notices() {
+        if (!$this->is_storyteller_dashboard_screen() || !is_admin()) {
+            return;
         }
+        remove_all_actions('admin_notices');
+        remove_all_actions('all_admin_notices');
+        remove_all_actions('network_admin_notices');
+        remove_all_actions('user_admin_notices');
     }
     
     public function render_storyteller_dashboard() {
@@ -314,13 +387,6 @@ class Their_Story {
         }
         
         return $stories;
-    }
-    
-    public function redirect_after_registration($user_id) {
-        $user = get_userdata($user_id);
-        if (in_array('storyteller', $user->roles)) {
-            set_transient('their_story_welcome_' . $user_id, true, 30);
-        }
     }
     
     public function redirect_after_login($redirect_to, $requested_redirect_to, $user) {
@@ -429,6 +495,17 @@ class Their_Story {
         return home_url('/story/' . $unique_link . '/');
     }
     
+    public function storyteller_dashboard_body_class($classes) {
+        if (!is_user_logged_in() || !in_array('storyteller', (array) wp_get_current_user()->roles, true)) {
+            return $classes;
+        }
+        $page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
+        if ($page !== 'their-story-dashboard') {
+            return $classes;
+        }
+        return $classes . ' their-story-storyteller-screen';
+    }
+
     public function enqueue_admin_assets($hook) {
         if (strpos($hook, 'their-story') === false && strpos($hook, 'their_story') === false) {
             return;
@@ -442,6 +519,23 @@ class Their_Story {
             array(),
             $css_version
         );
+
+        if ($hook === 'toplevel_page_their-story-dashboard') {
+            wp_enqueue_style(
+                'their-story-font-inter',
+                'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+                array(),
+                null
+            );
+            $storyteller_css = THEIR_STORY_PLUGIN_DIR . 'assets/css/storyteller-dashboard.css';
+            $storyteller_ver = file_exists($storyteller_css) ? filemtime($storyteller_css) : THEIR_STORY_VERSION;
+            wp_enqueue_style(
+                'their-story-storyteller',
+                THEIR_STORY_PLUGIN_URL . 'assets/css/storyteller-dashboard.css',
+                array('their-story-admin', 'their-story-font-inter'),
+                $storyteller_ver
+            );
+        }
         
         $js_file = THEIR_STORY_PLUGIN_DIR . 'assets/js/admin.js';
         $js_version = file_exists($js_file) ? filemtime($js_file) : THEIR_STORY_VERSION;
@@ -468,12 +562,18 @@ class Their_Story {
             global $post;
             $storyteller_id = get_post_meta($post->ID, '_storyteller_id', true);
             if ($storyteller_id) {
+                wp_enqueue_style(
+                    'their-story-font-inter',
+                    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+                    array(),
+                    null
+                );
                 $css_file = THEIR_STORY_PLUGIN_DIR . 'assets/css/frontend.css';
                 $css_version = file_exists($css_file) ? filemtime($css_file) : THEIR_STORY_VERSION;
                 wp_enqueue_style(
                     'their-story-frontend',
                     THEIR_STORY_PLUGIN_URL . 'assets/css/frontend.css',
-                    array(),
+                    array('their-story-font-inter'),
                     $css_version
                 );
                 

@@ -3,28 +3,25 @@
 if (!defined('ABSPATH')) {
     exit;
 }
-
-$current_user = wp_get_current_user();
 ?>
 
 <div class="wrap their-story-dashboard">
-    <div class="their-story-header-section">
-        <h1 class="their-story-title"><?php echo esc_html__('My Stories Dashboard', 'their-story'); ?></h1>
-        <p class="their-story-subtitle"><?php echo esc_html__('Create and manage your stories', 'their-story'); ?></p>
+    <div class="their-story-brand-header">
+        <a href="<?php echo esc_url(home_url('/')); ?>" class="their-story-brand-logo-link" rel="home">
+            <img
+                src="<?php echo esc_url('https://theirstory.kinsta.cloud/wp-content/uploads/2025/12/Their-Story-Temp-Logo.png'); ?>"
+                alt="<?php echo esc_attr(get_bloginfo('name')); ?>"
+                class="their-story-brand-logo"
+                decoding="async"
+            />
+        </a>
     </div>
-    
-    <?php
-    $welcome_transient = get_transient('their_story_welcome_' . $current_user->ID);
-    if ($welcome_transient) {
-        delete_transient('their_story_welcome_' . $current_user->ID);
-        echo '<div class="their-story-notice their-story-notice-success">';
-        echo '<p>' . esc_html__('Welcome to your Stories Dashboard! You can now create and manage your stories.', 'their-story') . '</p>';
-        echo '</div>';
-    }
-    ?>
-    
+
     <div class="their-story-actions">
-        <h2 class="their-story-section-title"><?php echo esc_html__('Your Stories', 'their-story'); ?></h2>
+        <div class="their-story-actions-text">
+            <h2 class="their-story-section-title"><?php echo esc_html__('Your Stories', 'their-story'); ?></h2>
+            <p class="their-story-section-lede"><?php echo esc_html__('Edit or manage your stories', 'their-story'); ?></p>
+        </div>
         <button type="button" id="create-story-btn" class="their-story-btn their-story-btn-primary">
             <svg class="their-story-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -143,5 +140,19 @@ $current_user = wp_get_current_user();
                 </table>
             </div>
         <?php endif; ?>
+    </div>
+
+    <div class="their-story-dashboard-footer">
+        <a class="their-story-logout-btn" href="<?php echo esc_url(wp_logout_url(home_url('/'))); ?>">
+            <?php esc_html_e('Log out', 'their-story'); ?>
+        </a>
+        <a
+            class="their-story-help-btn"
+            href="<?php echo esc_url(apply_filters('their_story_help_url', 'https://theirstory.kinsta.cloud')); ?>"
+            target="_blank"
+            rel="noopener noreferrer"
+        >
+            <?php esc_html_e('Get help', 'their-story'); ?>
+        </a>
     </div>
 </div>

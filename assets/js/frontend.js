@@ -253,6 +253,50 @@
             });
         });
 
+        const shareModal = document.getElementById('their-story-share-modal');
+        const openShareBtn = document.getElementById('their-story-open-share-modal');
+        let shareModalLastFocus = null;
+
+        function openShareModal() {
+            if (!shareModal) return;
+            shareModalLastFocus = document.activeElement;
+            shareModal.removeAttribute('hidden');
+            shareModal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            var closeBtn = shareModal.querySelector('.their-story-modal-close');
+            if (closeBtn) closeBtn.focus();
+        }
+
+        function closeShareModal() {
+            if (!shareModal || shareModal.hasAttribute('hidden')) return;
+            shareModal.setAttribute('hidden', '');
+            shareModal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            if (shareModalLastFocus && typeof shareModalLastFocus.focus === 'function') {
+                shareModalLastFocus.focus();
+            }
+        }
+
+        if (openShareBtn && shareModal) {
+            openShareBtn.addEventListener('click', function() {
+                openShareModal();
+            });
+        }
+
+        if (shareModal) {
+            shareModal.querySelectorAll('[data-their-story-close-modal]').forEach(function(el) {
+                el.addEventListener('click', function() {
+                    closeShareModal();
+                });
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && !shareModal.hasAttribute('hidden')) {
+                    closeShareModal();
+                }
+            });
+        }
+
         const closeStoryBtn = document.getElementById('close-story-btn');
         if (closeStoryBtn && theirStoryFrontend.canCloseStory) {
             closeStoryBtn.addEventListener('click', function() {
