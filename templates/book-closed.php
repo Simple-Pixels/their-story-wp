@@ -55,112 +55,15 @@ add_filter(
 );
 ?>
 <?php
+$book_closed_css = THEIR_STORY_PLUGIN_DIR . 'assets/css/book-closed.css';
+wp_enqueue_style(
+    'their-story-book-closed',
+    THEIR_STORY_PLUGIN_URL . 'assets/css/book-closed.css',
+    array(),
+    file_exists($book_closed_css) ? filemtime($book_closed_css) : THEIR_STORY_VERSION
+);
 get_header();
 ?>
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    body.their-story-book-closed-page,
-    .their-story-book-closed-page {
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-        background-color: #faf4f0;
-        color: #000000;
-    }
-    .their-story-book-closed-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 40px 20px;
-    }
-    .their-story-book-closed-header {
-        text-align: center;
-        margin-bottom: 50px;
-    }
-    .their-story-book-closed-title {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #000000;
-        margin: 0 0 1rem 0;
-    }
-    .their-story-book-closed-subtitle {
-        font-size: 1.25rem;
-        color: rgba(0, 0, 0, 0.55);
-        margin: 0;
-    }
-    .their-story-book-products-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 30px;
-        margin-top: 40px;
-    }
-    .their-story-book-product-card {
-        background: #fff;
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid rgba(230, 179, 161, 0.35);
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-        transition: transform 0.2s, box-shadow 0.2s;
-        text-decoration: none;
-        color: inherit;
-        display: block;
-    }
-    .their-story-book-product-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-        text-decoration: none;
-        color: inherit;
-    }
-    .their-story-book-product-image {
-        width: 100%;
-        height: 300px;
-        object-fit: cover;
-        background: #faf4f0;
-    }
-    .their-story-book-product-content {
-        padding: 20px;
-    }
-    .their-story-book-product-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #000000;
-        margin: 0 0 10px 0;
-    }
-    .their-story-book-product-price {
-        font-size: 1.125rem;
-        font-weight: 600;
-        color: #000000;
-        margin: 0;
-    }
-    .their-story-book-product-price .woocommerce-Price-amount {
-        color: #e6b3a1;
-    }
-    .their-story-story-info {
-        background: #ffffff;
-        border: 1px solid rgba(230, 179, 161, 0.35);
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 30px;
-        text-align: center;
-    }
-    .their-story-story-info-text {
-        margin: 0;
-        color: #000000;
-        font-size: 1rem;
-    }
-    .their-story-story-info strong {
-        color: #e6b3a1;
-    }
-    .their-story-book-empty {
-        text-align: center;
-        padding: 60px 20px;
-        background: #fff;
-        border-radius: 12px;
-        border: 1px solid rgba(230, 179, 161, 0.35);
-    }
-    .their-story-book-empty p {
-        font-size: 1.125rem;
-        color: rgba(0, 0, 0, 0.55);
-        margin: 0;
-    }
-</style>
 <div class="their-story-book-closed-page">
     <div class="their-story-book-closed-container">
         <div class="their-story-book-closed-header">

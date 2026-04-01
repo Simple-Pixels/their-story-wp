@@ -157,7 +157,7 @@
     line-height: 1.25rem;
 }
 
-.their-story-input:focus {
+body:not(.their-story-storyteller-screen) .their-story-input:focus {
     outline: none;
     border-color: #2563eb;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
@@ -544,8 +544,8 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-#story-title:focus,
-#story-password:focus {
+body:not(.their-story-storyteller-screen) #story-title:focus,
+body:not(.their-story-storyteller-screen) #story-password:focus {
     outline: none;
     border-color: #2563eb;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);

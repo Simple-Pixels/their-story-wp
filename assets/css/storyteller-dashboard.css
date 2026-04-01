@@ -198,16 +198,33 @@ body.their-story-storyteller-screen .their-story-dashboard .their-story-input,
 body.their-story-storyteller-screen .their-story-dashboard #story-title,
 body.their-story-storyteller-screen .their-story-dashboard #story-password {
     border-radius: 9999px;
+    border: 1px solid var(--their-story-brand-ring) !important;
     color: var(--their-story-brand-text);
     padding: 0.75rem 1.25rem;
     font-size: 0.9375rem;
+    background-color: #ffffff !important;
+    box-shadow: none !important;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body.their-story-storyteller-screen .their-story-dashboard .their-story-input:hover,
+body.their-story-storyteller-screen .their-story-dashboard #story-title:hover,
+body.their-story-storyteller-screen .their-story-dashboard #story-password:hover {
+    border-color: rgba(0, 0, 0, 0.18) !important;
 }
 
 body.their-story-storyteller-screen .their-story-dashboard .their-story-input:focus,
+body.their-story-storyteller-screen .their-story-dashboard .their-story-input:focus-visible,
 body.their-story-storyteller-screen .their-story-dashboard #story-title:focus,
-body.their-story-storyteller-screen .their-story-dashboard #story-password:focus {
-    border-color: var(--their-story-brand-accent);
-    box-shadow: 0 0 0 3px var(--their-story-brand-ring);
+body.their-story-storyteller-screen .their-story-dashboard #story-title:focus-visible,
+body.their-story-storyteller-screen .their-story-dashboard #story-password:focus,
+body.their-story-storyteller-screen .their-story-dashboard #story-password:focus-visible,
+body.their-story-storyteller-screen .their-story-dashboard .their-story-input:active,
+body.their-story-storyteller-screen .their-story-dashboard #story-title:active,
+body.their-story-storyteller-screen .their-story-dashboard #story-password:active {
+    outline: none !important;
+    border-color: var(--their-story-brand-ring) !important;
+    box-shadow: none !important;
 }
 
 body.their-story-storyteller-screen .their-story-dashboard .their-story-link {

@@ -11,14 +11,18 @@
     --ts-approve-hover: #15532c;
     --ts-danger: #b91c1c;
     --ts-danger-hover: #991b1b;
+    --ts-display-font: 'Diolce', Georgia, 'Times New Roman', serif;
 
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     color: var(--ts-text);
     background-color: var(--ts-bg);
-    max-width: 800px;
-    margin: 0 auto;
+    width: 100%;
+    max-width: 1300px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
     padding: 150px 1.25rem;
     box-sizing: border-box;
+    position: relative;
 }
 
 .their-story-page-content *,
@@ -68,7 +72,8 @@
 }
 
 .their-story-intro-what-link {
-    text-decoration: none;
+    text-decoration: none !important;
+    color: #000000 !important;
 }
 
 .their-story-intro-body p {
@@ -103,6 +108,20 @@
     font-size: 0.9375rem;
     line-height: 1.45;
     color: var(--ts-muted);
+}
+
+/* Large display headings — Diolce (load via theme / Elementor) */
+.their-story-page-content #their-story-form-heading.their-story-section-title,
+.their-story-page-content #their-story-messages-heading.their-story-section-title {
+    font-family: var(--ts-display-font) !important;
+    font-size: 55px !important;
+    font-weight: 400 !important;
+    line-height: 1.08 !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    font-style: normal !important;
+    margin: 0 0 0.35rem !important;
+    color: #000000 !important;
 }
 
 .their-story-form-section {
@@ -584,13 +603,16 @@
     position: relative;
     z-index: 1;
     width: 100%;
-    max-width: 28rem;
-    max-height: min(90vh, 32rem);
+    max-width: min(92vw, 46rem) !important;
+    max-height: min(90vh, 36rem);
     overflow-y: auto;
-    background: var(--ts-card);
-    border-radius: 1rem;
-    border: 1px solid var(--ts-border);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    overflow-x: hidden;
+    background: #ffffff !important;
+    background-image: none !important;
+    border-radius: 1rem !important;
+    border: 1px solid var(--ts-border) !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15) !important;
+    box-sizing: border-box !important;
 }
 
 .their-story-modal-header {
@@ -598,47 +620,91 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
-    padding: 1.25rem 1.25rem 0;
+    padding: 1.5rem 1.5rem 0 !important;
 }
 
 .their-story-modal-title {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--ts-text);
+    margin: 0 !important;
+    padding: 0 !important;
+    font-family: var(--ts-display-font) !important;
+    font-size: 55px !important;
+    font-weight: 400 !important;
+    line-height: 1.08 !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    font-style: normal !important;
+    color: #000000 !important;
 }
 
 .their-story-modal-close {
     flex-shrink: 0;
-    width: 2.25rem;
-    height: 2.25rem;
-    margin: -0.25rem -0.25rem 0 0;
-    border: none;
-    border-radius: 50%;
-    background: transparent;
-    font-size: 1.5rem;
-    line-height: 1;
-    cursor: pointer;
-    color: var(--ts-muted);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    width: 2.75rem !important;
+    height: 2.75rem !important;
+    min-width: 2.75rem !important;
+    min-height: 2.75rem !important;
+    margin: -0.25rem -0.25rem 0 0 !important;
+    padding: 0 !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    border-radius: 50% !important;
+    background: #faf4f0 !important;
+    background-image: none !important;
+    font-family: 'Inter', system-ui, sans-serif !important;
+    font-size: 1.5rem !important;
+    font-weight: 400 !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    color: #000000 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: none !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    transition: background-color 0.2s ease, border-color 0.2s ease !important;
 }
 
 .their-story-modal-close:hover,
 .their-story-modal-close:focus {
-    background: var(--ts-bg);
-    color: var(--ts-text);
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.25) !important;
+    color: #000000 !important;
 }
 
 .their-story-modal-close:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--ts-ring);
+    outline: none !important;
+    box-shadow: 0 0 0 2px var(--ts-ring) !important;
 }
 
 .their-story-modal-body {
-    padding: 0.75rem 1.25rem 1.5rem;
+    padding: 0.75rem 1.5rem 1.75rem !important;
+}
+
+.their-story-page-content .their-story-modal .their-story-btn-copy {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    line-height: 1.25 !important;
+    padding: 0.65rem 1.25rem !important;
+    border-radius: 9999px !important;
+    border: 1px solid #000000 !important;
+    background: transparent !important;
+    background-image: none !important;
+    color: #000000 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    box-shadow: none !important;
+    cursor: pointer !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 0 !important;
+    text-decoration: none !important;
+}
+
+.their-story-page-content .their-story-modal .their-story-btn-copy:hover {
+    background: rgba(0, 0, 0, 0.04) !important;
 }
 
 .their-story-modal-lede {
@@ -729,9 +795,153 @@
     transform: scale(1.1);
 }
 
+/* -------------------------------------------------------------------------
+   Elementor / theme overrides — explicit button & link styles
+   ------------------------------------------------------------------------- */
+.their-story-page-content button.their-story-btn,
+.their-story-page-content a.their-story-btn {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    line-height: 1.25 !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    text-decoration: none !important;
+    padding: 0.65rem 1.35rem !important;
+    border-radius: 9999px !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: none !important;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease !important;
+    min-height: 0 !important;
+    width: auto !important;
+    max-width: none !important;
+}
+
+.their-story-page-content .their-story-btn-primary {
+    background: var(--ts-accent) !important;
+    background-image: none !important;
+    color: #000000 !important;
+    border: 1px solid transparent !important;
+}
+
+.their-story-page-content .their-story-btn-primary:hover {
+    background: var(--ts-accent-hover) !important;
+    color: #000000 !important;
+}
+
+.their-story-page-content .their-story-btn-primary:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 3px var(--ts-ring) !important;
+}
+
+.their-story-page-content .their-story-btn-outline {
+    background: transparent !important;
+    background-image: none !important;
+    color: #000000 !important;
+    border: 1px solid #000000 !important;
+}
+
+.their-story-page-content .their-story-btn-outline:hover {
+    background: rgba(0, 0, 0, 0.04) !important;
+    color: #000000 !important;
+}
+
+.their-story-page-content .their-story-btn-outline:focus,
+.their-story-page-content .their-story-btn-outline:focus-visible,
+.their-story-page-content .their-story-btn-outline:active {
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    color: #000000 !important;
+    border-color: #000000 !important;
+}
+
+.their-story-page-content .their-story-btn-outline:hover:focus,
+.their-story-page-content .their-story-btn-outline:hover:active {
+    background: rgba(0, 0, 0, 0.04) !important;
+    color: #000000 !important;
+}
+
+.their-story-page-content a.their-story-intro-what-link {
+    color: #000000 !important;
+}
+
+.their-story-page-content .their-story-btn-danger {
+    background: var(--ts-danger) !important;
+    background-image: none !important;
+    color: #ffffff !important;
+    border: 1px solid transparent !important;
+}
+
+.their-story-page-content .their-story-btn-danger:hover {
+    background: var(--ts-danger-hover) !important;
+    color: #ffffff !important;
+}
+
+.their-story-page-content .their-story-btn-approve {
+    background: var(--ts-approve) !important;
+    background-image: none !important;
+    color: #ffffff !important;
+    border: 1px solid transparent !important;
+}
+
+.their-story-page-content .their-story-btn-approve:hover {
+    background: var(--ts-approve-hover) !important;
+    color: #ffffff !important;
+}
+
+.their-story-page-content .their-story-btn-delete {
+    background: var(--ts-danger) !important;
+    background-image: none !important;
+    color: #ffffff !important;
+    border: 1px solid transparent !important;
+}
+
+.their-story-page-content .their-story-btn-delete:hover {
+    background: var(--ts-danger-hover) !important;
+    color: #ffffff !important;
+}
+
+.their-story-page-content .their-story-btn-small {
+    padding: 0.375rem 0.75rem !important;
+    font-size: 0.75rem !important;
+}
+
 @media (max-width: 768px) {
     .their-story-page-content {
         padding: 150px 1rem;
+    }
+
+    .their-story-page-content #their-story-form-heading.their-story-section-title,
+    .their-story-page-content #their-story-messages-heading.their-story-section-title {
+        font-size: clamp(1.85rem, 9vw, 3.25rem) !important;
+        line-height: 1.1 !important;
+    }
+
+    .their-story-page-content .their-story-modal-title {
+        font-size: clamp(1.85rem, 9vw, 3.25rem) !important;
+        line-height: 1.1 !important;
+    }
+
+    .their-story-modal-panel {
+        max-width: 100% !important;
+        width: 100% !important;
+        max-height: 85vh !important;
+        margin: auto 0 0 !important;
+        align-self: flex-end !important;
+        border-radius: 1rem 1rem 0 0 !important;
+    }
+
+    .their-story-page-content .their-story-modal {
+        display: flex !important;
+        align-items: flex-end !important;
+        justify-content: center !important;
+        padding: 0 !important;
     }
 
     .their-story-form-section,
@@ -751,8 +961,8 @@
 
     .their-story-page-actions .their-story-btn-outline,
     .their-story-page-actions #close-story-btn {
-        max-width: none;
-        width: 100%;
+        max-width: none !important;
+        width: 100% !important;
     }
 
     .their-story-submission-header {

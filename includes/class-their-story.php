@@ -21,6 +21,7 @@ class Their_Story {
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
         add_filter('admin_body_class', array($this, 'storyteller_dashboard_body_class'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_assets'));
+        add_filter('body_class', array($this, 'story_page_body_class'));
         add_action('wp_ajax_their_story_create_story', array($this, 'ajax_create_story'));
         add_action('wp_ajax_their_story_delete_story', array($this, 'ajax_delete_story'));
         add_action('wp_ajax_their_story_update_password', array($this, 'ajax_update_password'));
@@ -182,9 +183,7 @@ class Their_Story {
         }
     }
 
-    /**
-     * Hide Their Story pages from the main Pages admin list (they remain editable here and via direct URL).
-     */
+
     public function exclude_story_pages_from_admin_pages_list($query) {
         if (!is_admin() || !$query->is_main_query()) {
             return;
@@ -557,23 +556,44 @@ class Their_Story {
         ));
     }
     
+    public function story_page_body_class($classes) {
+        if (!is_page()) {
+            return $classes;
+        }
+        global $post;
+        if (!$post || !get_post_meta($post->ID, '_storyteller_id', true)) {
+            return $classes;
+        }
+        if (post_password_required($post)) {
+            $classes[] = 'their-story-password-page';
+        }
+        return $classes;
+    }
+
     public function enqueue_frontend_assets() {
         if (is_page()) {
             global $post;
+            if (!$post) {
+                return;
+            }
             $storyteller_id = get_post_meta($post->ID, '_storyteller_id', true);
             if ($storyteller_id) {
-                wp_enqueue_style(
-                    'their-story-font-inter',
-                    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
-                    array(),
-                    null
-                );
+                if (post_password_required($post)) {
+                    $pass_css = THEIR_STORY_PLUGIN_DIR . 'assets/css/story-password.css';
+                    wp_enqueue_style(
+                        'their-story-password',
+                        THEIR_STORY_PLUGIN_URL . 'assets/css/story-password.css',
+                        array(),
+                        file_exists($pass_css) ? filemtime($pass_css) : THEIR_STORY_VERSION
+                    );
+                    return;
+                }
                 $css_file = THEIR_STORY_PLUGIN_DIR . 'assets/css/frontend.css';
                 $css_version = file_exists($css_file) ? filemtime($css_file) : THEIR_STORY_VERSION;
                 wp_enqueue_style(
                     'their-story-frontend',
                     THEIR_STORY_PLUGIN_URL . 'assets/css/frontend.css',
-                    array('their-story-font-inter'),
+                    array(),
                     $css_version
                 );
                 
