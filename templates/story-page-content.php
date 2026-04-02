@@ -106,11 +106,12 @@ $what_is_this_url = apply_filters('their_story_what_is_this_url', 'https://their
             <p><?php echo esc_html__('Next step — add your messages to a book', 'their-story'); ?></p>
             <?php
             $message_count = count($approved_submissions);
-            $book_closed_url = home_url('/book-closed');
-            $book_closed_url = add_query_arg(array(
-                'story' => $story_id,
-                'messages' => $message_count,
-            ), $book_closed_url);
+            $book_closed_url = $their_story->get_book_closed_url(
+                array(
+                    'story' => $story_id,
+                    'messages' => $message_count,
+                )
+            );
             ?>
             <a href="<?php echo esc_url($book_closed_url); ?>" class="their-story-btn their-story-btn-primary">
                 <?php echo esc_html__('Shop now', 'their-story'); ?>

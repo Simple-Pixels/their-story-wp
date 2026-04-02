@@ -20,7 +20,7 @@
     max-width: 1300px !important;
     margin-left: auto !important;
     margin-right: auto !important;
-    padding: 150px 1.25rem;
+    padding: 200px 1.25rem;
     box-sizing: border-box;
     position: relative;
 }
@@ -914,7 +914,7 @@
 
 @media (max-width: 768px) {
     .their-story-page-content {
-        padding: 150px 1rem;
+        padding: 200px 1rem;
     }
 
     .their-story-page-content #their-story-form-heading.their-story-section-title,

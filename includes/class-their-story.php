@@ -14,14 +14,16 @@ class Their_Story {
         add_action('init', array($this, 'add_storyteller_role'));
         add_action('init', array($this, 'register_story_submission_post_type'));
         add_action('init', array($this, 'add_rewrite_rules'));
+        add_action('init', array($this, 'register_book_closed_shortcode'), 5);
         add_filter('query_vars', array($this, 'add_query_vars'));
         add_action('template_redirect', array($this, 'handle_story_link_redirect'));
-        add_action('template_redirect', array($this, 'handle_book_closed_page'));
+        add_action('template_redirect', array($this, 'handle_book_closed_cookie'));
         add_action('template_redirect', array($this, 'handle_csv_export'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
         add_filter('admin_body_class', array($this, 'storyteller_dashboard_body_class'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_assets'));
         add_filter('body_class', array($this, 'story_page_body_class'));
+        add_filter('body_class', array($this, 'book_closed_body_class'));
         add_action('wp_ajax_their_story_create_story', array($this, 'ajax_create_story'));
         add_action('wp_ajax_their_story_delete_story', array($this, 'ajax_delete_story'));
         add_action('wp_ajax_their_story_update_password', array($this, 'ajax_update_password'));
@@ -75,7 +77,6 @@ class Their_Story {
     
     public function add_rewrite_rules() {
         add_rewrite_rule('^story/([^/]+)/?$', 'index.php?their_story_link=$matches[1]', 'top');
-        add_rewrite_rule('^book-closed/?$', 'index.php?their_story_book_closed=1', 'top');
     }
     
     public function flush_rewrite_rules() {
@@ -85,7 +86,6 @@ class Their_Story {
     
     public function add_query_vars($vars) {
         $vars[] = 'their_story_link';
-        $vars[] = 'their_story_book_closed';
         return $vars;
     }
     
@@ -116,27 +116,133 @@ class Their_Story {
         }
     }
     
-    public function handle_book_closed_page() {
-        $book_closed = get_query_var('their_story_book_closed');
-        if ($book_closed) {
-            $story_id = isset($_GET['story']) ? intval($_GET['story']) : 0;
-            $message_count = isset($_GET['messages']) ? intval($_GET['messages']) : 0;
-            
-            if ($story_id) {
-                setcookie('their_story_id', $story_id, time() + (86400 * 30), '/'); 
-                $_COOKIE['their_story_id'] = $story_id;
-            }
-            
-            $template_path = THEIR_STORY_PLUGIN_DIR . 'templates/book-closed.php';
-            if (file_exists($template_path)) {
-                include $template_path;
-                exit;
-            } else {
-                wp_die(__('Book closed page template not found.', 'their-story'), __('Not Found', 'their-story'), array('response' => 404));
-            }
+    public function handle_book_closed_cookie() {
+        if (!$this->is_book_closed_page_view()) {
+            return;
+        }
+        $story_id = isset($_GET['story']) ? intval($_GET['story']) : 0;
+        if ($story_id) {
+            setcookie('their_story_id', $story_id, time() + (86400 * 30), '/');
+            $_COOKIE['their_story_id'] = $story_id;
         }
     }
-    
+
+    /**
+     * Page slug for the book / product picker (create this page in WP and add [their_story_book_closed]).
+     */
+    public function get_book_closed_page_slug() {
+        return apply_filters('their_story_book_closed_slug', 'next-steps');
+    }
+
+    /**
+     * Published page ID for that page (resolved by slug only — no auto-created pages or stored option).
+     */
+    public function get_book_closed_page_id() {
+        $slug = $this->get_book_closed_page_slug();
+        if ($slug === '') {
+            return (int) apply_filters('their_story_book_closed_page_id', 0);
+        }
+        $posts = get_posts(
+            array(
+                'post_type' => 'page',
+                'name' => $slug,
+                'post_status' => 'publish',
+                'numberposts' => 1,
+                'fields' => 'ids',
+                'no_found_rows' => true,
+            )
+        );
+        if (!empty($posts)) {
+            return (int) $posts[0];
+        }
+        return (int) apply_filters('their_story_book_closed_page_id', 0);
+    }
+
+    public function is_book_closed_page_view() {
+        if (!is_singular('page')) {
+            return false;
+        }
+        $obj = get_queried_object();
+        if (!$obj || empty($obj->post_name)) {
+            return false;
+        }
+        return $obj->post_name === $this->get_book_closed_page_slug();
+    }
+
+    public function get_book_closed_url($query_args = array()) {
+        $page_id = $this->get_book_closed_page_id();
+        $url = '';
+        if ($page_id) {
+            $permalink = get_permalink($page_id);
+            if (is_string($permalink) && $permalink !== '') {
+                $url = $permalink;
+            }
+        }
+        if ($url === '') {
+            $slug = $this->get_book_closed_page_slug();
+            $url = $slug !== '' ? home_url(user_trailingslashit($slug)) : home_url('/');
+        }
+        if (!empty($query_args)) {
+            $url = add_query_arg($query_args, $url);
+        }
+        return $url;
+    }
+
+    public function book_product_url($product_id, $story_id, $message_count = 0) {
+        $url = get_permalink($product_id);
+        if ($story_id) {
+            $url = add_query_arg('story', $story_id, $url);
+            if ($message_count) {
+                $url = add_query_arg('messages', $message_count, $url);
+            }
+        }
+        return $url;
+    }
+
+    public function register_book_closed_shortcode() {
+        add_shortcode('their_story_book_closed', array($this, 'shortcode_book_closed'));
+    }
+
+    public function shortcode_book_closed($atts = array(), $content = '') {
+        $their_story = $this;
+        $story_id = isset($_GET['story']) ? intval($_GET['story']) : 0;
+        $message_count = isset($_GET['messages']) ? intval($_GET['messages']) : 0;
+        $story = $story_id ? get_post($story_id) : null;
+        $story_title = $story ? get_the_title($story_id) : '';
+        $story_title = str_replace('Protected: ', '', $story_title);
+        $book_products = array();
+        if (class_exists('WooCommerce')) {
+            $args = array(
+                'post_type' => 'product',
+                'posts_per_page' => -1,
+                'post_status' => 'publish',
+                'tax_query' => array(
+                    array(
+                        'taxonomy' => 'product_type',
+                        'field' => 'slug',
+                        'terms' => 'variable',
+                    ),
+                ),
+            );
+            $products = wc_get_products($args);
+            foreach ($products as $wc_product) {
+                if ($wc_product && $wc_product->is_type('variable')) {
+                    $book_products[] = $wc_product;
+                }
+            }
+        }
+        ob_start();
+        include THEIR_STORY_PLUGIN_DIR . 'templates/book-closed-inner.php';
+        return ob_get_clean();
+    }
+
+    public function book_closed_body_class($classes) {
+        if ($this->is_book_closed_page_view()) {
+            $classes[] = 'their-story-book-closed-page';
+        }
+        return $classes;
+    }
+
     public function add_admin_menu() {
         $current_user = wp_get_current_user();
         
@@ -572,6 +678,16 @@ class Their_Story {
 
     public function enqueue_frontend_assets() {
         if (is_page()) {
+            if ($this->is_book_closed_page_view()) {
+                $bc = THEIR_STORY_PLUGIN_DIR . 'assets/css/book-closed.css';
+                wp_enqueue_style(
+                    'their-story-book-closed',
+                    THEIR_STORY_PLUGIN_URL . 'assets/css/book-closed.css',
+                    array(),
+                    file_exists($bc) ? filemtime($bc) : THEIR_STORY_VERSION
+                );
+                return;
+            }
             global $post;
             if (!$post) {
                 return;
