@@ -67,13 +67,34 @@
 }
 
 .their-story-intro-what-wrap {
-    margin: 1.35rem 0 0;
+    margin: 0.85rem 0 0;
     text-align: center;
 }
 
+.their-story-intro-lede {
+    margin: 0;
+}
+
 .their-story-intro-what-link {
-    text-decoration: none !important;
-    color: #000000 !important;
+    margin-left: 0.25em;
+    font-size: inherit !important;
+    font-weight: 500 !important;
+    line-height: inherit !important;
+    text-decoration: underline !important;
+    text-decoration-thickness: 1px !important;
+    text-underline-offset: 0.2em !important;
+    color: var(--ts-text) !important;
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    display: inline !important;
+    vertical-align: baseline !important;
+}
+
+.their-story-intro-what-link:hover {
+    color: var(--ts-accent) !important;
 }
 
 .their-story-intro-body p {
@@ -383,6 +404,7 @@
 .their-story-notice-closed p {
     margin: 0;
     font-weight: 500;
+    font-size: 1rem;
 }
 
 .their-story-shop-section {
@@ -437,8 +459,9 @@
 }
 
 .their-story-submission-name {
-    font-size: 1.125rem;
+    font-size: 1.125rem !important;
     font-weight: 600;
+    font-family:'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
     color: var(--ts-text);
     margin: 0;
 }
@@ -868,7 +891,14 @@
 }
 
 .their-story-page-content a.their-story-intro-what-link {
-    color: #000000 !important;
+    text-decoration: underline !important;
+    color: var(--ts-text) !important;
+}
+
+.their-story-page-content a.their-story-intro-what-link:focus-visible {
+    outline: 2px solid var(--ts-ring) !important;
+    outline-offset: 2px !important;
+    border-radius: 2px !important;
 }
 
 .their-story-page-content .their-story-btn-danger {

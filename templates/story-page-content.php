@@ -48,15 +48,18 @@ $what_is_this_url = apply_filters('their_story_what_is_this_url', 'https://their
                 <div class="their-story-intro-custom">
                     <?php echo wp_kses_post(wpautop(get_post($story_id)->post_excerpt)); ?>
                 </div>
+                <p class="their-story-intro-what-wrap">
+                    <a href="<?php echo esc_url($what_is_this_url); ?>" class="their-story-intro-what-link" target="_blank" rel="noopener noreferrer">
+                        <?php echo esc_html__('What is this?', 'their-story'); ?>
+                    </a>
+                </p>
             <?php else : ?>
-                <p><?php echo esc_html('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'); ?></p>
+                <p class="their-story-intro-lede">
+                    <?php echo esc_html('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'); ?>
+                    <a href="<?php echo esc_url($what_is_this_url); ?>" class="their-story-intro-what-link" target="_blank" rel="noopener noreferrer"><?php echo esc_html__('What is this?', 'their-story'); ?></a>
+                </p>
             <?php endif; ?>
         </div>
-        <p class="their-story-intro-what-wrap">
-            <a href="<?php echo esc_url($what_is_this_url); ?>" class="their-story-btn their-story-btn-outline their-story-intro-what-link" target="_blank" rel="noopener noreferrer">
-                <?php echo esc_html__('What is this?', 'their-story'); ?>
-            </a>
-        </p>
     </header>
 
     <?php if (!$is_story_closed) : ?>
@@ -181,7 +184,7 @@ $what_is_this_url = apply_filters('their_story_what_is_this_url', 'https://their
 
     <section class="their-story-messages-section their-story-flow-section" aria-labelledby="their-story-messages-heading">
         <h2 id="their-story-messages-heading" class="their-story-section-title"><?php echo esc_html__('Messages', 'their-story'); ?></h2>
-        <p class="their-story-section-lede"><?php echo esc_html__('Every approved note appears here.', 'their-story'); ?></p>
+        <p class="their-story-section-lede"><?php echo esc_html__('All approved messages will appear here', 'their-story'); ?></p>
         <?php if (empty($approved_submissions)) : ?>
             <div class="their-story-empty">
                 <p><?php echo esc_html__('No messages yet. Be the first to share.', 'their-story'); ?></p>
