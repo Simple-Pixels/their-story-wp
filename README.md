@@ -23,7 +23,9 @@ A WordPress plugin for story creation, moderation, and collection. Stories can b
 3. Share the unique story link with visitors
 4. View and manage submissions on the story page
 5. Close the story when ready to prevent new submissions
-6. After closing, use "Shop Now" to select a book format
+6. After closing, use "Shop now" to open your **Next steps** page and pick a book format
+
+**Next steps page (required for book shopping):** Create a published WordPress page with slug `next-steps` and add the shortcode `[their_story_book_closed]` (or place that shortcode in Elementor). The theme handles header/footer; fonts load from your theme/Elementor as usual.
 
 ### For Administrators
 
@@ -41,11 +43,13 @@ A WordPress plugin for story creation, moderation, and collection. Stories can b
 3. Submit messages with optional images (up to 5 per submission)
 4. View approved messages and images in the gallery
 5. Click images to view in full-screen lightbox
+6. Optional “What is this?” text link on the story intro
 
 ## WooCommerce Integration
 
 When WooCommerce is installed:
 - Stories can be linked to variable products for book ordering
+- **Storytellers** see a dropdown on product pages to choose any **closed** story (defaults to `?story=` / cookie when valid); others still follow the link from the story with `story` in the URL
 - Story details are automatically included in order confirmation emails
 - CSV download links are included in admin order emails
 - Product variations are auto-selected based on message count
@@ -54,9 +58,12 @@ When WooCommerce is installed:
 ## Technical Details
 
 - Stories are stored as WordPress pages with custom meta fields
+- Story pages are hidden from the main Pages list; admins can open **Story pages** under All Stories
 - Submissions use custom post type `story_submission`
 - Images are stored as WordPress attachments
 - Unique links use rewrite rules: `/story/{unique-link}/`
+- Password-protected story pages load minimal plugin CSS for the password form
 - CSV exports are cached for 1 hour to reduce database load
 - AJAX-powered interactions throughout
 - Responsive design for mobile and desktop
+- Slug `next-steps` is the default for the book-picker page; override with filter `their_story_book_closed_slug` if needed

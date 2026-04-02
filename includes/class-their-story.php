@@ -127,16 +127,10 @@ class Their_Story {
         }
     }
 
-    /**
-     * Page slug for the book / product picker (create this page in WP and add [their_story_book_closed]).
-     */
     public function get_book_closed_page_slug() {
         return apply_filters('their_story_book_closed_slug', 'next-steps');
     }
 
-    /**
-     * Published page ID for that page (resolved by slug only — no auto-created pages or stored option).
-     */
     public function get_book_closed_page_id() {
         $slug = $this->get_book_closed_page_slug();
         if ($slug === '') {
@@ -466,7 +460,68 @@ class Their_Story {
         
         return get_posts($args);
     }
-    
+
+    /**
+     * Published story pages that belong to the current user and are closed (ready for book / shop flow).
+     *
+     * @return WP_Post[]
+     */
+    private function get_closed_stories_for_current_user() {
+        if (!is_user_logged_in()) {
+            return array();
+        }
+        $user = wp_get_current_user();
+        if (!in_array('storyteller', (array) $user->roles, true)) {
+            return array();
+        }
+        return get_posts(
+            array(
+                'post_type' => 'page',
+                'post_status' => 'publish',
+                'posts_per_page' => -1,
+                'orderby' => 'modified',
+                'order' => 'DESC',
+                'meta_query' => array(
+                    'relation' => 'AND',
+                    array(
+                        'key' => '_storyteller_id',
+                        'value' => (string) $user->ID,
+                        'compare' => '=',
+                    ),
+                    array(
+                        'key' => '_story_closed',
+                        'value' => '1',
+                        'compare' => '=',
+                    ),
+                ),
+            )
+        );
+    }
+
+    /**
+     * Story ID used on product pages (cart, variations). Storytellers with closed stories are limited to those IDs; URL/cookie must match when possible.
+     */
+    public function resolve_product_page_story_id() {
+        $url = isset($_GET['story']) ? intval($_GET['story']) : 0;
+        $cookie = isset($_COOKIE['their_story_id']) ? intval($_COOKIE['their_story_id']) : 0;
+        $resolved = $url ?: $cookie;
+
+        $closed = $this->get_closed_stories_for_current_user();
+        if (!empty($closed)) {
+            $ids = array_map('intval', wp_list_pluck($closed, 'ID'));
+            if ($resolved && in_array($resolved, $ids, true)) {
+                return $resolved;
+            }
+            return (int) $ids[0];
+        }
+
+        if (is_user_logged_in() && in_array('storyteller', (array) wp_get_current_user()->roles, true)) {
+            return 0;
+        }
+
+        return $resolved;
+    }
+
     public function get_all_stories() {
         $args = array(
             'post_type' => 'page',
@@ -1124,7 +1179,7 @@ class Their_Story {
     }
     
     public function preserve_story_id_in_cart_redirect($url) {
-        $story_id = isset($_GET['story']) ? intval($_GET['story']) : (isset($_COOKIE['their_story_id']) ? intval($_COOKIE['their_story_id']) : 0);
+        $story_id = $this->resolve_product_page_story_id();
         if ($story_id) {
             $url = add_query_arg('story', $story_id, $url);
         }
@@ -1132,7 +1187,7 @@ class Their_Story {
     }
     
     public function store_story_id_in_cart_item($cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data) {
-        $story_id = isset($_GET['story']) ? intval($_GET['story']) : (isset($_COOKIE['their_story_id']) ? intval($_COOKIE['their_story_id']) : 0);
+        $story_id = $this->resolve_product_page_story_id();
         if ($story_id) {
             WC()->cart->cart_contents[$cart_item_key]['their_story_id'] = $story_id;
             setcookie('their_story_id', $story_id, time() + (86400 * 30), '/');
@@ -1140,7 +1195,7 @@ class Their_Story {
     }
     
     public function preserve_story_id_on_product_page() {
-        $story_id = isset($_GET['story']) ? intval($_GET['story']) : (isset($_COOKIE['their_story_id']) ? intval($_COOKIE['their_story_id']) : 0);
+        $story_id = $this->resolve_product_page_story_id();
         if ($story_id) {
             setcookie('their_story_id', $story_id, time() + (86400 * 30), '/');
             $_COOKIE['their_story_id'] = $story_id;
@@ -1182,32 +1237,138 @@ class Their_Story {
     }
     
     public function display_story_info_on_product_page() {
-        $story_id = isset($_GET['story']) ? intval($_GET['story']) : (isset($_COOKIE['their_story_id']) ? intval($_COOKIE['their_story_id']) : 0);
-        if ($story_id) {
-            $story = get_post($story_id);
-            if ($story) {
-                $story_title = get_the_title($story_id);
-                $story_title = str_replace('Protected: ', '', $story_title);
-                $message_count = isset($_GET['messages']) ? intval($_GET['messages']) : 0;
-                if (!$message_count) {
-                    $approved_submissions = Their_Story::get_story_submissions_static($story_id, true);
-                    $message_count = count($approved_submissions);
-                }
-                ?>
-                <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-                <div class="their-story-product-info" style="background: #f0f6fc; border: 1px solid #c3d4e6; border-radius: 8px; padding: 20px; margin-bottom: 20px; font-family: 'Poppins', sans-serif;">
-                    <p style="margin: 0 0 10px 0; font-size: 1.125rem; font-weight: 600; color: #1a1a1a;">
-                        <?php echo esc_html__('Book for:', 'their-story'); ?> <strong><?php echo esc_html($story_title); ?></strong>
-                    </p>
-                    <?php if ($message_count > 0) : ?>
-                        <p style="margin: 0; font-size: 0.875rem; color: #666;">
-                            <?php printf(esc_html__('This story contains %d message(s).', 'their-story'), $message_count); ?>
-                        </p>
-                    <?php endif; ?>
-                </div>
-                <?php
+        $dashboard_url = admin_url('admin.php?page=their-story-dashboard');
+        $box_style = 'background: #ffffff; border: 1px solid #e6b3a1; border-radius: 8px; padding: 20px; margin-bottom: 20px; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;';
+        $muted = 'margin: 0 0 12px 0; font-size: 0.875rem; font-weight: 400; color: rgba(0, 0, 0, 0.55); line-height: 1.45;';
+
+        $closed_stories = $this->get_closed_stories_for_current_user();
+
+        if (!empty($closed_stories)) {
+            $ids = array_map('intval', wp_list_pluck($closed_stories, 'ID'));
+            $url_story = isset($_GET['story']) ? intval($_GET['story']) : 0;
+            $cookie_story = isset($_COOKIE['their_story_id']) ? intval($_COOKIE['their_story_id']) : 0;
+            $preferred = $url_story ? $url_story : $cookie_story;
+            $default_id = ($preferred && in_array($preferred, $ids, true)) ? $preferred : (int) $closed_stories[0]->ID;
+
+            $story_choices = array();
+            foreach ($closed_stories as $s) {
+                $approved = Their_Story::get_story_submissions_static($s->ID, true);
+                $story_choices[] = array(
+                    'id' => (int) $s->ID,
+                    'title' => preg_replace('/^Protected:\s*/i', '', get_the_title($s)),
+                    'messages' => count($approved),
+                );
             }
+
+            $selected_messages = 0;
+            foreach ($story_choices as $c) {
+                if ($c['id'] === $default_id) {
+                    $selected_messages = $c['messages'];
+                    break;
+                }
+            }
+
+            $select_style = 'width: 100%; max-width: 100%; box-sizing: border-box; padding: 10px 12px; margin: 0 0 12px 0; border: 1px solid #e6b3a1; border-radius: 6px; font-family: inherit; font-size: 1rem; font-weight: 400; color: #000000; background: #ffffff;';
+            ?>
+            <div class="their-story-product-info" style="<?php echo esc_attr($box_style); ?>">
+                <p style="<?php echo esc_attr($muted); ?>">
+                    <?php echo esc_html__('Choose from any of your closed stories.', 'their-story'); ?>
+                </p>
+                <label for="their-story-product-story-select" style="display: block; margin: 0 0 6px 0; font-size: 0.9375rem; font-weight: 400; color: #000000;">
+                    <?php echo esc_html__('Book for', 'their-story'); ?>
+                </label>
+                <select id="their-story-product-story-select" class="their-story-product-story-select" style="<?php echo esc_attr($select_style); ?>">
+                    <?php foreach ($story_choices as $c) : ?>
+                        <option value="<?php echo esc_attr((string) $c['id']); ?>" data-messages="<?php echo esc_attr((string) $c['messages']); ?>" <?php selected($default_id, $c['id']); ?>>
+                            <?php echo esc_html($c['title']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <?php if ($selected_messages > 0) : ?>
+                    <p class="their-story-product-info-messages" style="margin: 0 0 12px 0; font-size: 0.875rem; font-weight: 400; color: rgba(0, 0, 0, 0.55);">
+                        <?php printf(esc_html__('This story contains %d message(s).', 'their-story'), $selected_messages); ?>
+                    </p>
+                <?php endif; ?>
+                <p style="margin: 0; font-size: 0.8125rem; font-weight: 400; color: rgba(0, 0, 0, 0.55); line-height: 1.45;">
+                    <?php echo esc_html__("Can't see anything?", 'their-story'); ?>
+                    <a href="<?php echo esc_url($dashboard_url); ?>" style="color: #000000; text-decoration: underline; text-underline-offset: 0.15em;">
+                        <?php echo esc_html__('Close a story', 'their-story'); ?>
+                    </a>
+                    <?php echo esc_html__('in My Stories to see it here.', 'their-story'); ?>
+                </p>
+            </div>
+            <?php
+            add_action(
+                'wp_footer',
+                static function () {
+                    ?>
+                    <script>
+                    (function() {
+                        var sel = document.getElementById('their-story-product-story-select');
+                        if (!sel) return;
+                        sel.addEventListener('change', function() {
+                            var opt = sel.options[sel.selectedIndex];
+                            if (!opt) return;
+                            var u = new URL(window.location.href);
+                            u.searchParams.set('story', sel.value);
+                            u.searchParams.set('messages', opt.getAttribute('data-messages') || '0');
+                            window.location.href = u.toString();
+                        });
+                    })();
+                    </script>
+                    <?php
+                },
+                998
+            );
+            return;
         }
+
+        if (is_user_logged_in() && in_array('storyteller', (array) wp_get_current_user()->roles, true)) {
+            ?>
+            <div class="their-story-product-info" style="<?php echo esc_attr($box_style); ?>">
+                <p style="<?php echo esc_attr($muted); ?>">
+                    <?php echo esc_html__('Choose from any of your closed stories.', 'their-story'); ?>
+                </p>
+                <p style="margin: 0; font-size: 0.875rem; font-weight: 400; color: rgba(0, 0, 0, 0.55); line-height: 1.45;">
+                    <?php echo esc_html__("Can't see anything?", 'their-story'); ?>
+                    <a href="<?php echo esc_url($dashboard_url); ?>" style="color: #000000; text-decoration: underline; text-underline-offset: 0.15em;">
+                        <?php echo esc_html__('Close a story', 'their-story'); ?>
+                    </a>
+                    <?php echo esc_html__('in My Stories to see it here.', 'their-story'); ?>
+                </p>
+            </div>
+            <?php
+            return;
+        }
+
+        $story_id = $this->resolve_product_page_story_id();
+        if (!$story_id) {
+            return;
+        }
+        $story = get_post($story_id);
+        if (!$story) {
+            return;
+        }
+
+        $story_title = get_the_title($story_id);
+        $story_title = str_replace('Protected: ', '', $story_title);
+        $message_count = isset($_GET['messages']) ? intval($_GET['messages']) : 0;
+        if (!$message_count) {
+            $approved_submissions = Their_Story::get_story_submissions_static($story_id, true);
+            $message_count = count($approved_submissions);
+        }
+        ?>
+        <div class="their-story-product-info" style="<?php echo esc_attr($box_style); ?>">
+            <p style="margin: 0 0 10px 0; font-size: 1.125rem; font-weight: 400; color: #000000;">
+                <?php echo esc_html__('Book for:', 'their-story'); ?> <?php echo esc_html($story_title); ?>
+            </p>
+            <?php if ($message_count > 0) : ?>
+                <p style="margin: 0; font-size: 0.875rem; font-weight: 400; color: rgba(0, 0, 0, 0.55);">
+                    <?php printf(esc_html__('This story contains %d message(s).', 'their-story'), $message_count); ?>
+                </p>
+            <?php endif; ?>
+        </div>
+        <?php
     }
     
     public function add_story_name_to_cart_item($name, $cart_item, $cart_item_key) {
@@ -1224,7 +1385,7 @@ class Their_Story {
     }
     
     public function auto_select_variation_by_message_count() {
-        $story_id = isset($_GET['story']) ? intval($_GET['story']) : (isset($_COOKIE['their_story_id']) ? intval($_COOKIE['their_story_id']) : 0);
+        $story_id = $this->resolve_product_page_story_id();
         if (!$story_id) {
             return;
         }
