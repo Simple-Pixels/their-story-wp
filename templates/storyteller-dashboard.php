@@ -51,6 +51,19 @@ if (!defined('ABSPATH')) {
                            placeholder="<?php echo esc_attr__('Leave blank for no password', 'their-story'); ?>" />
                     <p class="their-story-help-text"><?php echo esc_html__('Leave blank if you don\'t want to password protect this story.', 'their-story'); ?></p>
                 </div>
+                <div class="their-story-form-field">
+                    <label for="contribution-subject-name" class="their-story-label">
+                        <?php echo esc_html__('Contributor invitation — first name of person stories are about (optional)', 'their-story'); ?>
+                    </label>
+                    <input type="text" id="contribution-subject-name" name="contribution_subject_name" class="their-story-input" maxlength="120" placeholder="<?php echo esc_attr__('e.g. Lucy', 'their-story'); ?>" />
+                    <p class="their-story-help-text"><?php echo esc_html__('Shown on the contributor form. If left blank, the story title is used.', 'their-story'); ?></p>
+                </div>
+                <div class="their-story-form-field">
+                    <label for="contribution-relation-label" class="their-story-label">
+                        <?php echo esc_html__('Relationship phrase (optional)', 'their-story'); ?>
+                    </label>
+                    <input type="text" id="contribution-relation-label" name="contribution_relation_label" class="their-story-input" maxlength="120" placeholder="<?php echo esc_attr__('e.g. family member or friend', 'their-story'); ?>" />
+                </div>
             </div>
             <div class="their-story-form-actions">
                 <button type="submit" class="their-story-btn their-story-btn-primary">

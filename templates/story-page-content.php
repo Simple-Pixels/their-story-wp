@@ -28,6 +28,16 @@ $storyteller = $storyteller_id ? get_userdata((int) $storyteller_id) : null;
 $display_title = get_the_title($story_id);
 $display_title = preg_replace('/^Protected:\s*/i', '', $display_title);
 $what_is_this_url = apply_filters('their_story_what_is_this_url', 'https://theirstory.kinsta.cloud');
+
+$contribution_subject = trim((string) get_post_meta($story_id, '_their_story_contribution_subject_name', true));
+if ($contribution_subject === '') {
+    $contribution_subject = $display_title;
+}
+$contribution_relation = trim((string) get_post_meta($story_id, '_their_story_contribution_relation_label', true));
+if ($contribution_relation === '') {
+    $contribution_relation = __('family member or friend', 'their-story');
+}
+$contribution_inviter = $storyteller ? $storyteller->display_name : __('the organiser', 'their-story');
 ?><div class="their-story-page-content">
 
     <header class="their-story-intro">
@@ -36,7 +46,6 @@ $what_is_this_url = apply_filters('their_story_what_is_this_url', 'https://their
             <p class="their-story-intro-byline">
                 <?php
                 printf(
-                    /* translators: %s: person name */
                     esc_html__('A message book from %s', 'their-story'),
                     esc_html($storyteller->display_name)
                 );
@@ -44,61 +53,38 @@ $what_is_this_url = apply_filters('their_story_what_is_this_url', 'https://their
             </p>
         <?php endif; ?>
         <div class="their-story-intro-body">
+            <p class="their-story-intro-invitation">
+                <?php
+                echo wp_kses(
+                    sprintf(
+                        __('You have been invited by <span class="their-story-intro-invitation-highlight">%1$s</span> to share stories about their <span class="their-story-intro-invitation-highlight">%2$s</span> <span class="their-story-intro-invitation-highlight">%3$s</span>.', 'their-story'),
+                        esc_html($contribution_inviter),
+                        esc_html($contribution_relation),
+                        esc_html($contribution_subject)
+                    ),
+                    array(
+                        'span' => array(
+                            'class' => true,
+                        ),
+                    )
+                );
+                ?>
+            </p>
             <?php if (has_excerpt($story_id)) : ?>
                 <div class="their-story-intro-custom">
                     <?php echo wp_kses_post(wpautop(get_post($story_id)->post_excerpt)); ?>
                 </div>
-                <p class="their-story-intro-what-wrap">
-                    <a href="<?php echo esc_url($what_is_this_url); ?>" class="their-story-intro-what-link" target="_blank" rel="noopener noreferrer">
-                        <?php echo esc_html__('What is this?', 'their-story'); ?>
-                    </a>
-                </p>
-            <?php else : ?>
-                <p class="their-story-intro-lede">
-                    <?php echo esc_html('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'); ?>
-                    <a href="<?php echo esc_url($what_is_this_url); ?>" class="their-story-intro-what-link" target="_blank" rel="noopener noreferrer"><?php echo esc_html__('What is this?', 'their-story'); ?></a>
-                </p>
             <?php endif; ?>
+            <p class="their-story-intro-what-wrap">
+                <a href="<?php echo esc_url($what_is_this_url); ?>" class="their-story-intro-what-link" target="_blank" rel="noopener noreferrer">
+                    <?php echo esc_html__('What is this?', 'their-story'); ?>
+                </a>
+            </p>
         </div>
     </header>
 
     <?php if (!$is_story_closed) : ?>
-    <section class="their-story-form-section their-story-flow-section" aria-labelledby="their-story-form-heading">
-        <h2 id="their-story-form-heading" class="their-story-section-title"><?php echo esc_html__('Share your message', 'their-story'); ?></h2>
-        <p class="their-story-section-lede"><?php echo esc_html__('Write a note and optionally add up to five images.', 'their-story'); ?></p>
-        <form id="their-story-submission-form" class="their-story-submission-form">
-            <div class="their-story-form-field">
-                <label for="submission-name" class="their-story-label">
-                    <?php echo esc_html__('Your name', 'their-story'); ?>
-                    <span class="required">*</span>
-                </label>
-                <input type="text" id="submission-name" name="name" required class="their-story-input" autocomplete="name" />
-            </div>
-
-            <div class="their-story-form-field">
-                <label for="submission-message" class="their-story-label">
-                    <?php echo esc_html__('Your message', 'their-story'); ?>
-                    <span class="required">*</span>
-                </label>
-                <textarea id="submission-message" name="message" required rows="5" class="their-story-textarea"></textarea>
-            </div>
-
-            <div class="their-story-form-field">
-                <label for="submission-images" class="their-story-label">
-                    <?php echo esc_html__('Images (optional, up to 5)', 'their-story'); ?>
-                </label>
-                <input type="file" id="submission-images" name="images[]" accept="image/*" multiple class="their-story-file-input" />
-                <p class="their-story-help-text"><?php echo esc_html__('You can upload up to five images.', 'their-story'); ?></p>
-                <div id="images-preview" class="their-story-images-preview"></div>
-            </div>
-
-            <button type="submit" class="their-story-btn their-story-btn-primary">
-                <?php echo esc_html__('Submit message', 'their-story'); ?>
-            </button>
-
-            <div id="submission-status-message" class="their-story-message" style="display: none;"></div>
-        </form>
-    </section>
+        <?php include THEIR_STORY_PLUGIN_DIR . 'templates/contribution-form.php'; ?>
     <?php else : ?>
     <section class="their-story-form-section their-story-flow-section">
         <div class="their-story-notice-closed">
@@ -195,47 +181,52 @@ $what_is_this_url = apply_filters('their_story_what_is_this_url', 'https://their
                     $submission_name = $submission->submission_name ? $submission->submission_name : get_post_meta($submission->ID, '_submission_name', true);
                     $image_ids = isset($submission->submission_image_ids) ? $submission->submission_image_ids : array();
                     ?>
-                    <div class="their-story-submission-item their-story-approved" data-submission-id="<?php echo esc_attr($submission->ID); ?>">
-                        <div class="their-story-submission-header">
-                            <h3 class="their-story-submission-name"><?php echo esc_html($submission_name); ?></h3>
-                            <span class="their-story-submission-date"><?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($submission->post_date))); ?></span>
-                        </div>
-                        <div class="their-story-submission-message">
-                            <?php
-                            $content = $submission->post_content;
-                            $lines = explode("\n", $content);
-                            $lines = array_map('trim', $lines);
-                            $lines = array_filter($lines, function ($line) {
-                                return $line !== '';
-                            });
-                            $content = implode("\n", $lines);
-                            $content = nl2br($content);
-                            echo wp_kses_post($content);
-                            ?>
-                        </div>
-                        <?php if (!empty($image_ids)) : ?>
-                            <div class="their-story-submission-gallery">
-                                <?php foreach ($image_ids as $image_id) :
-                                    $image_url = wp_get_attachment_image_url($image_id, 'large');
-                                    $full_image_url = wp_get_attachment_image_url($image_id, 'full');
-                                    if ($image_url) :
-                                        ?>
-                                    <div class="their-story-gallery-item">
-                                        <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr($submission_name); ?>" class="their-story-gallery-image" data-full-image="<?php echo esc_url($full_image_url); ?>" />
-                                    </div>
-                                        <?php
-                                    endif;
-                                endforeach; ?>
+                    <details class="their-story-submission-item their-story-submission-details their-story-approved" data-submission-id="<?php echo esc_attr($submission->ID); ?>">
+                        <summary class="their-story-submission-summary">
+                            <span class="their-story-submission-summary-main">
+                                <span class="their-story-submission-name"><?php echo esc_html($submission_name); ?></span>
+                                <span class="their-story-submission-date"><?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($submission->post_date))); ?></span>
+                            </span>
+                            <span class="their-story-submission-expand-hint" aria-hidden="true"></span>
+                        </summary>
+                        <div class="their-story-submission-details-body">
+                            <div class="their-story-submission-message">
+                                <?php
+                                $content = $submission->post_content;
+                                $lines = explode("\n", $content);
+                                $lines = array_map('trim', $lines);
+                                $lines = array_filter($lines, function ($line) {
+                                    return $line !== '';
+                                });
+                                $content = implode("\n", $lines);
+                                $content = nl2br($content);
+                                echo wp_kses_post($content);
+                                ?>
                             </div>
-                        <?php endif; ?>
-                        <?php if ($can_moderate && !$is_story_closed) : ?>
-                            <div class="their-story-submission-actions">
-                                <button type="button" class="their-story-btn their-story-btn-delete" data-action="delete">
-                                    <?php echo esc_html__('Delete', 'their-story'); ?>
-                                </button>
-                            </div>
-                        <?php endif; ?>
-                    </div>
+                            <?php if (!empty($image_ids)) : ?>
+                                <div class="their-story-submission-gallery">
+                                    <?php foreach ($image_ids as $image_id) :
+                                        $image_url = wp_get_attachment_image_url($image_id, 'large');
+                                        $full_image_url = wp_get_attachment_image_url($image_id, 'full');
+                                        if ($image_url) :
+                                            ?>
+                                        <div class="their-story-gallery-item">
+                                            <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr($submission_name); ?>" class="their-story-gallery-image" data-full-image="<?php echo esc_url($full_image_url); ?>" />
+                                        </div>
+                                            <?php
+                                        endif;
+                                    endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                            <?php if ($can_moderate && !$is_story_closed) : ?>
+                                <div class="their-story-submission-actions">
+                                    <button type="button" class="their-story-btn their-story-btn-delete" data-action="delete">
+                                        <?php echo esc_html__('Delete', 'their-story'); ?>
+                                    </button>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </details>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>

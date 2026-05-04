@@ -594,6 +594,15 @@ class Their_Story {
         
         $unique_link = $this->generate_unique_link($page_id);
         update_post_meta($page_id, '_story_unique_link', $unique_link);
+
+        $subject_name = isset($_POST['contribution_subject_name']) ? sanitize_text_field(wp_unslash($_POST['contribution_subject_name'])) : '';
+        $relation_label = isset($_POST['contribution_relation_label']) ? sanitize_text_field(wp_unslash($_POST['contribution_relation_label'])) : '';
+        if ($subject_name !== '') {
+            update_post_meta($page_id, '_their_story_contribution_subject_name', $subject_name);
+        }
+        if ($relation_label !== '') {
+            update_post_meta($page_id, '_their_story_contribution_relation_label', $relation_label);
+        }
         
         wp_send_json_success(array(
             'message' => __('Story created successfully!', 'their-story'),
@@ -777,6 +786,15 @@ class Their_Story {
                     $js_version,
                     true
                 );
+
+                $cf_js = THEIR_STORY_PLUGIN_DIR . 'assets/js/contribution-form.js';
+                wp_enqueue_script(
+                    'their-story-contribution',
+                    THEIR_STORY_PLUGIN_URL . 'assets/js/contribution-form.js',
+                    array('their-story-frontend'),
+                    file_exists($cf_js) ? filemtime($cf_js) : THEIR_STORY_VERSION,
+                    true
+                );
                 
                 $current_user = wp_get_current_user();
                 $can_moderate = in_array('administrator', $current_user->roles);
@@ -900,19 +918,8 @@ class Their_Story {
         }
         
         $story_id = isset($_POST['story_id']) ? intval($_POST['story_id']) : 0;
-        $name = isset($_POST['name']) ? sanitize_text_field($_POST['name']) : '';
-        $message = isset($_POST['message']) ? sanitize_textarea_field($_POST['message']) : '';
-        
         if (!$story_id) {
             wp_send_json_error(array('message' => __('Invalid story ID.', 'their-story')));
-        }
-        
-        if (empty($name)) {
-            wp_send_json_error(array('message' => __('Name is required.', 'their-story')));
-        }
-        
-        if (empty($message)) {
-            wp_send_json_error(array('message' => __('Message is required.', 'their-story')));
         }
         
         $story = get_post($story_id);
@@ -923,6 +930,31 @@ class Their_Story {
         $is_closed = get_post_meta($story_id, '_story_closed', true) === '1';
         if ($is_closed) {
             wp_send_json_error(array('message' => __('This story is closed. No new messages can be added.', 'their-story')));
+        }
+
+        $contribution_clean = null;
+        if (!empty($_POST['contribution_json'])) {
+            $raw = wp_unslash($_POST['contribution_json']);
+            $data = json_decode($raw, true);
+            if (!is_array($data)) {
+                wp_send_json_error(array('message' => __('Invalid submission data.', 'their-story')));
+            }
+            $err = $this->validate_contribution_submission($data);
+            if (is_wp_error($err)) {
+                wp_send_json_error(array('message' => $err->get_error_message()));
+            }
+            $contribution_clean = $this->sanitize_contribution_for_storage($data);
+            $name = trim(($contribution_clean['first_name'] ?? '') . ' ' . ($contribution_clean['surname'] ?? ''));
+            $message = $this->build_contribution_post_content($contribution_clean, $story_id);
+        } else {
+            $name = isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : '';
+            $message = isset($_POST['message']) ? sanitize_textarea_field(wp_unslash($_POST['message'])) : '';
+            if (empty($name)) {
+                wp_send_json_error(array('message' => __('Name is required.', 'their-story')));
+            }
+            if (empty($message)) {
+                wp_send_json_error(array('message' => __('Message is required.', 'their-story')));
+            }
         }
         
         $image_ids = array();
@@ -981,10 +1013,129 @@ class Their_Story {
         if (!empty($image_ids)) {
             update_post_meta($submission_id, '_submission_image_ids', $image_ids);
         }
+        if (!empty($contribution_clean)) {
+            update_post_meta($submission_id, '_submission_contribution', wp_json_encode($contribution_clean));
+        }
         
         $this->invalidate_csv_cache($story_id);
         
         wp_send_json_success(array('message' => __('Your message has been submitted and is awaiting approval.', 'their-story')));
+    }
+
+    /**
+     * @param array $data Raw contribution from JSON.
+     * @return true|WP_Error
+     */
+    private function validate_contribution_submission($data) {
+        if (($data['join_intent'] ?? '') !== 'yes') {
+            return new WP_Error('their_story_join', __('Only completed “yes” contributions can be submitted.', 'their-story'));
+        }
+        $required = array('first_name', 'surname', 'email', 'live_where', 'known_duration', 'how_met_story', 'describe_one_word', 'particular_story');
+        foreach ($required as $k) {
+            if (empty(trim((string) ($data[$k] ?? '')))) {
+                return new WP_Error('their_story_required', __('Please complete all required fields.', 'their-story'));
+            }
+        }
+        $email = sanitize_email($data['email'] ?? '');
+        if (!is_email($email)) {
+            return new WP_Error('their_story_email', __('Please enter a valid email address.', 'their-story'));
+        }
+        $funny = $data['funny_story_choice'] ?? '';
+        if (!in_array($funny, array('yes', 'no'), true)) {
+            return new WP_Error('their_story_funny', __('Please answer the funny story question.', 'their-story'));
+        }
+        if ($funny === 'yes' && trim((string) ($data['funny_story_text'] ?? '')) === '') {
+            return new WP_Error('their_story_funny_text', __('Please enter your funny story or choose No.', 'their-story'));
+        }
+        $ex1 = $data['extra_story1_choice'] ?? '';
+        if (!in_array($ex1, array('yes', 'no'), true)) {
+            return new WP_Error('their_story_choice', __('Please answer the “any other stories” question.', 'their-story'));
+        }
+        if ($ex1 === 'yes' && trim((string) ($data['extra_story1_text'] ?? '')) === '') {
+            return new WP_Error('their_story_extra1', __('Please enter your other story or choose No.', 'their-story'));
+        }
+        if ($ex1 === 'yes') {
+            $ex2 = $data['extra_story2_choice'] ?? '';
+            if (!in_array($ex2, array('yes', 'no'), true)) {
+                return new WP_Error('their_story_extra2_choice', __('Please answer the second “any other stories” question.', 'their-story'));
+            }
+            if ($ex2 === 'yes' && trim((string) ($data['extra_story2_text'] ?? '')) === '') {
+                return new WP_Error('their_story_extra2', __('Please enter your other story or choose No.', 'their-story'));
+            }
+        }
+        if (!in_array($data['other_thoughts_choice'] ?? '', array('yes', 'no'), true)) {
+            return new WP_Error('their_story_thoughts_choice', __('Please answer whether you would like to share other thoughts.', 'their-story'));
+        }
+        if (($data['other_thoughts_choice'] ?? '') === 'yes' && trim((string) ($data['other_thoughts_text'] ?? '')) === '') {
+            return new WP_Error('their_story_thoughts', __('Please enter your thoughts or choose No.', 'their-story'));
+        }
+        return true;
+    }
+
+    /**
+     * @param array $data
+     * @return array<string, mixed>
+     */
+    private function sanitize_contribution_for_storage($data) {
+        $out = array();
+        $long = array(
+            'how_met_story', 'particular_story', 'funny_story_text', 'extra_story1_text',
+            'extra_story2_text', 'other_thoughts_text',
+        );
+        $text_keys = array(
+            'join_intent', 'first_name', 'surname', 'email', 'live_where', 'known_duration',
+            'how_met_story', 'describe_one_word', 'particular_story', 'funny_story_choice', 'funny_story_text',
+            'extra_story1_choice', 'extra_story1_text', 'extra_story2_choice', 'extra_story2_text',
+            'other_thoughts_choice', 'other_thoughts_text',
+        );
+        foreach ($text_keys as $k) {
+            $v = isset($data[$k]) ? (string) $data[$k] : '';
+            if (strlen($v) > 12000) {
+                $v = substr($v, 0, 12000);
+            }
+            if ($k === 'email') {
+                $out[$k] = sanitize_email($v);
+            } elseif (in_array($k, $long, true)) {
+                $out[$k] = sanitize_textarea_field($v);
+            } else {
+                $out[$k] = sanitize_text_field($v);
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * @param array $data Sanitized contribution.
+     */
+    private function build_contribution_post_content($data, $story_id) {
+        $subject = trim((string) get_post_meta($story_id, '_their_story_contribution_subject_name', true));
+        if ($subject === '') {
+            $subject = preg_replace('/^Protected:\s*/i', '', get_the_title($story_id));
+        }
+        $lines = array();
+        $lines[] = __('Contributor submission (structured)', 'their-story');
+        $lines[] = '---';
+        $lines[] = __('First name', 'their-story') . ': ' . ($data['first_name'] ?? '');
+        $lines[] = __('Surname', 'their-story') . ': ' . ($data['surname'] ?? '');
+        $lines[] = __('Email', 'their-story') . ': ' . ($data['email'] ?? '');
+        $lines[] = __('Where they live', 'their-story') . ': ' . ($data['live_where'] ?? '');
+        $lines[] = sprintf(
+            /* translators: %s: honoree name */
+            __('How long known %s', 'their-story'),
+            $subject
+        ) . ': ' . ($data['known_duration'] ?? '');
+        $lines[] = __('How we met', 'their-story') . ': ' . ($data['how_met_story'] ?? '');
+        $lines[] = __('One word', 'their-story') . ': ' . ($data['describe_one_word'] ?? '');
+        $lines[] = __('Particular story', 'their-story') . ': ' . ($data['particular_story'] ?? '');
+        $lines[] = __('Funny story', 'their-story') . ': ' . (($data['funny_story_choice'] ?? '') === 'yes' ? ($data['funny_story_text'] ?? '') : __('No', 'their-story'));
+        $lines[] = __('Other story (1)', 'their-story') . ': ' . (($data['extra_story1_choice'] ?? '') === 'yes' ? ($data['extra_story1_text'] ?? '') : __('No', 'their-story'));
+        if (($data['extra_story1_choice'] ?? '') === 'yes') {
+            $lines[] = __('Other story (2)', 'their-story') . ': ' . (($data['extra_story2_choice'] ?? '') === 'yes' ? ($data['extra_story2_text'] ?? '') : __('No', 'their-story'));
+        } else {
+            $lines[] = __('Other story (2)', 'their-story') . ': ' . __('Not asked (no first story)', 'their-story');
+        }
+        $lines[] = __('Other thoughts', 'their-story') . ': ' . (($data['other_thoughts_choice'] ?? '') === 'yes' ? ($data['other_thoughts_text'] ?? '') : __('No', 'their-story'));
+        return implode("\n", $lines);
     }
     
     public function ajax_moderate_submission() {

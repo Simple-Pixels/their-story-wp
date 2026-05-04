@@ -29,10 +29,14 @@
                 
                 const titleInput = document.getElementById('story-title');
                 const passwordInput = document.getElementById('story-password');
+                const contributionSubjectInput = document.getElementById('contribution-subject-name');
+                const contributionRelationInput = document.getElementById('contribution-relation-label');
                 const submitBtn = storyCreationForm.querySelector('button[type="submit"]');
                 
                 const title = titleInput ? titleInput.value.trim() : '';
                 const password = passwordInput ? passwordInput.value : '';
+                const contributionSubject = contributionSubjectInput ? contributionSubjectInput.value.trim() : '';
+                const contributionRelation = contributionRelationInput ? contributionRelationInput.value.trim() : '';
                 
                 if (!title) {
                     alert('Please enter a story title.');
@@ -48,6 +52,8 @@
                 formData.append('action', 'their_story_create_story');
                 formData.append('title', title);
                 formData.append('password', password);
+                formData.append('contribution_subject_name', contributionSubject);
+                formData.append('contribution_relation_label', contributionRelation);
                 formData.append('nonce', theirStoryAdmin.nonce);
                 
                 fetch(theirStoryAdmin.ajaxUrl, {

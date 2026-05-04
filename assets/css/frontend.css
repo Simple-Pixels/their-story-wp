@@ -15,7 +15,7 @@
 
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     color: var(--ts-text);
-    background-color: var(--ts-bg);
+    background-color: transparent;
     width: 100%;
     max-width: 1300px !important;
     margin-left: auto !important;
@@ -32,10 +32,14 @@
 }
 
 .their-story-intro {
-    text-align: center;
     margin: 0 0 2.5rem;
     padding: 0 0 2rem;
     border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.their-story-intro-title,
+.their-story-intro-byline {
+    text-align: center;
 }
 
 .their-story-intro-title {
@@ -56,19 +60,36 @@
 .their-story-intro-body {
     margin: 0 auto;
     max-width: 38rem;
-    text-align: center;
+    text-align: left;
     font-size: 0.9375rem;
     line-height: 1.6;
     color: var(--ts-text);
 }
 
-.their-story-intro-custom {
+.their-story-intro-invitation {
+    margin: 0 0 0.85rem;
+    font-size: 1rem;
+    line-height: 1.55;
+    color: var(--ts-text);
     text-align: center;
 }
 
+.their-story-intro-invitation-highlight {
+    font-weight: 600;
+    color: var(--ts-text);
+}
+
+.their-story-intro-custom {
+    text-align: left;
+}
+
 .their-story-intro-what-wrap {
-    margin: 0.85rem 0 0;
+    margin: 0.35rem 0 0;
     text-align: center;
+}
+
+.their-story-intro-what-wrap .their-story-intro-what-link {
+    margin-left: 0;
 }
 
 .their-story-intro-lede {
@@ -143,6 +164,12 @@
     font-style: normal !important;
     margin: 0 0 0.35rem !important;
     color: #000000 !important;
+}
+
+.their-story-page-content #their-story-form-heading.their-story-section-title {
+    border-bottom: 1px solid var(--ts-border);
+    padding-bottom: 1rem;
+    margin: 0 0 1.25rem !important;
 }
 
 .their-story-form-section {
@@ -442,6 +469,81 @@
     border-radius: 0.75rem;
     padding: 1.5rem;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.their-story-submission-details {
+    padding: 0;
+    overflow: hidden;
+}
+
+.their-story-submission-details > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    text-align: left;
+    user-select: none;
+}
+
+.their-story-submission-details > summary:focus-visible {
+    outline: 2px solid var(--ts-ring);
+    outline-offset: 2px;
+    border-radius: 0.35rem;
+}
+
+.their-story-submission-details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.their-story-submission-summary-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 1rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.their-story-submission-details .their-story-submission-name {
+    display: inline-block;
+    margin: 0;
+}
+
+.their-story-submission-expand-hint {
+    flex-shrink: 0;
+    width: 0.55rem;
+    height: 0.55rem;
+    border-right: 2px solid var(--ts-text);
+    border-bottom: 2px solid var(--ts-text);
+    transform: rotate(45deg);
+    margin-top: -0.2rem;
+    opacity: 0.65;
+    transition: transform 0.25s ease, opacity 0.2s ease;
+}
+
+.their-story-submission-details[open] > summary .their-story-submission-expand-hint {
+    transform: rotate(225deg);
+    margin-top: 0.15rem;
+}
+
+.their-story-submission-details-body {
+    padding: 1rem 1.5rem 1.5rem;
+    border-top: 1px solid var(--ts-border);
+    animation: theirStoryDetailsOpen 0.35s ease-out;
+}
+
+@keyframes theirStoryDetailsOpen {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .their-story-submission-item.their-story-pending {
@@ -1012,4 +1114,103 @@
     .their-story-submission-gallery {
         grid-template-columns: 1fr;
     }
+}
+
+/* -------------------------------------------------------------------------
+   Contributor multi-step form
+   ------------------------------------------------------------------------- */
+.their-story-contribution-section .their-story-cf-step-progress {
+    margin: 0 0 1rem;
+    text-align: left;
+    font-size: 0.9rem;
+    color: var(--ts-muted, #5c5c5c);
+}
+
+@keyframes theirStoryCfFadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.their-story-contribution-section .their-story-cf-step.their-story-cf-step--enter {
+    animation: theirStoryCfFadeUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .their-story-contribution-section .their-story-cf-step.their-story-cf-step--enter {
+        animation: none;
+    }
+
+    .their-story-submission-details-body {
+        animation: none;
+    }
+}
+
+.their-story-contribution-section .their-story-cf-wizard {
+    margin-top: 0.5rem;
+}
+
+.their-story-contribution-section .their-story-cf-steps {
+    min-height: 4rem;
+}
+
+.their-story-contribution-section .their-story-cf-wizard-nav {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--ts-border);
+}
+
+.their-story-contribution-section .their-story-cf-wizard-nav .their-story-btn[hidden] {
+    display: none;
+}
+
+.their-story-contribution-section .their-story-cf-block {
+    margin-bottom: 1.25rem;
+}
+
+.their-story-contribution-section .their-story-cf-question {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--ts-text);
+}
+
+.their-story-contribution-section .their-story-cf-choice-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    justify-content: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.their-story-contribution-section .their-story-cf-panel-bordered {
+    margin-top: 1.25rem;
+    padding: 1.25rem;
+    border: 1px solid var(--ts-border);
+    border-radius: 0.75rem;
+    background: var(--ts-card);
+    text-align: left;
+}
+
+.their-story-contribution-section .their-story-cf-panel-bordered .their-story-cf-choice-row {
+    justify-content: flex-start;
+}
+
+.their-story-modal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    margin-top: 1.25rem;
 }

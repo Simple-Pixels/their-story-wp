@@ -2,12 +2,13 @@
     'use strict';
 
     document.addEventListener('DOMContentLoaded', function() {
+        const legacyForm = document.getElementById('their-story-submission-form');
         const imagesInput = document.getElementById('submission-images');
         const imagesPreview = document.getElementById('images-preview');
-        const form = document.getElementById('their-story-submission-form');
+        const form = legacyForm;
         let selectedFiles = [];
 
-        if (imagesInput) {
+        if (legacyForm && imagesInput) {
             imagesInput.addEventListener('change', function(e) {
                 const files = Array.from(e.target.files);
                 
@@ -82,7 +83,7 @@
             return dt.files;
         }
 
-        if (form) {
+        if (legacyForm && form) {
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
 
