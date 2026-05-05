@@ -48,6 +48,22 @@
         var form = document.getElementById('their-story-contribution-form');
         if (!form || typeof theirStoryFrontend === 'undefined') return;
 
+        if (theirStoryFrontend.isStoryClosed) {
+            var closedSection = form.closest('.their-story-contribution-section');
+            if (closedSection) {
+                while (closedSection.firstChild) {
+                    closedSection.removeChild(closedSection.firstChild);
+                }
+                var notice = document.createElement('div');
+                notice.className = 'their-story-notice-closed';
+                var closedP = document.createElement('p');
+                closedP.textContent = theirStoryFrontend.storyClosedMessage || 'This story has been closed.';
+                notice.appendChild(closedP);
+                closedSection.appendChild(notice);
+            }
+            return;
+        }
+
         form.addEventListener('submit', function(e) {
             e.preventDefault();
         });

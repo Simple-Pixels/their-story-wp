@@ -10,7 +10,7 @@ $storyteller_id = get_post_meta($story_id, '_storyteller_id', true);
 $can_moderate = in_array('administrator', $current_user->roles);
 $is_storyteller = in_array('storyteller', $current_user->roles) && ($storyteller_id == $current_user->ID);
 $can_close_story = $can_moderate || $is_storyteller;
-$is_story_closed = get_post_meta($story_id, '_story_closed', true) === '1';
+$is_story_closed = Their_Story::story_is_closed($story_id);
 
 $all_submissions = Their_Story::get_story_submissions_static($story_id, false);
 $approved_submissions = Their_Story::get_story_submissions_static($story_id, true);
@@ -77,7 +77,7 @@ $contribution_inviter = $storyteller ? $storyteller->display_name : __('the orga
     <?php else : ?>
     <section class="their-story-form-section their-story-flow-section">
         <div class="their-story-notice-closed">
-            <p><?php echo esc_html__('This story is closed. No new messages can be added.', 'their-story'); ?></p>
+            <p><?php echo esc_html__('This story has been closed. No new messages can be added.', 'their-story'); ?></p>
         </div>
         <?php if ($is_storyteller) : ?>
         <div class="their-story-shop-section">

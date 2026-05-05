@@ -543,7 +543,7 @@ class Their_Story {
             $storyteller_id = get_post_meta($story->ID, '_storyteller_id', true);
             $story->storyteller = get_userdata($storyteller_id);
             $story->unique_link = get_post_meta($story->ID, '_story_unique_link', true);
-            $story->is_closed = get_post_meta($story->ID, '_story_closed', true) === '1';
+            $story->is_closed = self::story_is_closed((int) $story->ID);
         }
         
         return $stories;
@@ -803,6 +803,7 @@ class Their_Story {
                 $is_storyteller = in_array('storyteller', $current_user->roles) && ($storyteller_id == $current_user->ID);
                 $can_close_story = $can_moderate || $is_storyteller;
                 
+                $story_closed = self::story_is_closed((int) $post->ID);
                 wp_localize_script('their-story-frontend', 'theirStoryFrontend', array(
                     'ajaxUrl' => admin_url('admin-ajax.php'),
                     'storyId' => $post->ID,
@@ -810,7 +811,11 @@ class Their_Story {
                     'moderateNonce' => wp_create_nonce('their_story_moderate_submission'),
                     'closeNonce' => wp_create_nonce('their_story_close_story'),
                     'canModerate' => $can_moderate,
-                    'canCloseStory' => $can_close_story
+                    'canCloseStory' => $can_close_story,
+                    'isStoryClosed' => $story_closed,
+                    'storyClosedMessage' => $story_closed
+                        ? __('This story has been closed. No new messages can be added.', 'their-story')
+                        : '',
                 ));
             }
         }
@@ -927,9 +932,8 @@ class Their_Story {
             wp_send_json_error(array('message' => __('Story not found.', 'their-story')));
         }
         
-        $is_closed = get_post_meta($story_id, '_story_closed', true) === '1';
-        if ($is_closed) {
-            wp_send_json_error(array('message' => __('This story is closed. No new messages can be added.', 'their-story')));
+        if (self::story_is_closed($story_id)) {
+            wp_send_json_error(array('message' => __('This story has been closed. No new messages can be added.', 'their-story')));
         }
 
         $contribution_clean = null;
@@ -1168,12 +1172,11 @@ class Their_Story {
         
         $story_id = get_post_meta($submission_id, '_submission_story_id', true);
         if ($story_id) {
-            $is_closed = get_post_meta($story_id, '_story_closed', true) === '1';
-            if ($is_closed) {
+            if (self::story_is_closed((int) $story_id)) {
                 if ($action === 'approve') {
-                    wp_send_json_error(array('message' => __('This story is closed. Submissions cannot be approved.', 'their-story')));
+                    wp_send_json_error(array('message' => __('This story has been closed. Submissions cannot be approved.', 'their-story')));
                 } elseif ($action === 'delete') {
-                    wp_send_json_error(array('message' => __('This story is closed. Submissions cannot be deleted.', 'their-story')));
+                    wp_send_json_error(array('message' => __('This story has been closed. Submissions cannot be deleted.', 'their-story')));
                 }
             }
         }
@@ -1210,6 +1213,24 @@ class Their_Story {
     
     public function get_story_submissions($story_id, $approved_only = false) {
         return self::get_story_submissions_static($story_id, $approved_only);
+    }
+
+    /**
+     * Whether the story is closed to new submissions (checks post meta).
+     *
+     * @param int $story_id
+     * @return bool
+     */
+    public static function story_is_closed($story_id) {
+        $story_id = (int) $story_id;
+        if ($story_id <= 0) {
+            return false;
+        }
+        $v = get_post_meta($story_id, '_story_closed', true);
+        if ($v === '' || $v === false || $v === null) {
+            return false;
+        }
+        return $v === '1' || $v === 1 || $v === true;
     }
     
     public static function get_story_submissions_static($story_id, $approved_only = false) {
