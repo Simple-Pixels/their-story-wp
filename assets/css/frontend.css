@@ -1075,6 +1075,10 @@
         padding-bottom: 1.5rem;
     }
 
+    .their-story-page-content .their-story-intro-invitation {
+        font-size: clamp(1.5rem, 3.5vw, 2rem) !important;
+    }
+
     .their-story-page-actions {
         flex-direction: column;
         align-items: stretch;
