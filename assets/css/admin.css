@@ -167,6 +167,7 @@ body:not(.their-story-storyteller-screen) .their-story-input:focus {
     margin-top: 0.25rem;
     font-size: 0.875rem;
     color: #6b7280;
+    margin-bottom:1rem;
 }
 
 .their-story-form-actions {
@@ -625,7 +626,7 @@ body:not(.their-story-storyteller-screen) #story-password:focus {
 
 .their-story-table td:first-child {
     white-space: normal;
-    max-width: 300px;
+    max-width: 280px;
 }
 
 .submission-status-pending {
@@ -837,5 +838,187 @@ body:not(.their-story-storyteller-screen) #story-password:focus {
     
     .their-story-actions-inline {
         justify-content: center;
+    }
+}
+
+.their-story-submission-preview--compact {
+    align-items: flex-start;
+}
+
+.their-story-submission-preview-actions {
+    margin-top: 0.35rem;
+}
+
+.their-story-admin-submission-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100100;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.their-story-admin-submission-modal[hidden] {
+    display: none !important;
+}
+
+.their-story-admin-submission-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    cursor: pointer;
+}
+
+.their-story-admin-submission-modal-panel {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 720px;
+    margin: 1rem auto 2rem;
+    background: #fff;
+    border-radius: 0.5rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 1px solid #e5e7eb;
+    max-height: calc(100vh - 4rem);
+    display: flex;
+    flex-direction: column;
+}
+
+.their-story-admin-submission-modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.their-story-admin-submission-modal-title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1.35;
+    padding-right: 0.5rem;
+}
+
+.their-story-admin-submission-modal-x {
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: #6b7280;
+    cursor: pointer;
+    border-radius: 0.25rem;
+}
+
+.their-story-admin-submission-modal-x:hover {
+    color: #111827;
+    background: #f3f4f6;
+}
+
+.their-story-admin-submission-modal-body {
+    padding: 1rem 1.25rem;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: #374151;
+}
+
+.their-story-admin-detail-section {
+    margin-bottom: 1.5rem;
+}
+
+.their-story-admin-detail-section:last-child {
+    margin-bottom: 0;
+}
+
+.their-story-admin-detail-heading {
+    margin: 0 0 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6b7280;
+}
+
+.their-story-admin-detail-message {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.their-story-admin-contribution-dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: minmax(8rem, 11rem) 1fr;
+    gap: 0.35rem 1rem;
+}
+
+.their-story-admin-contribution-dl dt {
+    margin: 0;
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.their-story-admin-contribution-dl dd {
+    margin: 0;
+    word-break: break-word;
+}
+
+.their-story-admin-detail-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.their-story-admin-detail-gallery-item {
+    width: 120px;
+    height: 120px;
+    border-radius: 0.375rem;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.their-story-admin-detail-gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.their-story-admin-submission-modal-foot {
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    background: #fafafa;
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+
+@media (max-width: 520px) {
+    .their-story-admin-contribution-dl {
+        grid-template-columns: 1fr;
+    }
+
+    .their-story-admin-contribution-dl dt {
+        margin-top: 0.5rem;
+    }
+
+    .their-story-admin-contribution-dl dt:first-child {
+        margin-top: 0;
     }
 }

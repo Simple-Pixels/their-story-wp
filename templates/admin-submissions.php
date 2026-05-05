@@ -95,17 +95,20 @@ if (!defined('ABSPATH')) {
                             <tr data-submission-id="<?php echo esc_attr($submission->ID); ?>" class="submission-status-<?php echo esc_attr($submission->post_status); ?>">
                                 <td>
                                     <div class="their-story-table-cell">
-                                        <div class="their-story-submission-preview">
-                                            <?php if (!empty($image_ids)) : 
+                                        <div class="their-story-submission-preview their-story-submission-preview--compact">
+                                            <?php if (!empty($image_ids)) :
                                                 $first_image_id = $image_ids[0];
                                                 $image_url = wp_get_attachment_image_url($first_image_id, 'thumbnail');
                                                 $full_image_urls = array();
                                                 foreach ($image_ids as $img_id) {
-                                                    $full_image_urls[] = wp_get_attachment_image_url($img_id, 'full');
+                                                    $full = wp_get_attachment_image_url($img_id, 'full');
+                                                    if ($full) {
+                                                        $full_image_urls[] = $full;
+                                                    }
                                                 }
-                                            ?>
+                                                ?>
                                                 <div class="their-story-submission-thumb">
-                                                    <img src="<?php echo esc_url($image_url); ?>" alt="<?php echo esc_attr($submission_name); ?>" class="their-story-lightbox-trigger" data-full-images="<?php echo esc_attr(json_encode($full_image_urls)); ?>" style="cursor: pointer;" />
+                                                    <img src="<?php echo esc_url($image_url); ?>" alt="" class="their-story-lightbox-trigger" data-full-images="<?php echo esc_attr(wp_json_encode($full_image_urls)); ?>" style="cursor: pointer;" />
                                                     <?php if (count($image_ids) > 1) : ?>
                                                         <span class="their-story-image-count">+<?php echo esc_html(count($image_ids) - 1); ?></span>
                                                     <?php endif; ?>
@@ -113,8 +116,10 @@ if (!defined('ABSPATH')) {
                                             <?php endif; ?>
                                             <div class="their-story-submission-info">
                                                 <strong class="their-story-submission-name"><?php echo esc_html($submission_name); ?></strong>
-                                                <div class="their-story-submission-excerpt their-story-muted their-story-text-xs">
-                                                    <?php echo esc_html(wp_trim_words($submission->post_content, 20)); ?>
+                                                <div class="their-story-submission-preview-actions">
+                                                    <button type="button" class="button button-small their-story-view-submission-detail" data-detail-template="<?php echo esc_attr('their-story-admin-detail-' . $submission->ID); ?>" data-modal-title="<?php echo esc_attr($submission_name); ?>">
+                                                        <?php echo esc_html__('View Full Submission', 'their-story'); ?>
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
@@ -183,6 +188,60 @@ if (!defined('ABSPATH')) {
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                <div id="their-story-admin-submission-modal" class="their-story-admin-submission-modal" hidden aria-hidden="true">
+                    <div class="their-story-admin-submission-modal-backdrop" tabindex="-1"></div>
+                    <div class="their-story-admin-submission-modal-panel" role="dialog" aria-modal="true" aria-labelledby="their-story-admin-submission-modal-title">
+                        <div class="their-story-admin-submission-modal-head">
+                            <h2 id="their-story-admin-submission-modal-title" class="their-story-admin-submission-modal-title"></h2>
+                            <button type="button" class="their-story-admin-submission-modal-x" aria-label="<?php echo esc_attr__('Close', 'their-story'); ?>">&times;</button>
+                        </div>
+                        <div id="their-story-admin-submission-modal-body" class="their-story-admin-submission-modal-body"></div>
+                        <div class="their-story-admin-submission-modal-foot">
+                            <button type="button" class="button their-story-admin-submission-modal-close-btn"><?php echo esc_html__('Close', 'their-story'); ?></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="their-story-admin-detail-templates" hidden aria-hidden="true">
+                    <?php
+                    foreach ($submissions as $submission) :
+                        $submission_name = $submission->submission_name ? $submission->submission_name : get_post_meta($submission->ID, '_submission_name', true);
+                        $image_ids = isset($submission->submission_image_ids) ? $submission->submission_image_ids : array();
+                        ?>
+                        <template id="<?php echo esc_attr('their-story-admin-detail-' . $submission->ID); ?>">
+                            <div class="their-story-admin-detail-inner">
+                                <div class="their-story-admin-detail-section">
+                                    <h3 class="their-story-admin-detail-heading"><?php echo esc_html__('Message (stored)', 'their-story'); ?></h3>
+                                    <div class="their-story-admin-detail-message"><?php echo nl2br(esc_html($submission->post_content)); ?></div>
+                                </div>
+                                <?php if (!empty($image_ids)) : ?>
+                                    <div class="their-story-admin-detail-section">
+                                        <h3 class="their-story-admin-detail-heading"><?php echo esc_html__('Images', 'their-story'); ?></h3>
+                                        <div class="their-story-admin-detail-gallery">
+                                            <?php
+                                            $full_image_urls = array();
+                                            foreach ($image_ids as $img_id) {
+                                                $fu = wp_get_attachment_image_url($img_id, 'full');
+                                                if ($fu) {
+                                                    $full_image_urls[] = $fu;
+                                                }
+                                            }
+                                            foreach ($image_ids as $img_id) :
+                                                $med = wp_get_attachment_image_url($img_id, 'medium');
+                                                if (!$med) {
+                                                    continue;
+                                                }
+                                                ?>
+                                                <div class="their-story-admin-detail-gallery-item">
+                                                    <img src="<?php echo esc_url($med); ?>" alt="" class="their-story-lightbox-trigger" data-full-images="<?php echo esc_attr(wp_json_encode($full_image_urls)); ?>" style="cursor: pointer;" />
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </template>
+                    <?php endforeach; ?>
+                </div>
             </div>
         <?php endif; ?>
     </div>

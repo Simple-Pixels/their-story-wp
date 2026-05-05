@@ -274,8 +274,8 @@ class Their_Story {
 
             add_submenu_page(
                 'their-story-admin',
-                __('Story pages', 'their-story'),
-                __('Story pages', 'their-story'),
+                __('Story Pages', 'their-story'),
+                __('Story Pages', 'their-story'),
                 'manage_options',
                 'their-story-story-pages',
                 array($this, 'render_story_pages_list')
@@ -1113,8 +1113,6 @@ class Their_Story {
             $subject = preg_replace('/^Protected:\s*/i', '', get_the_title($story_id));
         }
         $lines = array();
-        $lines[] = __('Contributor submission (structured)', 'their-story');
-        $lines[] = '---';
         $lines[] = __('First name', 'their-story') . ': ' . ($data['first_name'] ?? '');
         $lines[] = __('Surname', 'their-story') . ': ' . ($data['surname'] ?? '');
         $lines[] = __('Email', 'their-story') . ': ' . ($data['email'] ?? '');
@@ -1127,14 +1125,20 @@ class Their_Story {
         $lines[] = __('How we met', 'their-story') . ': ' . ($data['how_met_story'] ?? '');
         $lines[] = __('One word', 'their-story') . ': ' . ($data['describe_one_word'] ?? '');
         $lines[] = __('Particular story', 'their-story') . ': ' . ($data['particular_story'] ?? '');
-        $lines[] = __('Funny story', 'their-story') . ': ' . (($data['funny_story_choice'] ?? '') === 'yes' ? ($data['funny_story_text'] ?? '') : __('No', 'their-story'));
-        $lines[] = __('Other story (1)', 'their-story') . ': ' . (($data['extra_story1_choice'] ?? '') === 'yes' ? ($data['extra_story1_text'] ?? '') : __('No', 'their-story'));
-        if (($data['extra_story1_choice'] ?? '') === 'yes') {
-            $lines[] = __('Other story (2)', 'their-story') . ': ' . (($data['extra_story2_choice'] ?? '') === 'yes' ? ($data['extra_story2_text'] ?? '') : __('No', 'their-story'));
-        } else {
-            $lines[] = __('Other story (2)', 'their-story') . ': ' . __('Not asked (no first story)', 'their-story');
+        if (($data['funny_story_choice'] ?? '') === 'yes' && trim((string) ($data['funny_story_text'] ?? '')) !== '') {
+            $lines[] = __('Funny story', 'their-story') . ': ' . ($data['funny_story_text'] ?? '');
         }
-        $lines[] = __('Other thoughts', 'their-story') . ': ' . (($data['other_thoughts_choice'] ?? '') === 'yes' ? ($data['other_thoughts_text'] ?? '') : __('No', 'their-story'));
+        if (($data['extra_story1_choice'] ?? '') === 'yes' && trim((string) ($data['extra_story1_text'] ?? '')) !== '') {
+            $lines[] = __('Other story (1)', 'their-story') . ': ' . ($data['extra_story1_text'] ?? '');
+        }
+        if (($data['extra_story1_choice'] ?? '') === 'yes'
+            && ($data['extra_story2_choice'] ?? '') === 'yes'
+            && trim((string) ($data['extra_story2_text'] ?? '')) !== '') {
+            $lines[] = __('Other story (2)', 'their-story') . ': ' . ($data['extra_story2_text'] ?? '');
+        }
+        if (($data['other_thoughts_choice'] ?? '') === 'yes' && trim((string) ($data['other_thoughts_text'] ?? '')) !== '') {
+            $lines[] = __('Other thoughts', 'their-story') . ': ' . ($data['other_thoughts_text'] ?? '');
+        }
         return implode("\n", $lines);
     }
     
@@ -1806,8 +1810,82 @@ class Their_Story {
     }
     
     private function invalidate_csv_cache($story_id) {
-        $cache_key = 'their_story_csv_' . $story_id;
-        delete_transient($cache_key);
+        delete_transient($this->csv_export_cache_key($story_id));
+        delete_transient('their_story_csv_' . (int) $story_id);
+    }
+
+    /**
+     * Transient key for cached CSV rows (bump suffix when columns change).
+     *
+     * @param int $story_id
+     * @return string
+     */
+    private function csv_export_cache_key($story_id) {
+        return 'their_story_csv_rows_v2_' . (int) $story_id;
+    }
+
+    /**
+     * Single-line cell text for CSV (no HTML, normalized whitespace).
+     *
+     * @param mixed $text
+     * @return string
+     */
+    private function csv_export_flatten_cell($text) {
+        $text = wp_strip_all_tags((string) $text);
+        $text = str_replace(array("\r\n", "\r", "\n"), ' ', $text);
+        return trim(preg_replace('/\s+/u', ' ', $text));
+    }
+
+    /**
+     * Contribution meta keys in export column order (matches wizard / storage).
+     *
+     * @return string[]
+     */
+    private function csv_export_contribution_keys() {
+        return array(
+            'join_intent',
+            'first_name',
+            'surname',
+            'email',
+            'live_where',
+            'known_duration',
+            'how_met_story',
+            'describe_one_word',
+            'particular_story',
+            'funny_story_choice',
+            'funny_story_text',
+            'extra_story1_choice',
+            'extra_story1_text',
+            'extra_story2_choice',
+            'extra_story2_text',
+            'other_thoughts_choice',
+            'other_thoughts_text',
+        );
+    }
+
+    /**
+     * @return string[] Translated header labels for contribution columns.
+     */
+    private function csv_export_contribution_headers() {
+        return array(
+            __('Join intent', 'their-story'),
+            __('First name', 'their-story'),
+            __('Surname', 'their-story'),
+            __('Email', 'their-story'),
+            __('Where they live', 'their-story'),
+            __('How long known', 'their-story'),
+            __('How we met', 'their-story'),
+            __('One word', 'their-story'),
+            __('Particular story', 'their-story'),
+            __('Funny story (choice)', 'their-story'),
+            __('Funny story', 'their-story'),
+            __('Other story 1 (choice)', 'their-story'),
+            __('Other story 1', 'their-story'),
+            __('Other story 2 (choice)', 'their-story'),
+            __('Other story 2', 'their-story'),
+            __('Other thoughts (choice)', 'their-story'),
+            __('Other thoughts', 'their-story'),
+        );
     }
     
     private function export_story_csv($story_id) {
@@ -1817,7 +1895,7 @@ class Their_Story {
             wp_die(__('Story not found.', 'their-story'));
         }
         
-        $cache_key = 'their_story_csv_' . $story_id;
+        $cache_key = $this->csv_export_cache_key($story_id);
         $cache_time = 3600; 
         $cached_data = get_transient($cache_key);
         
@@ -1825,12 +1903,17 @@ class Their_Story {
             $submissions = Their_Story::get_story_submissions_static($story_id, false);
             
             $csv_data = array();
+            $contrib_keys = $this->csv_export_contribution_keys();
             
             foreach ($submissions as $submission) {
                 $submission_name = get_post_meta($submission->ID, '_submission_name', true);
-                $message = wp_strip_all_tags($submission->post_content);
-                $message = str_replace(array("\r\n", "\r", "\n"), ' ', $message);
-                $message = trim($message);
+                $message = $this->csv_export_flatten_cell($submission->post_content);
+                
+                $contrib_raw = get_post_meta($submission->ID, '_submission_contribution', true);
+                $contrib = is_string($contrib_raw) ? json_decode($contrib_raw, true) : null;
+                if (!is_array($contrib)) {
+                    $contrib = array();
+                }
                 
                 $image_ids = get_post_meta($submission->ID, '_submission_image_ids', true);
                 $image_urls = array();
@@ -1846,13 +1929,16 @@ class Their_Story {
                     }
                 }
                 
-                $csv_data[] = array(
-                    'name' => $submission_name,
-                    'message' => $message,
-                    'image_urls' => implode(' | ', $image_urls),
-                    'date' => date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($submission->post_date)),
-                    'status' => $submission->post_status === 'publish' ? __('Approved', 'their-story') : __('Pending', 'their-story')
-                );
+                $row = array($this->csv_export_flatten_cell($submission_name));
+                foreach ($contrib_keys as $key) {
+                    $row[] = isset($contrib[$key]) ? $this->csv_export_flatten_cell($contrib[$key]) : '';
+                }
+                $row[] = $message;
+                $row[] = implode(' | ', $image_urls);
+                $row[] = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($submission->post_date));
+                $row[] = $submission->post_status === 'publish' ? __('Approved', 'their-story') : __('Pending', 'their-story');
+                
+                $csv_data[] = $row;
             }
             
             set_transient($cache_key, $csv_data, $cache_time);
@@ -1876,24 +1962,24 @@ class Their_Story {
         
         fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
         
-        $headers = array(
-            __('Name', 'their-story'),
-            __('Message', 'their-story'),
-            __('Image URLs', 'their-story'),
-            __('Date Submitted', 'their-story'),
-            __('Status', 'their-story')
+        $headers = array_merge(
+            array(__('Name', 'their-story')),
+            $this->csv_export_contribution_headers(),
+            array(
+                __('Message (stored)', 'their-story'),
+                __('Image URLs', 'their-story'),
+                __('Date Submitted', 'their-story'),
+                __('Status', 'their-story'),
+            )
         );
         
         fputcsv($output, $headers);
         
         foreach ($cached_data as $row) {
-            fputcsv($output, array(
-                $row['name'],
-                $row['message'],
-                $row['image_urls'],
-                $row['date'],
-                $row['status']
-            ));
+            if (!is_array($row)) {
+                continue;
+            }
+            fputcsv($output, $row);
         }
         
         fclose($output);

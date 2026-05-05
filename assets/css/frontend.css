@@ -34,32 +34,10 @@
 .their-story-intro {
     margin: 0 0 2.5rem;
     padding: 0 0 2rem;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-}
-
-.their-story-intro-title,
-.their-story-intro-byline {
-    text-align: center;
-}
-
-.their-story-intro-title {
-    font-size: clamp(1.75rem, 4vw, 2.25rem);
-    font-weight: 700;
-    line-height: 1.2;
-    margin: 0 0 0.75rem;
-    color: var(--ts-text);
-}
-
-.their-story-intro-byline {
-    margin: 0 0 1.25rem;
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--ts-accent);
 }
 
 .their-story-intro-body {
     margin: 0 auto;
-    max-width: 38rem;
     text-align: left;
     font-size: 0.9375rem;
     line-height: 1.6;
@@ -67,15 +45,18 @@
 }
 
 .their-story-intro-invitation {
-    margin: 0 0 0.85rem;
-    font-size: 1rem;
-    line-height: 1.55;
+    margin: 0 auto 2rem;
+    font-family: var(--ts-display-font);
+    font-size: clamp(1.75rem, 4vw, 2.25rem);
+    font-weight: 700;
+    line-height: 1.2;
     color: var(--ts-text);
     text-align: center;
+    text-wrap: balance;
 }
 
 .their-story-intro-invitation-highlight {
-    font-weight: 600;
+    font-weight: 700;
     color: var(--ts-text);
 }
 
@@ -84,12 +65,18 @@
 }
 
 .their-story-intro-what-wrap {
-    margin: 0.35rem 0 0;
+    margin: 0.65rem 0 0;
     text-align: center;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--ts-muted);
 }
 
 .their-story-intro-what-wrap .their-story-intro-what-link {
     margin-left: 0;
+    font-size: 0.8125rem !important;
+    font-weight: 500 !important;
+    line-height: inherit !important;
 }
 
 .their-story-intro-lede {
@@ -184,7 +171,6 @@
 .their-story-submission-form {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
 }
 
 .their-story-form-field {
@@ -206,8 +192,7 @@
 .their-story-input,
 .their-story-textarea {
     padding: 0.75rem 1.25rem;
-    border: 1px solid var(--ts-border);
-    border-radius: 9999px;
+    border: 1px solid;
     font-size: 0.9375rem;
     font-family: inherit;
     width: 100%;
@@ -217,13 +202,12 @@
 }
 
 .their-story-textarea {
-    border-radius: 1rem;
+    border-radius: 0.5rem;
     resize: vertical;
     min-height: 8rem;
 }
 
-.their-story-input:hover,
-.their-story-textarea:hover {
+.their-story-input:hover{
     border-color: rgba(0, 0, 0, 0.18);
 }
 
@@ -253,7 +237,7 @@
 }
 
 .their-story-help-text {
-    margin: 0.25rem 0 0;
+    margin: 0.25rem 0 0.5rem 0;
     font-size: 0.875rem;
     color: var(--ts-muted);
 }
@@ -697,9 +681,7 @@
     align-items: flex-start;
     justify-content: center;
     gap: 1rem 1.5rem;
-    margin: 0 0 2rem;
-    padding: 1.5rem 0 0;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
+
 }
 
 .their-story-modal {
@@ -715,6 +697,12 @@
 
 .their-story-modal[hidden] {
     display: none;
+}
+
+/* Beats .their-story-page-content .their-story-modal { display: flex !important } on small screens */
+.their-story-page-content .their-story-modal[hidden] {
+    display: none !important;
+    pointer-events: none;
 }
 
 .their-story-modal-backdrop {
@@ -920,9 +908,6 @@
     transform: scale(1.1);
 }
 
-/* -------------------------------------------------------------------------
-   Elementor / theme overrides — explicit button & link styles
-   ------------------------------------------------------------------------- */
 .their-story-page-content button.their-story-btn,
 .their-story-page-content a.their-story-btn {
     appearance: none !important;
@@ -945,6 +930,9 @@
     min-height: 0 !important;
     width: auto !important;
     max-width: none !important;
+}
+.their-story-page-content a.their-story-btn {
+    margin-top:1rem;
 }
 
 .their-story-page-content .their-story-btn-primary {
@@ -992,9 +980,10 @@
     color: #000000 !important;
 }
 
-.their-story-page-content a.their-story-intro-what-link {
+.their-story-page-content .their-story-intro-what-wrap a.their-story-intro-what-link {
     text-decoration: underline !important;
-    color: var(--ts-text) !important;
+    color: var(--ts-muted) !important;
+    font-size: 0.8125rem !important;
 }
 
 .their-story-page-content a.their-story-intro-what-link:focus-visible {
@@ -1116,11 +1105,8 @@
     }
 }
 
-/* -------------------------------------------------------------------------
-   Contributor multi-step form
-   ------------------------------------------------------------------------- */
+
 .their-story-contribution-section .their-story-cf-step-progress {
-    margin: 0 0 1rem;
     text-align: left;
     font-size: 0.9rem;
     color: var(--ts-muted, #5c5c5c);
@@ -1171,8 +1157,9 @@
     border-top: 1px solid var(--ts-border);
 }
 
-.their-story-contribution-section .their-story-cf-wizard-nav .their-story-btn[hidden] {
-    display: none;
+/* Wizard visibility: class-based so theme CSS cannot override native [hidden] on buttons. */
+.their-story-contribution-section .their-story-cf-is-hidden {
+    display: none !important;
 }
 
 .their-story-contribution-section .their-story-cf-block {
@@ -1180,7 +1167,7 @@
 }
 
 .their-story-contribution-section .their-story-cf-question {
-    margin: 0 0 0.75rem;
+    margin: 0.5rem 0 0;
     font-size: 1rem;
     font-weight: 500;
     color: var(--ts-text);
@@ -1191,13 +1178,15 @@
     flex-wrap: wrap;
     gap: 0.65rem;
     justify-content: flex-start;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.their-story-contribution-section .their-story-cf-choice-row--with-inline-back {
+    align-items: center;
 }
 
 .their-story-contribution-section .their-story-cf-panel-bordered {
-    margin-top: 1.25rem;
-    padding: 1.25rem;
-    border: 1px solid var(--ts-border);
     border-radius: 0.75rem;
     background: var(--ts-card);
     text-align: left;

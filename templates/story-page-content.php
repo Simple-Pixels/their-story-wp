@@ -41,19 +41,8 @@ $contribution_inviter = $storyteller ? $storyteller->display_name : __('the orga
 ?><div class="their-story-page-content">
 
     <header class="their-story-intro">
-        <h1 class="their-story-intro-title"><?php echo esc_html($display_title); ?></h1>
-        <?php if ($storyteller) : ?>
-            <p class="their-story-intro-byline">
-                <?php
-                printf(
-                    esc_html__('A message book from %s', 'their-story'),
-                    esc_html($storyteller->display_name)
-                );
-                ?>
-            </p>
-        <?php endif; ?>
         <div class="their-story-intro-body">
-            <p class="their-story-intro-invitation">
+            <h1 class="their-story-intro-invitation">
                 <?php
                 echo wp_kses(
                     sprintf(
@@ -69,7 +58,7 @@ $contribution_inviter = $storyteller ? $storyteller->display_name : __('the orga
                     )
                 );
                 ?>
-            </p>
+            </h1>
             <?php if (has_excerpt($story_id)) : ?>
                 <div class="their-story-intro-custom">
                     <?php echo wp_kses_post(wpautop(get_post($story_id)->post_excerpt)); ?>

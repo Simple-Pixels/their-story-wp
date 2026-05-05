@@ -1,6 +1,9 @@
 (function() {
     'use strict';
 
+    /** Theme-safe hide: native [hidden] is often overridden on buttons. */
+    var CF_HIDE = 'their-story-cf-is-hidden';
+
     function readCfConfig() {
         var el = document.getElementById('their-story-cf-config');
         if (!el || !el.textContent) return {};
@@ -12,11 +15,15 @@
     }
 
     function show(el) {
-        if (el) el.hidden = false;
+        if (!el) return;
+        el.classList.remove(CF_HIDE);
+        el.removeAttribute('hidden');
     }
 
     function hide(el) {
-        if (el) el.hidden = true;
+        if (!el) return;
+        el.classList.add(CF_HIDE);
+        el.removeAttribute('hidden');
     }
 
     function val(id) {
@@ -53,14 +60,10 @@
         var nav = document.getElementById('their-story-cf-wizard-nav');
         var backBtn = document.getElementById('their-story-cf-wizard-back');
         var nextBtn = document.getElementById('their-story-cf-wizard-next');
-        var openConfirmBtn = document.getElementById('their-story-cf-open-confirm');
         var progressEl = document.getElementById('their-story-cf-step-progress');
+        var nextLabelNext = (cfg.i18n && cfg.i18n.next) || 'Next';
+        var nextLabelSubmit = (cfg.i18n && cfg.i18n.submit) || 'Submit';
         var statusEl = document.getElementById('submission-status-message');
-
-        var funnyTextWrap = document.getElementById('their-story-cf-funny-text-wrap');
-        var extra1Wrap = document.getElementById('their-story-cf-extra1-text-wrap');
-        var extra2Wrap = document.getElementById('their-story-cf-extra2-text-wrap');
-        var thoughtsWrap = document.getElementById('their-story-cf-thoughts-text-wrap');
 
         var funnyChoice = null;
         var extra1Choice = null;
@@ -72,40 +75,24 @@
         var selectedFiles = [];
 
         function getYesScreens() {
-            var screens = ['q1', 'details', 'how_met', 'one_word', 'particular', 'funny', 'extra1'];
-            if (extra1Choice === 'yes' && val('cf-extra1').length > 0) {
-                screens.push('extra2');
+            var screens = ['q1', 'details', 'how_met', 'one_word', 'particular', 'funny'];
+            if (funnyChoice === 'yes') {
+                screens.push('funny_text');
             }
-            screens.push('thoughts', 'images');
+            screens.push('extra1');
+            if (extra1Choice === 'yes') {
+                screens.push('extra1_text');
+                screens.push('extra2');
+                if (extra2Choice === 'yes') {
+                    screens.push('extra2_text');
+                }
+            }
+            screens.push('thoughts');
+            if (thoughtsChoice === 'yes') {
+                screens.push('thoughts_text');
+            }
+            screens.push('images');
             return screens;
-        }
-
-        function tryAdvanceFromTextarea(fieldId, mustBeScreen, nextScreen) {
-            if (currentScreen !== mustBeScreen) return;
-            if (fieldId === 'cf-funny-text' && funnyChoice !== 'yes') return;
-            if (fieldId === 'cf-extra1' && extra1Choice !== 'yes') return;
-            if (fieldId === 'cf-extra2' && extra2Choice !== 'yes') return;
-            if (fieldId === 'cf-thoughts' && thoughtsChoice !== 'yes') return;
-            var el = document.getElementById(fieldId);
-            if (!el) return;
-            var t = String(el.value || '').trim();
-            if (t.length === 0) return;
-            setStatus('', '');
-            goTo(nextScreen, { forward: true });
-        }
-
-        var textDebounceTimer = null;
-        function scheduleTextareaAdvance(fieldId, mustBeScreen, nextScreen, delay) {
-            if (currentScreen !== mustBeScreen) return;
-            if (fieldId === 'cf-funny-text' && funnyChoice !== 'yes') return;
-            if (fieldId === 'cf-extra1' && extra1Choice !== 'yes') return;
-            if (fieldId === 'cf-extra2' && extra2Choice !== 'yes') return;
-            if (fieldId === 'cf-thoughts' && thoughtsChoice !== 'yes') return;
-            if (textDebounceTimer) window.clearTimeout(textDebounceTimer);
-            textDebounceTimer = window.setTimeout(function() {
-                textDebounceTimer = null;
-                tryAdvanceFromTextarea(fieldId, mustBeScreen, nextScreen);
-            }, delay || 420);
         }
 
         function setStatus(type, text) {
@@ -145,7 +132,8 @@
             if (!wizard) return;
             wizard.querySelectorAll('[data-cf-screen]').forEach(function(el) {
                 var isActive = el.getAttribute('data-cf-screen') === screen;
-                el.hidden = !isActive;
+                if (isActive) show(el);
+                else hide(el);
                 el.classList.toggle('their-story-cf-step-active', isActive);
                 el.setAttribute('aria-hidden', isActive ? 'false' : 'true');
             });
@@ -156,9 +144,9 @@
                 playStepEnter(active);
             }
             if (active) {
-                var focusTarget = active.querySelector('input:not([type="file"]), textarea, select, button:not([hidden])');
+                var focusTarget = active.querySelector('input:not([type="file"]), textarea, select, button:not(.' + CF_HIDE + ')');
                 if (!focusTarget) {
-                    focusTarget = active.querySelector('button[type="button"]:not([hidden])');
+                    focusTarget = active.querySelector('button[type="button"]:not(.' + CF_HIDE + ')');
                 }
                 if (focusTarget && typeof focusTarget.focus === 'function') {
                     try {
@@ -173,33 +161,50 @@
             var flow = getYesScreens();
             var idx = flow.indexOf(currentScreen);
             if (idx >= 0) {
-                progressEl.hidden = false;
+                show(progressEl);
                 progressEl.textContent = formatStepProgress(cfg, idx + 1, flow.length);
             } else {
-                progressEl.hidden = true;
+                hide(progressEl);
                 progressEl.textContent = '';
             }
         }
 
         function syncNav() {
-            if (!nav || !backBtn || !nextBtn || !openConfirmBtn) return;
-            if (currentScreen === 'no_thanks' || currentScreen === 'q1') {
-                nav.hidden = true;
+            if (!nav || !backBtn || !nextBtn) return;
+            if (currentScreen === 'no_thanks') {
+                hide(nav);
                 return;
             }
-            nav.hidden = false;
 
-            backBtn.hidden = false;
+            var hideFullNavScreens = ['q1', 'funny', 'extra1', 'extra2', 'thoughts'];
+            if (hideFullNavScreens.indexOf(currentScreen) !== -1) {
+                hide(nav);
+                return;
+            }
+
+            show(nav);
 
             var onImages = currentScreen === 'images';
             var onNoBranch = currentScreen === 'no_confirm';
             var onUncertain = currentScreen === 'uncertain';
+            var textStepsWithNext = ['details', 'how_met', 'one_word', 'particular', 'funny_text', 'extra1_text', 'extra2_text', 'thoughts_text'];
+            var onTextStep = textStepsWithNext.indexOf(currentScreen) !== -1;
 
-            var textStepsWithNext = ['details', 'how_met', 'one_word', 'particular'];
-            var showNext = textStepsWithNext.indexOf(currentScreen) !== -1;
+            show(backBtn);
 
-            nextBtn.hidden = onImages || onNoBranch || onUncertain || !showNext;
-            openConfirmBtn.hidden = !onImages;
+            if (onImages) {
+                show(nextBtn);
+                nextBtn.textContent = nextLabelSubmit;
+            } else if (onNoBranch || onUncertain) {
+                hide(nextBtn);
+                nextBtn.textContent = nextLabelNext;
+            } else if (onTextStep) {
+                show(nextBtn);
+                nextBtn.textContent = nextLabelNext;
+            } else {
+                hide(nextBtn);
+                nextBtn.textContent = nextLabelNext;
+            }
         }
 
         function validateCurrentScreen() {
@@ -236,32 +241,40 @@
                     if (!funnyChoice) {
                         return 'Please answer whether you have a funny story.';
                     }
+                    return '';
+                case 'funny_text':
                     if (funnyChoice === 'yes' && !val('cf-funny-text')) {
-                        return 'Please enter your funny story, or choose No.';
+                        return 'Please enter your funny story, or go back and choose No.';
                     }
                     return '';
                 case 'extra1':
                     if (extra1Choice !== 'yes' && extra1Choice !== 'no') {
                         return 'Please answer whether you have another story to share.';
                     }
+                    return '';
+                case 'extra1_text':
                     if (extra1Choice === 'yes' && !val('cf-extra1')) {
-                        return 'Please enter your story, or choose No.';
+                        return 'Please enter your story, or go back and choose No.';
                     }
                     return '';
                 case 'extra2':
                     if (extra2Choice !== 'yes' && extra2Choice !== 'no') {
                         return 'Please answer whether you have another story to share.';
                     }
+                    return '';
+                case 'extra2_text':
                     if (extra2Choice === 'yes' && !val('cf-extra2')) {
-                        return 'Please enter your story, or choose No.';
+                        return 'Please enter your story, or go back and choose No.';
                     }
                     return '';
                 case 'thoughts':
                     if (thoughtsChoice !== 'yes' && thoughtsChoice !== 'no') {
                         return 'Please answer whether you would like to share other thoughts.';
                     }
+                    return '';
+                case 'thoughts_text':
                     if (thoughtsChoice === 'yes' && !val('cf-thoughts')) {
-                        return 'Please enter your thoughts, or choose No.';
+                        return 'Please enter your thoughts, or go back and choose No.';
                     }
                     return '';
                 case 'images':
@@ -311,8 +324,11 @@
             if (prev) goTo(prev, { forward: false });
         }
 
-        if (nextBtn) nextBtn.addEventListener('click', handleNext);
         if (backBtn) backBtn.addEventListener('click', handleBack);
+
+        form.querySelectorAll('.their-story-cf-inline-back').forEach(function(btn) {
+            btn.addEventListener('click', handleBack);
+        });
 
         form.querySelectorAll('[data-cf-join]').forEach(function(btn) {
             btn.addEventListener('click', function() {
@@ -345,19 +361,14 @@
                     b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
                 });
                 if (funnyChoice === 'yes') {
-                    show(funnyTextWrap);
                     setStatus('', '');
-                    syncNav();
+                    goTo('funny_text', { forward: true });
                 } else {
-                    hide(funnyTextWrap);
                     var ft = document.getElementById('cf-funny-text');
                     if (ft) ft.value = '';
                     extra1Choice = null;
                     extra2Choice = null;
                     thoughtsChoice = null;
-                    hide(extra1Wrap);
-                    hide(extra2Wrap);
-                    hide(thoughtsWrap);
                     var x1 = document.getElementById('cf-extra1');
                     var x2 = document.getElementById('cf-extra2');
                     var th = document.getElementById('cf-thoughts');
@@ -380,17 +391,13 @@
                     b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
                 });
                 if (extra1Choice === 'yes') {
-                    show(extra1Wrap);
                     setStatus('', '');
-                    syncNav();
+                    goTo('extra1_text', { forward: true });
                 } else {
-                    hide(extra1Wrap);
                     var x = document.getElementById('cf-extra1');
                     if (x) x.value = '';
                     extra2Choice = null;
                     thoughtsChoice = null;
-                    hide(extra2Wrap);
-                    hide(thoughtsWrap);
                     var x2 = document.getElementById('cf-extra2');
                     var th = document.getElementById('cf-thoughts');
                     if (x2) x2.value = '';
@@ -411,15 +418,12 @@
                     b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
                 });
                 if (extra2Choice === 'yes') {
-                    show(extra2Wrap);
                     setStatus('', '');
-                    syncNav();
+                    goTo('extra2_text', { forward: true });
                 } else {
-                    hide(extra2Wrap);
                     var x = document.getElementById('cf-extra2');
                     if (x) x.value = '';
                     thoughtsChoice = null;
-                    hide(thoughtsWrap);
                     var th = document.getElementById('cf-thoughts');
                     if (th) th.value = '';
                     form.querySelectorAll('[data-cf-thoughts]').forEach(function(b) {
@@ -438,11 +442,9 @@
                     b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
                 });
                 if (thoughtsChoice === 'yes') {
-                    show(thoughtsWrap);
                     setStatus('', '');
-                    syncNav();
+                    goTo('thoughts_text', { forward: true });
                 } else {
-                    hide(thoughtsWrap);
                     var x = document.getElementById('cf-thoughts');
                     if (x) x.value = '';
                     setStatus('', '');
@@ -565,10 +567,6 @@
             form.querySelectorAll('[data-cf-funny], [data-cf-extra1], [data-cf-extra2], [data-cf-thoughts]').forEach(function(b) {
                 b.setAttribute('aria-pressed', 'false');
             });
-            hide(funnyTextWrap);
-            hide(extra1Wrap);
-            hide(extra2Wrap);
-            hide(thoughtsWrap);
             selectedFiles = [];
             if (imagesPreview) imagesPreview.innerHTML = '';
             goTo('q1', { forward: false });
@@ -597,7 +595,16 @@
             document.body.style.overflow = '';
         }
 
-        if (openConfirmBtn) openConfirmBtn.addEventListener('click', openConfirmModal);
+        if (nextBtn) {
+            nextBtn.addEventListener('click', function() {
+                if (currentScreen === 'images') {
+                    openConfirmModal();
+                } else {
+                    handleNext();
+                }
+            });
+        }
+
         if (confirmModal) {
             confirmModal.querySelectorAll('[data-their-story-close-submit-confirm]').forEach(function(el) {
                 el.addEventListener('click', closeConfirmModal);
@@ -657,51 +664,7 @@
             });
         }
 
-        var funnyTa = document.getElementById('cf-funny-text');
-        if (funnyTa) {
-            funnyTa.addEventListener('blur', function() {
-                tryAdvanceFromTextarea('cf-funny-text', 'funny', 'extra1');
-            });
-            funnyTa.addEventListener('input', function() {
-                scheduleTextareaAdvance('cf-funny-text', 'funny', 'extra1', 420);
-            });
-        }
-        var ex1Ta = document.getElementById('cf-extra1');
-        if (ex1Ta) {
-            ex1Ta.addEventListener('blur', function() {
-                if (extra1Choice !== 'yes') return;
-                tryAdvanceFromTextarea('cf-extra1', 'extra1', 'extra2');
-            });
-            ex1Ta.addEventListener('input', function() {
-                if (extra1Choice !== 'yes') return;
-                scheduleTextareaAdvance('cf-extra1', 'extra1', 'extra2', 420);
-            });
-        }
-        var ex2Ta = document.getElementById('cf-extra2');
-        if (ex2Ta) {
-            ex2Ta.addEventListener('blur', function() {
-                if (extra2Choice !== 'yes') return;
-                tryAdvanceFromTextarea('cf-extra2', 'extra2', 'thoughts');
-            });
-            ex2Ta.addEventListener('input', function() {
-                if (extra2Choice !== 'yes') return;
-                scheduleTextareaAdvance('cf-extra2', 'extra2', 'thoughts', 420);
-            });
-        }
-        var thoughtsTa = document.getElementById('cf-thoughts');
-        if (thoughtsTa) {
-            thoughtsTa.addEventListener('blur', function() {
-                if (thoughtsChoice !== 'yes') return;
-                tryAdvanceFromTextarea('cf-thoughts', 'thoughts', 'images');
-            });
-            thoughtsTa.addEventListener('input', function() {
-                if (thoughtsChoice !== 'yes') return;
-                scheduleTextareaAdvance('cf-thoughts', 'thoughts', 'images', 420);
-            });
-        }
-
         syncJoinAria();
-        syncNav();
-        updateProgress();
+        goTo('q1', { forward: false });
     });
 })();

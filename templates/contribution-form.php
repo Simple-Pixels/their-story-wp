@@ -21,14 +21,20 @@ $cf_step_progress_tpl = __('Step %1$d of %2$d', 'their-story');
     <h2 id="their-story-form-heading" class="their-story-section-title"><?php echo esc_html__('Share your stories', 'their-story'); ?></h2>
 
     <form id="their-story-contribution-form" class="their-story-contribution-form their-story-submission-form" novalidate>
-        <p id="their-story-cf-step-progress" class="their-story-cf-step-progress" hidden aria-live="polite"></p>
+        <p id="their-story-cf-step-progress" class="their-story-cf-step-progress their-story-cf-is-hidden" aria-live="polite"></p>
 
         <div class="their-story-cf-wizard">
             <div class="their-story-cf-steps">
 
                 <div class="their-story-cf-step their-story-cf-step-active" data-cf-screen="q1">
                     <div class="their-story-cf-block their-story-cf-q1">
-                        <p class="their-story-cf-question"><?php echo esc_html__('Are you wanting to join in this process?', 'their-story'); ?></p>
+                        <p class="their-story-cf-question"><?php
+                            printf(
+                                /* translators: %s: honoree name */
+                                esc_html__('Are you wanting to share a story about %s?', 'their-story'),
+                                esc_html($contribution_subject)
+                            );
+                            ?></p>
                         <div class="their-story-cf-choice-row">
                             <button type="button" class="their-story-btn their-story-btn-outline their-story-cf-choice" data-cf-join="yes"><?php echo esc_html__('Yes', 'their-story'); ?></button>
                             <button type="button" class="their-story-btn their-story-btn-outline their-story-cf-choice" data-cf-join="no"><?php echo esc_html__('No', 'their-story'); ?></button>
@@ -37,7 +43,7 @@ $cf_step_progress_tpl = __('Step %1$d of %2$d', 'their-story');
                     </div>
                 </div>
 
-                <div class="their-story-cf-step" data-cf-screen="no_confirm" hidden>
+                <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="no_confirm">
                     <div class="their-story-cf-panel their-story-cf-panel-bordered">
                         <p class="their-story-cf-question"><?php echo esc_html__('Are you sure?', 'their-story'); ?></p>
                         <div class="their-story-cf-choice-row">
@@ -47,11 +53,10 @@ $cf_step_progress_tpl = __('Step %1$d of %2$d', 'their-story');
                     </div>
                 </div>
 
-                <div class="their-story-cf-step" data-cf-screen="no_thanks" hidden>
+                <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="no_thanks">
                     <div class="their-story-cf-panel their-story-cf-panel-bordered">
                         <p><?php
                             printf(
-                                /* translators: %s: honoree name */
                                 esc_html__('Thank you for your consideration. Should you change your mind and would like to contribute to %s’s stories, please open this link again when you are ready.', 'their-story'),
                                 esc_html($contribution_subject)
                             );
@@ -59,14 +64,14 @@ $cf_step_progress_tpl = __('Step %1$d of %2$d', 'their-story');
                     </div>
                 </div>
 
-                <div class="their-story-cf-step" data-cf-screen="uncertain" hidden>
+                <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="uncertain">
                     <div class="their-story-cf-panel their-story-cf-panel-bordered">
                         <p class="their-story-cf-question"><?php echo esc_html__('Would you like to review our FAQs?', 'their-story'); ?></p>
                         <p><a class="their-story-btn their-story-btn-primary" href="<?php echo esc_url($faq_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__('Open FAQs', 'their-story'); ?></a></p>
                     </div>
                 </div>
 
-                <div class="their-story-cf-step" data-cf-screen="details" hidden>
+                <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="details">
                     <div class="their-story-cf-block">
                         <label for="cf-first-name" class="their-story-label"><?php echo esc_html__('What is your first name?', 'their-story'); ?> <span class="required">*</span></label>
                         <input type="text" id="cf-first-name" name="cf_first_name" class="their-story-input" autocomplete="given-name" maxlength="120" />
@@ -96,7 +101,7 @@ $cf_step_progress_tpl = __('Step %1$d of %2$d', 'their-story');
                     </div>
                 </div>
 
-                <div class="their-story-cf-step" data-cf-screen="how_met" hidden>
+                <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="how_met">
                     <div class="their-story-cf-block">
                         <label for="cf-how-met" class="their-story-label"><?php
                             printf(
@@ -108,7 +113,7 @@ $cf_step_progress_tpl = __('Step %1$d of %2$d', 'their-story');
                     </div>
                 </div>
 
-                <div class="their-story-cf-step" data-cf-screen="one_word" hidden>
+                <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="one_word">
                     <div class="their-story-cf-block">
                         <label for="cf-one-word" class="their-story-label"><?php
                             printf(
@@ -120,7 +125,7 @@ $cf_step_progress_tpl = __('Step %1$d of %2$d', 'their-story');
                     </div>
                 </div>
 
-                <div class="their-story-cf-step" data-cf-screen="particular" hidden>
+                <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="particular">
                     <div class="their-story-cf-block">
                         <label for="cf-particular" class="their-story-label"><?php
                             printf(
@@ -131,7 +136,6 @@ $cf_step_progress_tpl = __('Step %1$d of %2$d', 'their-story');
                         <p class="their-story-help-text"><?php
                         echo wp_kses(
                             sprintf(
-                                /* translators: %s: FAQ URL */
                                 __('We are after stories of actual events you shared with your loved one, not only a tribute. Need more info? <a href="%s">See our FAQs</a>.', 'their-story'),
                                 esc_url($faq_url)
                             ),
@@ -148,7 +152,7 @@ $cf_step_progress_tpl = __('Step %1$d of %2$d', 'their-story');
                     </div>
                 </div>
 
-                <div class="their-story-cf-step" data-cf-screen="funny" hidden>
+                <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="funny">
                     <div class="their-story-cf-block">
                         <p class="their-story-cf-question"><?php
                             printf(
@@ -156,46 +160,58 @@ $cf_step_progress_tpl = __('Step %1$d of %2$d', 'their-story');
                                 esc_html($contribution_subject)
                             );
                             ?></p>
-                        <div class="their-story-cf-choice-row">
+                        <div class="their-story-cf-choice-row their-story-cf-choice-row--with-inline-back">
                             <button type="button" class="their-story-btn their-story-btn-outline their-story-cf-funny-yes" data-cf-funny="yes"><?php echo esc_html__('Yes', 'their-story'); ?></button>
                             <button type="button" class="their-story-btn their-story-btn-outline their-story-cf-funny-no" data-cf-funny="no"><?php echo esc_html__('No', 'their-story'); ?></button>
-                        </div>
-                        <div id="their-story-cf-funny-text-wrap" class="their-story-cf-block" hidden>
-                            <label for="cf-funny-text" class="their-story-label"><?php echo esc_html__('Tell us the funny story', 'their-story'); ?></label>
-                            <textarea id="cf-funny-text" name="cf_funny_text" class="their-story-textarea" rows="4" maxlength="8000"></textarea>
+                            <button type="button" class="their-story-btn their-story-btn-outline their-story-cf-inline-back"><?php echo esc_html__('Back', 'their-story'); ?></button>
                         </div>
                     </div>
                 </div>
 
-                <div class="their-story-cf-step" data-cf-screen="extra1" hidden>
+                <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="funny_text">
+                    <div class="their-story-cf-block">
+                        <label for="cf-funny-text" class="their-story-label"><?php echo esc_html__('Tell us the funny story', 'their-story'); ?></label>
+                        <textarea id="cf-funny-text" name="cf_funny_text" class="their-story-textarea" rows="4" maxlength="8000"></textarea>
+                    </div>
+                </div>
+
+                <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="extra1">
                     <div class="their-story-cf-block">
                         <p class="their-story-cf-question"><?php echo esc_html__('Any other stories you would like to share?', 'their-story'); ?></p>
-                        <div class="their-story-cf-choice-row">
+                        <div class="their-story-cf-choice-row their-story-cf-choice-row--with-inline-back">
                             <button type="button" class="their-story-btn their-story-btn-outline" data-cf-extra1="yes"><?php echo esc_html__('Yes', 'their-story'); ?></button>
                             <button type="button" class="their-story-btn their-story-btn-outline" data-cf-extra1="no"><?php echo esc_html__('No', 'their-story'); ?></button>
-                        </div>
-                        <div id="their-story-cf-extra1-text-wrap" class="their-story-cf-block" hidden>
-                            <label for="cf-extra1" class="their-story-label"><?php echo esc_html__('Your other story', 'their-story'); ?></label>
-                            <textarea id="cf-extra1" name="cf_extra1" class="their-story-textarea" rows="4" maxlength="8000"></textarea>
+                            <button type="button" class="their-story-btn their-story-btn-outline their-story-cf-inline-back"><?php echo esc_html__('Back', 'their-story'); ?></button>
                         </div>
                     </div>
                 </div>
 
-                <div class="their-story-cf-step" data-cf-screen="extra2" hidden>
+                <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="extra1_text">
+                    <div class="their-story-cf-block">
+                        <label for="cf-extra1" class="their-story-label"><?php echo esc_html__('Your other story', 'their-story'); ?></label>
+                        <textarea id="cf-extra1" name="cf_extra1" class="their-story-textarea" rows="4" maxlength="8000"></textarea>
+                    </div>
+                </div>
+
+                <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="extra2">
                     <div class="their-story-cf-block">
                         <p class="their-story-cf-question"><?php echo esc_html__('Any other stories you would like to share?', 'their-story'); ?></p>
-                        <div class="their-story-cf-choice-row">
+                        <div class="their-story-cf-choice-row their-story-cf-choice-row--with-inline-back">
                             <button type="button" class="their-story-btn their-story-btn-outline" data-cf-extra2="yes"><?php echo esc_html__('Yes', 'their-story'); ?></button>
                             <button type="button" class="their-story-btn their-story-btn-outline" data-cf-extra2="no"><?php echo esc_html__('No', 'their-story'); ?></button>
-                        </div>
-                        <div id="their-story-cf-extra2-text-wrap" class="their-story-cf-block" hidden>
-                            <label for="cf-extra2" class="their-story-label"><?php echo esc_html__('Your other story', 'their-story'); ?></label>
-                            <textarea id="cf-extra2" name="cf_extra2" class="their-story-textarea" rows="4" maxlength="8000"></textarea>
+                            <button type="button" class="their-story-btn their-story-btn-outline their-story-cf-inline-back"><?php echo esc_html__('Back', 'their-story'); ?></button>
                         </div>
                     </div>
                 </div>
 
-                <div class="their-story-cf-step" data-cf-screen="thoughts" hidden>
+                <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="extra2_text">
+                    <div class="their-story-cf-block">
+                        <label for="cf-extra2" class="their-story-label"><?php echo esc_html__('Your other story', 'their-story'); ?></label>
+                        <textarea id="cf-extra2" name="cf_extra2" class="their-story-textarea" rows="4" maxlength="8000"></textarea>
+                    </div>
+                </div>
+
+                <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="thoughts">
                     <div class="their-story-cf-block">
                         <p class="their-story-cf-question"><?php
                             printf(
@@ -204,18 +220,22 @@ $cf_step_progress_tpl = __('Step %1$d of %2$d', 'their-story');
                             );
                             ?></p>
                         <p class="their-story-help-text"><?php echo esc_html__('This one can be a tribute — your thoughts, feelings, or what you think of them.', 'their-story'); ?></p>
-                        <div class="their-story-cf-choice-row">
+                        <div class="their-story-cf-choice-row their-story-cf-choice-row--with-inline-back">
                             <button type="button" class="their-story-btn their-story-btn-outline" data-cf-thoughts="yes"><?php echo esc_html__('Yes', 'their-story'); ?></button>
                             <button type="button" class="their-story-btn their-story-btn-outline" data-cf-thoughts="no"><?php echo esc_html__('No', 'their-story'); ?></button>
-                        </div>
-                        <div id="their-story-cf-thoughts-text-wrap" class="their-story-cf-block" hidden>
-                            <label for="cf-thoughts" class="their-story-label"><?php echo esc_html__('Your thoughts', 'their-story'); ?></label>
-                            <textarea id="cf-thoughts" name="cf_thoughts" class="their-story-textarea" rows="4" maxlength="8000"></textarea>
+                            <button type="button" class="their-story-btn their-story-btn-outline their-story-cf-inline-back"><?php echo esc_html__('Back', 'their-story'); ?></button>
                         </div>
                     </div>
                 </div>
 
-                <div class="their-story-cf-step" data-cf-screen="images" hidden>
+                <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="thoughts_text">
+                    <div class="their-story-cf-block">
+                        <label for="cf-thoughts" class="their-story-label"><?php echo esc_html__('Your thoughts', 'their-story'); ?></label>
+                        <textarea id="cf-thoughts" name="cf_thoughts" class="their-story-textarea" rows="4" maxlength="8000"></textarea>
+                    </div>
+                </div>
+
+                <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="images">
                     <div class="their-story-cf-block">
                         <label for="cf-submission-images" class="their-story-label"><?php echo esc_html__('Images (optional, up to 5)', 'their-story'); ?></label>
                         <input type="file" id="cf-submission-images" name="images[]" accept="image/*" multiple class="their-story-file-input" />
@@ -229,7 +249,6 @@ $cf_step_progress_tpl = __('Step %1$d of %2$d', 'their-story');
             <div id="their-story-cf-wizard-nav" class="their-story-cf-wizard-nav">
                 <button type="button" class="their-story-btn their-story-btn-outline" id="their-story-cf-wizard-back"><?php echo esc_html__('Back', 'their-story'); ?></button>
                 <button type="button" class="their-story-btn their-story-btn-primary" id="their-story-cf-wizard-next"><?php echo esc_html__('Next', 'their-story'); ?></button>
-                <button type="button" class="their-story-btn their-story-btn-primary" id="their-story-cf-open-confirm" hidden><?php echo esc_html__('Submit stories', 'their-story'); ?></button>
             </div>
         </div>
 
@@ -262,6 +281,7 @@ echo wp_json_encode(
         'subjectName' => $contribution_subject,
         'i18n' => array(
             'next' => __('Next', 'their-story'),
+            'submit' => __('Submit', 'their-story'),
             'stepProgress' => $cf_step_progress_tpl,
         ),
     )
