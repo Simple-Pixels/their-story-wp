@@ -38,16 +38,16 @@ class Their_Story {
         add_filter('the_content', array($this, 'add_story_page_content'), 20);
         add_filter('post_password_required', array($this, 'bypass_password_for_owner'), 10, 2);
         
+        add_action('template_redirect', array($this, 'handle_begin_checkout'));
+        add_action('wp_ajax_their_story_get_products', array($this, 'ajax_get_products'));
+        add_action('wp_ajax_their_story_prepare_checkout', array($this, 'ajax_prepare_checkout'));
+
         if (class_exists('WooCommerce')) {
             add_filter('woocommerce_prevent_admin_access', array($this, 'allow_storyteller_admin_access'));
-            add_filter('woocommerce_add_to_cart_redirect', array($this, 'preserve_story_id_in_cart_redirect'));
-            add_action('woocommerce_add_to_cart', array($this, 'store_story_id_in_cart_item'), 10, 6);
-            add_action('woocommerce_before_single_product', array($this, 'preserve_story_id_on_product_page'));
-            add_action('woocommerce_before_add_to_cart_button', array($this, 'display_story_info_on_product_page'));
             add_filter('woocommerce_cart_item_name', array($this, 'add_story_name_to_cart_item'), 10, 3);
-            add_action('woocommerce_before_single_product_summary', array($this, 'auto_select_variation_by_message_count'), 5);
             add_action('woocommerce_checkout_create_order_line_item', array($this, 'save_story_id_to_order_item'), 10, 4);
-            add_action('woocommerce_new_order', array($this, 'add_story_details_to_order_note'), 10, 1);
+            add_action('woocommerce_payment_complete', array($this, 'create_story_on_payment'), 10, 1);
+            add_action('woocommerce_order_status_processing', array($this, 'create_story_on_payment'), 10, 1);
             add_action('woocommerce_email_order_details', array($this, 'add_story_details_to_email'), 20, 4);
         }
     }
@@ -722,7 +722,9 @@ class Their_Story {
             'deleteNonce' => wp_create_nonce('their_story_delete_story'),
             'passwordNonce' => wp_create_nonce('their_story_update_password'),
             'moderateNonce' => wp_create_nonce('their_story_moderate_submission'),
-            'reopenNonce' => wp_create_nonce('their_story_reopen_story')
+            'reopenNonce' => wp_create_nonce('their_story_reopen_story'),
+            'getProductsNonce' => wp_create_nonce('their_story_get_products'),
+            'prepareCheckoutNonce' => wp_create_nonce('their_story_prepare_checkout'),
         ));
     }
     
@@ -1322,8 +1324,22 @@ class Their_Story {
         }
         
         update_post_meta($story_id, '_story_closed', '1');
-        
-        wp_send_json_success(array('message' => __('Story closed successfully.', 'their-story')));
+
+        // Notify the Their Story team
+        $story_title    = get_the_title($story_id);
+        $storyteller_name  = $current_user->display_name;
+        $storyteller_email = $current_user->user_email;
+        $admin_subject  = sprintf('Story closed: %s', $story_title);
+        $admin_message  = sprintf(
+            "A story has been closed by its storyteller and is ready for production.\n\nStory: %s\nStoryteller: %s (%s)\n\nDashboard: %s",
+            $story_title,
+            $storyteller_name,
+            $storyteller_email,
+            admin_url('admin.php?page=their-story-admin')
+        );
+        wp_mail('info@theirstory.com.au', $admin_subject, $admin_message);
+
+        wp_send_json_success(array('message' => __('Story closed. The Their Story team has been notified.', 'their-story')));
     }
     
     public function ajax_reopen_story() {
@@ -1548,12 +1564,14 @@ class Their_Story {
     }
     
     public function add_story_name_to_cart_item($name, $cart_item, $cart_item_key) {
-        if (isset($cart_item['their_story_id']) && $cart_item['their_story_id']) {
+        if (!empty($cart_item['their_story_pending']['title'])) {
+            $story_title = $cart_item['their_story_pending']['title'];
+            $name .= '<br><small style="color: #666; font-size: 0.875rem;">' . esc_html__('Story:', 'their-story') . ' <strong>' . esc_html($story_title) . '</strong></small>';
+        } elseif (isset($cart_item['their_story_id']) && $cart_item['their_story_id']) {
             $story_id = $cart_item['their_story_id'];
             $story = get_post($story_id);
             if ($story) {
-                $story_title = get_the_title($story_id);
-                $story_title = str_replace('Protected: ', '', $story_title);
+                $story_title = str_replace('Protected: ', '', get_the_title($story_id));
                 $name .= '<br><small style="color: #666; font-size: 0.875rem;">' . esc_html__('Story:', 'their-story') . ' <strong>' . esc_html($story_title) . '</strong></small>';
             }
         }
@@ -1677,6 +1695,9 @@ class Their_Story {
     }
     
     public function save_story_id_to_order_item($item, $cart_item_key, $values, $order) {
+        if (!empty($values['their_story_pending']) && is_array($values['their_story_pending'])) {
+            $item->add_meta_data('_their_story_pending', wp_json_encode($values['their_story_pending']), true);
+        }
         if (isset($values['their_story_id']) && $values['their_story_id']) {
             $item->add_meta_data('_their_story_id', $values['their_story_id'], true);
         }
@@ -2005,6 +2026,277 @@ class Their_Story {
         
         fclose($output);
         exit;
+    }
+
+    // -------------------------------------------------------------------------
+    // Purchase-first workflow
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns available WC variable products + their variations for the creation wizard.
+     */
+    public function ajax_get_products() {
+        check_ajax_referer('their_story_get_products', 'nonce');
+
+        $user = wp_get_current_user();
+        if (!in_array('storyteller', (array) $user->roles, true) && !current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => __('No permission.', 'their-story')));
+        }
+
+        if (!class_exists('WooCommerce')) {
+            wp_send_json_error(array('message' => __('WooCommerce is not active.', 'their-story')));
+        }
+
+        $wc_products = wc_get_products(array(
+            'type'   => 'variable',
+            'status' => 'publish',
+            'limit'  => -1,
+        ));
+
+        $result = array();
+        foreach ($wc_products as $product) {
+            if (!$product->is_type('variable')) {
+                continue;
+            }
+            $variations = array();
+            foreach ($product->get_available_variations() as $v) {
+                $var = wc_get_product($v['variation_id']);
+                if (!$var) {
+                    continue;
+                }
+                $attr_labels = array();
+                foreach ($v['attributes'] as $attr_key => $attr_value) {
+                    if ($attr_value === '') {
+                        continue;
+                    }
+                    $taxonomy = str_replace('attribute_', '', $attr_key);
+                    $term     = get_term_by('slug', $attr_value, $taxonomy);
+                    $attr_labels[] = $term ? $term->name : ucwords(str_replace(array('-', '_'), ' ', $attr_value));
+                }
+                $variations[] = array(
+                    'id'          => $v['variation_id'],
+                    'price'       => $var->get_price(),
+                    'price_html'  => $var->get_price_html(),
+                    'label'       => implode(' / ', $attr_labels) ?: $var->get_name(),
+                    'description' => $var->get_description(),
+                    'attributes'  => $v['attributes'],
+                );
+            }
+            if (empty($variations)) {
+                continue;
+            }
+            $result[] = array(
+                'id'          => $product->get_id(),
+                'name'        => $product->get_name(),
+                'description' => wp_strip_all_tags($product->get_short_description()),
+                'image'       => wp_get_attachment_image_url($product->get_image_id(), 'medium') ?: '',
+                'variations'  => $variations,
+            );
+        }
+
+        wp_send_json_success($result);
+    }
+
+    /**
+     * Stores pending story details in user meta and returns the begin-checkout URL.
+     */
+    public function ajax_prepare_checkout() {
+        check_ajax_referer('their_story_prepare_checkout', 'nonce');
+
+        $user = wp_get_current_user();
+        if (!in_array('storyteller', (array) $user->roles, true)) {
+            wp_send_json_error(array('message' => __('No permission.', 'their-story')));
+        }
+
+        $title          = sanitize_text_field(wp_unslash($_POST['story_title'] ?? ''));
+        $password       = sanitize_text_field(wp_unslash($_POST['story_password'] ?? ''));
+        $subject_name   = sanitize_text_field(wp_unslash($_POST['contribution_subject_name'] ?? ''));
+        $relation_label = sanitize_text_field(wp_unslash($_POST['contribution_relation_label'] ?? ''));
+        $product_id     = intval($_POST['product_id'] ?? 0);
+        $variation_id   = intval($_POST['variation_id'] ?? 0);
+
+        if (empty($title)) {
+            wp_send_json_error(array('message' => __('Story title is required.', 'their-story')));
+        }
+        if (!$product_id || !$variation_id) {
+            wp_send_json_error(array('message' => __('Please select a product and size.', 'their-story')));
+        }
+        if (!class_exists('WooCommerce') || !wc_get_product($variation_id)) {
+            wp_send_json_error(array('message' => __('Invalid product selection.', 'their-story')));
+        }
+
+        update_user_meta($user->ID, '_their_story_pending_creation', array(
+            'title'          => $title,
+            'password'       => $password,
+            'subject_name'   => $subject_name,
+            'relation_label' => $relation_label,
+            'product_id'     => $product_id,
+            'variation_id'   => $variation_id,
+            'storyteller_id' => $user->ID,
+            'created_at'     => time(),
+        ));
+
+        wp_send_json_success(array(
+            'redirect_url' => add_query_arg('their_story_begin_checkout', '1', home_url('/')),
+        ));
+    }
+
+    /**
+     * Handles the begin-checkout redirect: adds product to WC cart then redirects to checkout.
+     */
+    public function handle_begin_checkout() {
+        if (!isset($_GET['their_story_begin_checkout'])) {
+            return;
+        }
+
+        $user = wp_get_current_user();
+        if (!$user->ID || !in_array('storyteller', (array) $user->roles, true)) {
+            wp_safe_redirect(wp_login_url(home_url('/?their_story_begin_checkout=1')));
+            exit;
+        }
+
+        $pending = get_user_meta($user->ID, '_their_story_pending_creation', true);
+        if (empty($pending) || !is_array($pending) || empty($pending['title'])) {
+            wp_safe_redirect(admin_url('admin.php?page=their-story-dashboard'));
+            exit;
+        }
+
+        // Expire after 1 hour to prevent stale replays
+        if (!empty($pending['created_at']) && (time() - intval($pending['created_at'])) > 3600) {
+            delete_user_meta($user->ID, '_their_story_pending_creation');
+            wp_safe_redirect(admin_url('admin.php?page=their-story-dashboard&their_story_error=expired'));
+            exit;
+        }
+
+        delete_user_meta($user->ID, '_their_story_pending_creation');
+
+        if (!class_exists('WooCommerce')) {
+            wp_safe_redirect(admin_url('admin.php?page=their-story-dashboard'));
+            exit;
+        }
+
+        WC()->cart->empty_cart();
+
+        $variation    = wc_get_product($pending['variation_id']);
+        $var_attrs    = array();
+        if ($variation) {
+            foreach ($variation->get_variation_attributes() as $key => $value) {
+                $var_attrs[$key] = $value;
+            }
+        }
+
+        $cart_key = WC()->cart->add_to_cart(
+            $pending['product_id'],
+            1,
+            $pending['variation_id'],
+            $var_attrs,
+            array(
+                'their_story_pending' => array(
+                    'title'          => $pending['title'],
+                    'password'       => $pending['password'],
+                    'subject_name'   => $pending['subject_name'],
+                    'relation_label' => $pending['relation_label'],
+                    'storyteller_id' => $pending['storyteller_id'],
+                ),
+            )
+        );
+
+        if (!$cart_key) {
+            wp_safe_redirect(admin_url('admin.php?page=their-story-dashboard&their_story_error=cart'));
+            exit;
+        }
+
+        wp_safe_redirect(wc_get_checkout_url());
+        exit;
+    }
+
+    /**
+     * Creates the story page once payment is confirmed.
+     * Hooked to woocommerce_payment_complete and woocommerce_order_status_processing.
+     */
+    public function create_story_on_payment($order_id) {
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            return;
+        }
+
+        // Prevent double creation
+        if ($order->get_meta('_their_story_created')) {
+            return;
+        }
+
+        foreach ($order->get_items() as $item) {
+            $pending_json = $item->get_meta('_their_story_pending');
+            if (!$pending_json) {
+                continue;
+            }
+
+            $pending = json_decode($pending_json, true);
+            if (!is_array($pending) || empty($pending['title'])) {
+                continue;
+            }
+
+            $storyteller_id = intval($pending['storyteller_id']);
+            $storyteller    = get_userdata($storyteller_id);
+            if (!$storyteller) {
+                continue;
+            }
+
+            $page_data = array(
+                'post_title'  => $pending['title'],
+                'post_status' => 'publish',
+                'post_type'   => 'page',
+                'post_author' => $storyteller_id,
+            );
+            if (!empty($pending['password'])) {
+                $page_data['post_password'] = $pending['password'];
+            }
+
+            $page_id = wp_insert_post($page_data);
+            if (is_wp_error($page_id)) {
+                continue;
+            }
+
+            update_post_meta($page_id, '_storyteller_id', $storyteller_id);
+            $unique_link = $this->generate_unique_link($page_id);
+            update_post_meta($page_id, '_story_unique_link', $unique_link);
+
+            if (!empty($pending['subject_name'])) {
+                update_post_meta($page_id, '_their_story_contribution_subject_name', $pending['subject_name']);
+            }
+            if (!empty($pending['relation_label'])) {
+                update_post_meta($page_id, '_their_story_contribution_relation_label', $pending['relation_label']);
+            }
+
+            // Link story back to the order item and order
+            $item->add_meta_data('_their_story_id', $page_id, true);
+            $item->save();
+
+            $order->update_meta_data('_their_story_created', '1');
+            $order->update_meta_data('_their_story_id', $page_id);
+            $order->save();
+
+            // Confirmation email to storyteller
+            $story_url     = $this->get_story_url_from_link($unique_link);
+            $dashboard_url = admin_url('admin.php?page=their-story-dashboard');
+
+            $subject = sprintf(
+                /* translators: %s: story title */
+                __('Your story "%s" is ready!', 'their-story'),
+                $pending['title']
+            );
+            $message = sprintf(
+                __("Hi %s,\n\nYour story \"%s\" has been created and is ready to share!\n\nShare this link with friends and family so they can contribute:\n%s\n\nManage your story from your dashboard:\n%s\n\nThank you,\nThe Their Story Team", 'their-story'),
+                $storyteller->display_name,
+                $pending['title'],
+                $story_url,
+                $dashboard_url
+            );
+            wp_mail($storyteller->user_email, $subject, $message);
+
+            // Only create one story per order
+            break;
+        }
     }
 }
 
