@@ -1,451 +1,563 @@
 (function() {
     'use strict';
-    
+
     document.addEventListener('DOMContentLoaded', function() {
-        const createStoryBtn = document.getElementById('create-story-btn');
-        const createStoryForm = document.getElementById('create-story-form');
-        const cancelStoryBtn = document.getElementById('cancel-story-btn');
-        const storyCreationForm = document.getElementById('story-creation-form');
-        
-        if (createStoryBtn && createStoryForm) {
-            createStoryBtn.addEventListener('click', function() {
-                const isHidden = createStoryForm.style.display === 'none' || !createStoryForm.style.display;
-                createStoryForm.style.display = isHidden ? 'block' : 'none';
-                createStoryBtn.classList.toggle('active');
+
+        // -----------------------------------------------------------------------
+        // Create Story Wizard
+        // -----------------------------------------------------------------------
+
+        const modal       = document.getElementById('ts-wizard-modal');
+        const backdrop    = modal ? modal.querySelector('.ts-wizard-backdrop') : null;
+        const closeBtn    = modal ? modal.querySelector('.ts-wizard-close') : null;
+        const openBtn     = document.getElementById('create-story-btn');
+
+        // Step panels
+        const step1 = document.getElementById('ts-step-1');
+        const step2 = document.getElementById('ts-step-2');
+        const step3 = document.getElementById('ts-step-3');
+
+        // Step indicators
+        const stepDots = modal ? modal.querySelectorAll('.ts-step') : [];
+
+        // Controls
+        const termsCheckbox = document.getElementById('ts-terms-accept');
+        const next1Btn      = document.getElementById('ts-next-1');
+        const back2Btn      = document.getElementById('ts-back-2');
+        const next2Btn      = document.getElementById('ts-next-2');
+        const back3Btn      = document.getElementById('ts-back-3');
+        const purchaseBtn   = document.getElementById('ts-purchase-btn');
+        const productsWrap  = document.getElementById('ts-products-container');
+
+        let currentStep      = 1;
+        let productsLoaded   = false;
+        let selectedProduct  = null;
+        let selectedVariation = null;
+
+        function setStep(n) {
+            currentStep = n;
+            [step1, step2, step3].forEach(function(el, i) {
+                if (!el) return;
+                if (i + 1 === n) {
+                    el.removeAttribute('hidden');
+                } else {
+                    el.setAttribute('hidden', '');
+                }
+            });
+            stepDots.forEach(function(dot) {
+                const dotStep = parseInt(dot.getAttribute('data-step'), 10);
+                dot.classList.toggle('ts-step--active', dotStep === n);
+                dot.classList.toggle('ts-step--done', dotStep < n);
             });
         }
-        
-        if (cancelStoryBtn && createStoryForm && storyCreationForm) {
-            cancelStoryBtn.addEventListener('click', function() {
-                createStoryForm.style.display = 'none';
-                createStoryBtn.classList.remove('active');
-                storyCreationForm.reset();
+
+        function openModal() {
+            if (!modal) return;
+            setStep(1);
+            modal.removeAttribute('hidden');
+            document.body.classList.add('ts-wizard-open');
+            if (closeBtn) closeBtn.focus();
+        }
+
+        function closeModal() {
+            if (!modal) return;
+            modal.setAttribute('hidden', '');
+            document.body.classList.remove('ts-wizard-open');
+            if (openBtn) openBtn.focus();
+        }
+
+        if (openBtn) {
+            openBtn.addEventListener('click', openModal);
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeModal);
+        }
+
+        if (backdrop) {
+            backdrop.addEventListener('click', closeModal);
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal && !modal.hasAttribute('hidden')) {
+                closeModal();
+            }
+        });
+
+        // Step 1: enable Next when checkbox is checked
+        if (termsCheckbox && next1Btn) {
+            termsCheckbox.addEventListener('change', function() {
+                next1Btn.disabled = !this.checked;
+            });
+            next1Btn.addEventListener('click', function() {
+                setStep(2);
+                const titleInput = document.getElementById('ts-story-title');
+                if (titleInput) titleInput.focus();
             });
         }
-        
-        if (storyCreationForm) {
-            storyCreationForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const titleInput = document.getElementById('story-title');
-                const passwordInput = document.getElementById('story-password');
-                const contributionSubjectInput = document.getElementById('contribution-subject-name');
-                const contributionRelationInput = document.getElementById('contribution-relation-label');
-                const submitBtn = storyCreationForm.querySelector('button[type="submit"]');
-                
-                const title = titleInput ? titleInput.value.trim() : '';
-                const password = passwordInput ? passwordInput.value : '';
-                const contributionSubject = contributionSubjectInput ? contributionSubjectInput.value.trim() : '';
-                const contributionRelation = contributionRelationInput ? contributionRelationInput.value.trim() : '';
-                
-                if (!title) {
+
+        // Step 2: Back / Next
+        if (back2Btn) {
+            back2Btn.addEventListener('click', function() {
+                setStep(1);
+            });
+        }
+
+        if (next2Btn) {
+            next2Btn.addEventListener('click', function() {
+                const title = (document.getElementById('ts-story-title') || {}).value || '';
+                if (!title.trim()) {
+                    const input = document.getElementById('ts-story-title');
+                    if (input) { input.focus(); input.reportValidity && input.reportValidity(); }
                     alert('Please enter a story title.');
                     return;
                 }
-                
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = 'Creating...';
+                setStep(3);
+                if (!productsLoaded) {
+                    loadProducts();
                 }
-                
-                const formData = new FormData();
-                formData.append('action', 'their_story_create_story');
-                formData.append('title', title);
-                formData.append('password', password);
-                formData.append('contribution_subject_name', contributionSubject);
-                formData.append('contribution_relation_label', contributionRelation);
-                formData.append('nonce', theirStoryAdmin.nonce);
-                
-                fetch(theirStoryAdmin.ajaxUrl, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(function(response) {
-                    return response.json();
-                })
+            });
+        }
+
+        // Step 3: Back
+        if (back3Btn) {
+            back3Btn.addEventListener('click', function() {
+                setStep(2);
+            });
+        }
+
+        // -----------------------------------------------------------------------
+        // Load products for step 3
+        // -----------------------------------------------------------------------
+
+        function loadProducts() {
+            if (!productsWrap) return;
+
+            var fd = new FormData();
+            fd.append('action', 'their_story_get_products');
+            fd.append('nonce', theirStoryAdmin.getProductsNonce);
+
+            fetch(theirStoryAdmin.ajaxUrl, { method: 'POST', body: fd })
+                .then(function(r) { return r.json(); })
                 .then(function(data) {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert(data.data.message || 'Error creating story. Please try again.');
-                        if (submitBtn) {
-                            submitBtn.disabled = false;
-                            submitBtn.textContent = 'Create Story';
-                        }
+                    productsLoaded = true;
+                    if (!data.success || !data.data || !data.data.length) {
+                        productsWrap.innerHTML = '<p class="ts-products-error">No products available. Please contact the administrator.</p>';
+                        return;
                     }
+                    renderProducts(data.data);
                 })
                 .catch(function() {
-                    alert('An error occurred. Please try again.');
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'Create Story';
+                    productsWrap.innerHTML = '<p class="ts-products-error">Failed to load products. Please refresh and try again.</p>';
+                });
+        }
+
+        function renderProducts(products) {
+            if (!productsWrap) return;
+
+            var html = '<div class="ts-product-grid">';
+
+            products.forEach(function(product) {
+                html += '<div class="ts-product-card" data-product-id="' + product.id + '">';
+
+                if (product.image) {
+                    html += '<img class="ts-product-img" src="' + escAttr(product.image) + '" alt="' + escAttr(product.name) + '" />';
+                }
+
+                html += '<h3 class="ts-product-name">' + escHtml(product.name) + '</h3>';
+
+                if (product.description) {
+                    html += '<p class="ts-product-desc">' + escHtml(product.description) + '</p>';
+                }
+
+                html += '<div class="ts-variation-list">';
+                product.variations.forEach(function(v) {
+                    var inputId = 'ts-var-' + product.id + '-' + v.id;
+                    html += '<label class="ts-variation-option" for="' + inputId + '">';
+                    html += '<input type="radio" id="' + inputId + '" name="ts-variation-' + product.id + '" '
+                          + 'value="' + v.id + '" data-product-id="' + product.id + '" class="ts-variation-radio" />';
+                    html += '<span class="ts-variation-label">' + escHtml(v.label) + '</span>';
+                    html += '<span class="ts-variation-price">' + v.price_html + '</span>';
+                    if (v.description) {
+                        html += '<span class="ts-variation-desc">' + escHtml(v.description) + '</span>';
                     }
+                    html += '</label>';
+                });
+                html += '</div>'; // .ts-variation-list
+
+                html += '</div>'; // .ts-product-card
+            });
+
+            html += '</div>'; // .ts-product-grid
+            productsWrap.innerHTML = html;
+
+            // Wire up variation radio buttons
+            productsWrap.querySelectorAll('.ts-variation-radio').forEach(function(radio) {
+                radio.addEventListener('change', function() {
+                    selectedProduct   = parseInt(this.getAttribute('data-product-id'), 10);
+                    selectedVariation = parseInt(this.value, 10);
+
+                    // Highlight the chosen card
+                    productsWrap.querySelectorAll('.ts-product-card').forEach(function(card) {
+                        card.classList.remove('ts-product-card--selected');
+                    });
+                    var card = productsWrap.querySelector('.ts-product-card[data-product-id="' + selectedProduct + '"]');
+                    if (card) card.classList.add('ts-product-card--selected');
+
+                    if (purchaseBtn) purchaseBtn.disabled = false;
                 });
             });
         }
-        
-        const copyLinkBtns = document.querySelectorAll('.copy-link-btn');
-        copyLinkBtns.forEach(function(btn) {
+
+        // -----------------------------------------------------------------------
+        // Proceed to Checkout
+        // -----------------------------------------------------------------------
+
+        if (purchaseBtn) {
+            purchaseBtn.addEventListener('click', function() {
+                if (!selectedProduct || !selectedVariation) {
+                    alert('Please select a book size to continue.');
+                    return;
+                }
+
+                var title         = (document.getElementById('ts-story-title') || {}).value || '';
+                var password      = (document.getElementById('ts-story-password') || {}).value || '';
+                var subjectName   = (document.getElementById('ts-subject-name') || {}).value || '';
+                var relationLabel = (document.getElementById('ts-relation-label') || {}).value || '';
+
+                purchaseBtn.disabled = true;
+                purchaseBtn.textContent = 'Redirecting to checkout…';
+
+                var fd = new FormData();
+                fd.append('action', 'their_story_prepare_checkout');
+                fd.append('nonce', theirStoryAdmin.prepareCheckoutNonce);
+                fd.append('story_title', title);
+                fd.append('story_password', password);
+                fd.append('contribution_subject_name', subjectName);
+                fd.append('contribution_relation_label', relationLabel);
+                fd.append('product_id', selectedProduct);
+                fd.append('variation_id', selectedVariation);
+
+                fetch(theirStoryAdmin.ajaxUrl, { method: 'POST', body: fd })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success && data.data && data.data.redirect_url) {
+                            window.location.href = data.data.redirect_url;
+                        } else {
+                            var msg = (data.data && data.data.message) ? data.data.message : 'An error occurred. Please try again.';
+                            alert(msg);
+                            purchaseBtn.disabled = false;
+                            purchaseBtn.textContent = 'Proceed to Checkout';
+                        }
+                    })
+                    .catch(function() {
+                        alert('An error occurred. Please try again.');
+                        purchaseBtn.disabled = false;
+                        purchaseBtn.textContent = 'Proceed to Checkout';
+                    });
+            });
+        }
+
+        // -----------------------------------------------------------------------
+        // Copy story link
+        // -----------------------------------------------------------------------
+
+        document.querySelectorAll('.copy-link-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                const link = this.dataset.link;
-                
-                const tempInput = document.createElement('input');
+                var link = this.dataset.link;
+                var tempInput = document.createElement('input');
                 document.body.appendChild(tempInput);
                 tempInput.value = link;
                 tempInput.select();
                 document.execCommand('copy');
                 document.body.removeChild(tempInput);
-                
-                const originalText = this.textContent;
+
+                var self = this;
+                var orig = this.textContent;
                 this.textContent = 'Copied!';
-                
-                const self = this;
-                setTimeout(function() {
-                    self.textContent = originalText;
-                }, 2000);
+                setTimeout(function() { self.textContent = orig; }, 2000);
             });
         });
-        
-        const passwordBtns = document.querySelectorAll('.their-story-password-btn');
-        passwordBtns.forEach(function(btn) {
+
+        // -----------------------------------------------------------------------
+        // Change password
+        // -----------------------------------------------------------------------
+
+        document.querySelectorAll('.their-story-password-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                const storyId = this.dataset.storyId;
-                const storyTitle = this.dataset.storyTitle || 'this story';
-                
-                const newPassword = prompt('Enter new password for "' + storyTitle + '" (leave blank to remove password):');
-                if (newPassword === null) {
-                    return;
-                }
-                
-                const self = this;
-                const originalText = self.textContent;
+                var storyId    = this.dataset.storyId;
+                var storyTitle = this.dataset.storyTitle || 'this story';
+
+                var newPassword = prompt('Enter new password for "' + storyTitle + '" (leave blank to remove password):');
+                if (newPassword === null) return;
+
+                var self = this;
                 self.disabled = true;
-                self.textContent = 'Updating...';
-                
-                const formData = new FormData();
-                formData.append('action', 'their_story_update_password');
-                formData.append('story_id', storyId);
-                formData.append('password', newPassword);
-                formData.append('nonce', theirStoryAdmin.passwordNonce);
-                
-                fetch(theirStoryAdmin.ajaxUrl, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(function(response) {
-                    return response.json();
-                })
-                .then(function(data) {
-                    if (data.success) {
-                        alert(data.data.message || 'Password updated successfully.');
-                        location.reload();
-                    } else {
-                        alert(data.data.message || 'Error updating password. Please try again.');
-                        self.disabled = false;
-                        self.textContent = originalText;
-                    }
-                })
-                .catch(function() {
-                    alert('An error occurred. Please try again.');
-                    self.disabled = false;
-                    self.textContent = originalText;
-                });
-            });
-        });
-        
-        const deleteBtns = document.querySelectorAll('.their-story-delete-btn');
-        deleteBtns.forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                const storyId = this.dataset.storyId;
-                const storyTitle = this.dataset.storyTitle || 'this story';
-                
-                if (!confirm('Are you sure you want to delete "' + storyTitle + '"? This action cannot be undone.')) {
-                    return;
-                }
-                
-                const self = this;
-                const originalText = self.textContent;
-                self.disabled = true;
-                self.textContent = 'Deleting...';
-                
-                const formData = new FormData();
-                formData.append('action', 'their_story_delete_story');
-                formData.append('story_id', storyId);
-                formData.append('nonce', theirStoryAdmin.deleteNonce);
-                
-                fetch(theirStoryAdmin.ajaxUrl, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(function(response) {
-                    return response.json();
-                })
-                .then(function(data) {
-                    if (data.success) {
-                        const row = self.closest('tr');
-                        if (row) {
-                            row.style.opacity = '0.5';
-                            setTimeout(function() {
-                                row.remove();
-                                
-                                const tbody = document.querySelector('.their-story-table tbody');
-                                if (tbody && tbody.children.length === 0) {
-                                    location.reload();
-                                }
-                            }, 300);
-                        } else {
+
+                var fd = new FormData();
+                fd.append('action', 'their_story_update_password');
+                fd.append('story_id', storyId);
+                fd.append('password', newPassword);
+                fd.append('nonce', theirStoryAdmin.passwordNonce);
+
+                fetch(theirStoryAdmin.ajaxUrl, { method: 'POST', body: fd })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success) {
+                            alert(data.data.message || 'Password updated successfully.');
                             location.reload();
+                        } else {
+                            alert(data.data.message || 'Error updating password. Please try again.');
+                            self.disabled = false;
                         }
-                    } else {
-                        alert(data.data.message || 'Error deleting story. Please try again.');
+                    })
+                    .catch(function() {
+                        alert('An error occurred. Please try again.');
                         self.disabled = false;
-                        self.textContent = originalText;
-                    }
-                })
-                .catch(function() {
-                    alert('An error occurred. Please try again.');
-                    self.disabled = false;
-                    self.textContent = originalText;
-                });
+                    });
             });
         });
-        
-        const approveSubmissionBtns = document.querySelectorAll('.their-story-approve-submission-btn');
-        approveSubmissionBtns.forEach(function(btn) {
+
+        // -----------------------------------------------------------------------
+        // Delete story
+        // -----------------------------------------------------------------------
+
+        document.querySelectorAll('.their-story-delete-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                const submissionId = this.dataset.submissionId;
-                
-                if (!submissionId) {
-                    return;
-                }
-                
-                const self = this;
-                const originalText = self.textContent;
+                var storyId    = this.dataset.storyId;
+                var storyTitle = this.dataset.storyTitle || 'this story';
+
+                if (!confirm('Are you sure you want to delete "' + storyTitle + '"? This action cannot be undone.')) return;
+
+                var self = this;
+                self.disabled = true;
+
+                var fd = new FormData();
+                fd.append('action', 'their_story_delete_story');
+                fd.append('story_id', storyId);
+                fd.append('nonce', theirStoryAdmin.deleteNonce);
+
+                fetch(theirStoryAdmin.ajaxUrl, { method: 'POST', body: fd })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success) {
+                            var row = self.closest('tr');
+                            if (row) {
+                                row.style.opacity = '0.5';
+                                setTimeout(function() {
+                                    row.remove();
+                                    var tbody = document.querySelector('.their-story-table tbody');
+                                    if (tbody && tbody.children.length === 0) location.reload();
+                                }, 300);
+                            } else {
+                                location.reload();
+                            }
+                        } else {
+                            alert(data.data.message || 'Error deleting story. Please try again.');
+                            self.disabled = false;
+                        }
+                    })
+                    .catch(function() {
+                        alert('An error occurred. Please try again.');
+                        self.disabled = false;
+                    });
+            });
+        });
+
+        // -----------------------------------------------------------------------
+        // Approve submission
+        // -----------------------------------------------------------------------
+
+        document.querySelectorAll('.their-story-approve-submission-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var submissionId = this.dataset.submissionId;
+                if (!submissionId) return;
+
+                var self = this;
+                var orig = self.textContent;
                 self.disabled = true;
                 self.textContent = 'Approving...';
-                
-                const formData = new FormData();
-                formData.append('action', 'their_story_moderate_submission');
-                formData.append('submission_id', submissionId);
-                formData.append('moderate_action', 'approve');
-                formData.append('nonce', theirStoryAdmin.moderateNonce);
-                
-                fetch(theirStoryAdmin.ajaxUrl, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(function(response) {
-                    return response.json();
-                })
-                .then(function(data) {
-                    if (data.success) {
-                        const row = document.querySelector('tr[data-submission-id="' + submissionId + '"]');
-                        if (row) {
-                            const statusBadge = row.querySelector('.story-status');
-                            if (statusBadge) {
-                                statusBadge.className = 'story-status status-publish';
-                                statusBadge.textContent = 'Approved';
-                            }
-                            
-                            const approveBtn = row.querySelector('.their-story-approve-submission-btn');
-                            if (approveBtn) {
-                                const divider = approveBtn.nextElementSibling;
-                                if (divider && divider.classList.contains('their-story-divider')) {
-                                    divider.remove();
+
+                var fd = new FormData();
+                fd.append('action', 'their_story_moderate_submission');
+                fd.append('submission_id', submissionId);
+                fd.append('moderate_action', 'approve');
+                fd.append('nonce', theirStoryAdmin.moderateNonce);
+
+                fetch(theirStoryAdmin.ajaxUrl, { method: 'POST', body: fd })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success) {
+                            var row = document.querySelector('tr[data-submission-id="' + submissionId + '"]');
+                            if (row) {
+                                var badge = row.querySelector('.story-status');
+                                if (badge) { badge.className = 'story-status status-publish'; badge.textContent = 'Approved'; }
+                                var approveBtn = row.querySelector('.their-story-approve-submission-btn');
+                                if (approveBtn) {
+                                    var divider = approveBtn.nextElementSibling;
+                                    if (divider && divider.classList.contains('their-story-divider')) divider.remove();
+                                    approveBtn.remove();
                                 }
-                                approveBtn.remove();
+                                row.className = row.className.replace('submission-status-pending', 'submission-status-publish');
                             }
-                            
-                            row.className = row.className.replace('submission-status-pending', 'submission-status-publish');
+                            var subModal = document.getElementById('their-story-admin-submission-modal');
+                            if (subModal && !subModal.hidden) {
+                                subModal.setAttribute('hidden', '');
+                                subModal.setAttribute('aria-hidden', 'true');
+                                var mb = document.getElementById('their-story-admin-submission-modal-body');
+                                if (mb) mb.innerHTML = '';
+                                document.body.style.overflow = '';
+                            }
+                            alert(data.data.message || 'Submission approved.');
+                        } else {
+                            alert(data.data.message || 'Error approving submission. Please try again.');
+                            self.disabled = false;
+                            self.textContent = orig;
                         }
-                        const subModal = document.getElementById('their-story-admin-submission-modal');
-                        if (subModal && !subModal.hidden) {
-                            subModal.setAttribute('hidden', '');
-                            subModal.setAttribute('aria-hidden', 'true');
-                            const mb = document.getElementById('their-story-admin-submission-modal-body');
-                            if (mb) mb.innerHTML = '';
-                            document.body.style.overflow = '';
-                        }
-                        alert(data.data.message || 'Submission approved.');
-                    } else {
-                        alert(data.data.message || 'Error approving submission. Please try again.');
+                    })
+                    .catch(function() {
+                        alert('An error occurred. Please try again.');
                         self.disabled = false;
-                        self.textContent = originalText;
-                    }
-                })
-                .catch(function() {
-                    alert('An error occurred. Please try again.');
-                    self.disabled = false;
-                    self.textContent = originalText;
-                });
+                        self.textContent = orig;
+                    });
             });
         });
-        
-        const deleteSubmissionBtns = document.querySelectorAll('.their-story-delete-submission-btn');
-        deleteSubmissionBtns.forEach(function(btn) {
+
+        // -----------------------------------------------------------------------
+        // Delete submission
+        // -----------------------------------------------------------------------
+
+        document.querySelectorAll('.their-story-delete-submission-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                const submissionId = this.dataset.submissionId;
-                
-                if (!submissionId) {
-                    return;
-                }
-                
-                if (!confirm('Are you sure you want to delete this submission? This action cannot be undone.')) {
-                    return;
-                }
-                
-                const self = this;
-                const originalText = self.textContent;
+                var submissionId = this.dataset.submissionId;
+                if (!submissionId) return;
+                if (!confirm('Are you sure you want to delete this submission? This action cannot be undone.')) return;
+
+                var self = this;
+                var orig = self.textContent;
                 self.disabled = true;
                 self.textContent = 'Deleting...';
-                
-                const formData = new FormData();
-                formData.append('action', 'their_story_moderate_submission');
-                formData.append('submission_id', submissionId);
-                formData.append('moderate_action', 'delete');
-                formData.append('nonce', theirStoryAdmin.moderateNonce);
-                
-                fetch(theirStoryAdmin.ajaxUrl, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(function(response) {
-                    return response.json();
-                })
-                .then(function(data) {
-                    if (data.success) {
-                        const row = document.querySelector('tr[data-submission-id="' + submissionId + '"]');
-                        const subModal = document.getElementById('their-story-admin-submission-modal');
-                        if (subModal && !subModal.hidden) {
-                            subModal.setAttribute('hidden', '');
-                            subModal.setAttribute('aria-hidden', 'true');
-                            const mb = document.getElementById('their-story-admin-submission-modal-body');
-                            if (mb) mb.innerHTML = '';
-                            document.body.style.overflow = '';
-                        }
-                        if (row) {
-                            row.style.opacity = '0.5';
-                            setTimeout(function() {
-                                row.remove();
-                                
-                                const tbody = document.querySelector('.their-story-table tbody');
-                                if (tbody && tbody.children.length === 0) {
-                                    location.reload();
-                                }
-                            }, 300);
+
+                var fd = new FormData();
+                fd.append('action', 'their_story_moderate_submission');
+                fd.append('submission_id', submissionId);
+                fd.append('moderate_action', 'delete');
+                fd.append('nonce', theirStoryAdmin.moderateNonce);
+
+                fetch(theirStoryAdmin.ajaxUrl, { method: 'POST', body: fd })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success) {
+                            var row = document.querySelector('tr[data-submission-id="' + submissionId + '"]');
+                            var subModal = document.getElementById('their-story-admin-submission-modal');
+                            if (subModal && !subModal.hidden) {
+                                subModal.setAttribute('hidden', '');
+                                subModal.setAttribute('aria-hidden', 'true');
+                                var mb = document.getElementById('their-story-admin-submission-modal-body');
+                                if (mb) mb.innerHTML = '';
+                                document.body.style.overflow = '';
+                            }
+                            if (row) {
+                                row.style.opacity = '0.5';
+                                setTimeout(function() {
+                                    row.remove();
+                                    var tbody = document.querySelector('.their-story-table tbody');
+                                    if (tbody && tbody.children.length === 0) location.reload();
+                                }, 300);
+                            } else {
+                                location.reload();
+                            }
                         } else {
-                            location.reload();
+                            alert(data.data.message || 'Error deleting submission. Please try again.');
+                            self.disabled = false;
+                            self.textContent = orig;
                         }
-                    } else {
-                        alert(data.data.message || 'Error deleting submission. Please try again.');
+                    })
+                    .catch(function() {
+                        alert('An error occurred. Please try again.');
                         self.disabled = false;
-                        self.textContent = originalText;
-                    }
-                })
-                .catch(function() {
-                    alert('An error occurred. Please try again.');
-                    self.disabled = false;
-                    self.textContent = originalText;
-                });
+                        self.textContent = orig;
+                    });
             });
         });
-        
-        const reopenStoryBtns = document.querySelectorAll('.their-story-reopen-btn');
-        reopenStoryBtns.forEach(function(btn) {
+
+        // -----------------------------------------------------------------------
+        // Reopen story
+        // -----------------------------------------------------------------------
+
+        document.querySelectorAll('.their-story-reopen-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                const storyId = this.dataset.storyId;
-                const storyTitle = this.dataset.storyTitle || 'this story';
-                
-                if (!confirm('Are you sure you want to re-open "' + storyTitle + '"? This will allow new messages to be added.')) {
-                    return;
-                }
-                
-                const self = this;
-                const originalText = self.textContent;
+                var storyId    = this.dataset.storyId;
+                var storyTitle = this.dataset.storyTitle || 'this story';
+
+                if (!confirm('Are you sure you want to re-open "' + storyTitle + '"? This will allow new messages to be added.')) return;
+
+                var self = this;
+                var orig = self.textContent;
                 self.disabled = true;
                 self.textContent = 'Re-opening...';
-                
-                const formData = new FormData();
-                formData.append('action', 'their_story_reopen_story');
-                formData.append('story_id', storyId);
-                formData.append('nonce', theirStoryAdmin.reopenNonce);
-                
-                fetch(theirStoryAdmin.ajaxUrl, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(function(response) {
-                    return response.json();
-                })
-                .then(function(data) {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert(data.data.message || 'Error reopening story. Please try again.');
+
+                var fd = new FormData();
+                fd.append('action', 'their_story_reopen_story');
+                fd.append('story_id', storyId);
+                fd.append('nonce', theirStoryAdmin.reopenNonce);
+
+                fetch(theirStoryAdmin.ajaxUrl, { method: 'POST', body: fd })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert(data.data.message || 'Error reopening story. Please try again.');
+                            self.disabled = false;
+                            self.textContent = orig;
+                        }
+                    })
+                    .catch(function() {
+                        alert('An error occurred. Please try again.');
                         self.disabled = false;
-                        self.textContent = originalText;
-                    }
-                })
-                .catch(function() {
-                    alert('An error occurred. Please try again.');
-                    self.disabled = false;
-                    self.textContent = originalText;
-                });
+                        self.textContent = orig;
+                    });
             });
         });
-        
-        let lightbox = null;
-        
+
+        // -----------------------------------------------------------------------
+        // Lightbox
+        // -----------------------------------------------------------------------
+
+        var lightbox = null;
+
         function createLightbox() {
             if (lightbox) return lightbox;
-            
             lightbox = document.createElement('div');
             lightbox.className = 'their-story-lightbox';
-            lightbox.innerHTML = `
-                <div class="their-story-lightbox-overlay"></div>
-                <button class="their-story-lightbox-close" aria-label="Close lightbox">&times;</button>
-                <div class="their-story-lightbox-content">
-                    <img class="their-story-lightbox-image" src="" alt="" />
-                </div>
-            `;
+            lightbox.innerHTML =
+                '<div class="their-story-lightbox-overlay"></div>' +
+                '<button class="their-story-lightbox-close" aria-label="Close lightbox">&times;</button>' +
+                '<div class="their-story-lightbox-content"><img class="their-story-lightbox-image" src="" alt="" /></div>';
             document.body.appendChild(lightbox);
-            
             lightbox.querySelector('.their-story-lightbox-overlay').addEventListener('click', closeLightbox);
-            
             lightbox.querySelector('.their-story-lightbox-close').addEventListener('click', closeLightbox);
-            
             document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && lightbox && lightbox.classList.contains('active')) {
-                    closeLightbox();
-                }
+                if (e.key === 'Escape' && lightbox && lightbox.classList.contains('active')) closeLightbox();
             });
-            
             return lightbox;
         }
-        
+
         function openLightbox(imageUrlOrArray) {
-            const lb = createLightbox();
-            const img = lb.querySelector('.their-story-lightbox-image');
-            
-            let imageUrls = [];
-            if (Array.isArray(imageUrlOrArray)) {
-                imageUrls = imageUrlOrArray;
-            } else if (typeof imageUrlOrArray === 'string') {
-                imageUrls = [imageUrlOrArray];
-            }
-            
-            if (imageUrls.length === 0) return;
-            
-            let currentIndex = 0;
+            var lb = createLightbox();
+            var img = lb.querySelector('.their-story-lightbox-image');
+            var imageUrls = Array.isArray(imageUrlOrArray) ? imageUrlOrArray : (typeof imageUrlOrArray === 'string' ? [imageUrlOrArray] : []);
+            if (!imageUrls.length) return;
+            var currentIndex = 0;
             img.src = imageUrls[0];
             img.alt = 'Full size image';
             lb.classList.add('active');
             document.body.style.overflow = 'hidden';
-            
+
             if (imageUrls.length > 1) {
-                let prevBtn = lb.querySelector('.their-story-lightbox-prev');
-                let nextBtn = lb.querySelector('.their-story-lightbox-next');
-                
+                var prevBtn = lb.querySelector('.their-story-lightbox-prev');
+                var nextBtn = lb.querySelector('.their-story-lightbox-next');
                 if (!prevBtn) {
                     prevBtn = document.createElement('button');
                     prevBtn.className = 'their-story-lightbox-prev';
@@ -453,7 +565,6 @@
                     prevBtn.setAttribute('aria-label', 'Previous image');
                     lb.querySelector('.their-story-lightbox-content').appendChild(prevBtn);
                 }
-                
                 if (!nextBtn) {
                     nextBtn = document.createElement('button');
                     nextBtn.className = 'their-story-lightbox-next';
@@ -461,98 +572,69 @@
                     nextBtn.setAttribute('aria-label', 'Next image');
                     lb.querySelector('.their-story-lightbox-content').appendChild(nextBtn);
                 }
-                
                 prevBtn.style.display = 'flex';
                 nextBtn.style.display = 'flex';
-                
                 function showImage(index) {
                     if (index < 0) index = imageUrls.length - 1;
                     if (index >= imageUrls.length) index = 0;
                     currentIndex = index;
                     img.src = imageUrls[currentIndex];
                 }
-                
-                prevBtn.onclick = function() {
-                    showImage(currentIndex - 1);
-                };
-                
-                nextBtn.onclick = function() {
-                    showImage(currentIndex + 1);
-                };
-                
+                prevBtn.onclick = function() { showImage(currentIndex - 1); };
+                nextBtn.onclick = function() { showImage(currentIndex + 1); };
                 document.addEventListener('keydown', function handleKey(e) {
-                    if (!lb.classList.contains('active')) {
-                        document.removeEventListener('keydown', handleKey);
-                        return;
-                    }
-                    if (e.key === 'ArrowLeft') {
-                        showImage(currentIndex - 1);
-                    } else if (e.key === 'ArrowRight') {
-                        showImage(currentIndex + 1);
-                    }
+                    if (!lb.classList.contains('active')) { document.removeEventListener('keydown', handleKey); return; }
+                    if (e.key === 'ArrowLeft') showImage(currentIndex - 1);
+                    else if (e.key === 'ArrowRight') showImage(currentIndex + 1);
                 });
             } else {
-                const prevBtn = lb.querySelector('.their-story-lightbox-prev');
-                const nextBtn = lb.querySelector('.their-story-lightbox-next');
-                if (prevBtn) prevBtn.style.display = 'none';
-                if (nextBtn) nextBtn.style.display = 'none';
+                var p = lb.querySelector('.their-story-lightbox-prev');
+                var n = lb.querySelector('.their-story-lightbox-next');
+                if (p) p.style.display = 'none';
+                if (n) n.style.display = 'none';
             }
         }
-        
+
         function closeLightbox() {
-            if (lightbox) {
-                lightbox.classList.remove('active');
-                document.body.style.overflow = '';
-            }
+            if (lightbox) { lightbox.classList.remove('active'); document.body.style.overflow = ''; }
         }
-        
+
         document.body.addEventListener('click', function(e) {
-            const trigger = e.target.closest('.their-story-lightbox-trigger');
-            if (!trigger) {
-                return;
-            }
+            var trigger = e.target.closest('.their-story-lightbox-trigger');
+            if (!trigger) return;
             e.preventDefault();
-            const fullImagesJson = trigger.dataset.fullImages;
+            var fullImagesJson = trigger.dataset.fullImages;
             if (fullImagesJson) {
-                try {
-                    const imageUrls = JSON.parse(fullImagesJson);
-                    openLightbox(imageUrls);
-                } catch (err) {
-                    console.error('Error parsing image URLs:', err);
-                }
+                try { openLightbox(JSON.parse(fullImagesJson)); } catch (err) { console.error(err); }
             } else {
-                const fullImageUrl = trigger.dataset.fullImage;
-                if (fullImageUrl) {
-                    openLightbox(fullImageUrl);
-                }
+                var url = trigger.dataset.fullImage;
+                if (url) openLightbox(url);
             }
         });
 
-        const submissionModal = document.getElementById('their-story-admin-submission-modal');
+        // -----------------------------------------------------------------------
+        // Submission detail modal
+        // -----------------------------------------------------------------------
+
+        var submissionModal = document.getElementById('their-story-admin-submission-modal');
         if (submissionModal) {
-            const submissionModalBody = document.getElementById('their-story-admin-submission-modal-body');
-            const submissionModalTitle = document.getElementById('their-story-admin-submission-modal-title');
+            var submissionModalBody  = document.getElementById('their-story-admin-submission-modal-body');
+            var submissionModalTitle = document.getElementById('their-story-admin-submission-modal-title');
 
             function closeSubmissionModal() {
                 submissionModal.setAttribute('hidden', '');
                 submissionModal.hidden = true;
                 submissionModal.setAttribute('aria-hidden', 'true');
-                if (submissionModalBody) {
-                    submissionModalBody.innerHTML = '';
-                }
+                if (submissionModalBody) submissionModalBody.innerHTML = '';
                 document.body.style.overflow = '';
             }
 
             function openSubmissionModal(templateId, titleText) {
-                const tpl = templateId ? document.getElementById(templateId) : null;
-                if (!tpl || !submissionModalBody) {
-                    return;
-                }
+                var tpl = templateId ? document.getElementById(templateId) : null;
+                if (!tpl || !submissionModalBody) return;
                 submissionModalBody.innerHTML = '';
                 submissionModalBody.appendChild(tpl.content.cloneNode(true));
-                if (submissionModalTitle) {
-                    submissionModalTitle.textContent = titleText || '';
-                }
+                if (submissionModalTitle) submissionModalTitle.textContent = titleText || '';
                 submissionModal.removeAttribute('hidden');
                 submissionModal.hidden = false;
                 submissionModal.setAttribute('aria-hidden', 'false');
@@ -566,25 +648,36 @@
             });
 
             submissionModal.querySelector('.their-story-admin-submission-modal-backdrop').addEventListener('click', closeSubmissionModal);
-            const xBtn = submissionModal.querySelector('.their-story-admin-submission-modal-x');
-            if (xBtn) {
-                xBtn.addEventListener('click', closeSubmissionModal);
-            }
-            const closeBtn = submissionModal.querySelector('.their-story-admin-submission-modal-close-btn');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', closeSubmissionModal);
-            }
+            var xBtn = submissionModal.querySelector('.their-story-admin-submission-modal-x');
+            if (xBtn) xBtn.addEventListener('click', closeSubmissionModal);
+            var closeSubmBtn = submissionModal.querySelector('.their-story-admin-submission-modal-close-btn');
+            if (closeSubmBtn) closeSubmBtn.addEventListener('click', closeSubmissionModal);
 
             document.addEventListener('keydown', function(ev) {
-                if (ev.key !== 'Escape') {
-                    return;
-                }
-                if (!submissionModal.hasAttribute('hidden')) {
-                    closeSubmissionModal();
-                }
+                if (ev.key !== 'Escape') return;
+                if (!submissionModal.hasAttribute('hidden')) closeSubmissionModal();
             });
         }
-    });
-    
-})();
 
+        // -----------------------------------------------------------------------
+        // Helpers
+        // -----------------------------------------------------------------------
+
+        function escHtml(str) {
+            var d = document.createElement('div');
+            d.appendChild(document.createTextNode(String(str)));
+            return d.innerHTML;
+        }
+
+        function escAttr(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+    });
+
+})();

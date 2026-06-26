@@ -3,6 +3,8 @@
 if (!defined('ABSPATH')) {
     exit;
 }
+
+$checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_story_error']) : '';
 ?>
 
 <div class="wrap their-story-dashboard">
@@ -17,6 +19,16 @@ if (!defined('ABSPATH')) {
         </a>
     </div>
 
+    <?php if ($checkout_error === 'cart') : ?>
+        <div class="their-story-notice their-story-notice-error">
+            <?php esc_html_e('There was a problem adding the product to your cart. Please try again.', 'their-story'); ?>
+        </div>
+    <?php elseif ($checkout_error === 'expired') : ?>
+        <div class="their-story-notice their-story-notice-error">
+            <?php esc_html_e('Your session expired. Please start the process again.', 'their-story'); ?>
+        </div>
+    <?php endif; ?>
+
     <div class="their-story-actions">
         <div class="their-story-actions-text">
             <h2 class="their-story-section-title"><?php echo esc_html__('Your Stories', 'their-story'); ?></h2>
@@ -29,53 +41,7 @@ if (!defined('ABSPATH')) {
             <?php echo esc_html__('Create New Story', 'their-story'); ?>
         </button>
     </div>
-    
-    <div id="create-story-form" style="display: none;" class="their-story-form">
-        <h3 class="their-story-form-title"><?php echo esc_html__('Create New Story', 'their-story'); ?></h3>
-        <form id="story-creation-form">
-            <div class="their-story-form-fields">
-                <div class="their-story-form-field">
-                    <label for="story-title" class="their-story-label">
-                        <?php echo esc_html__('Story Title', 'their-story'); ?>
-                    </label>
-                    <input type="text" id="story-title" name="story_title" required 
-                           class="their-story-input" 
-                           placeholder="<?php echo esc_attr__('Enter story title...', 'their-story'); ?>" />
-                </div>
-                <div class="their-story-form-field">
-                    <label for="story-password" class="their-story-label">
-                        <?php echo esc_html__('Password (Optional)', 'their-story'); ?>
-                    </label>
-                    <input type="password" id="story-password" name="story_password" 
-                           class="their-story-input" 
-                           placeholder="<?php echo esc_attr__('Leave blank for no password', 'their-story'); ?>" />
-                    <p class="their-story-help-text"><?php echo esc_html__('Leave blank if you don\'t want to password protect this story.', 'their-story'); ?></p>
-                </div>
-                <div class="their-story-form-field">
-                    <label for="contribution-subject-name" class="their-story-label">
-                        <?php echo esc_html__('Contributor invitation — first name of person stories are about (optional)', 'their-story'); ?>
-                    </label>
-                    <input type="text" id="contribution-subject-name" name="contribution_subject_name" class="their-story-input" maxlength="120" placeholder="<?php echo esc_attr__('e.g. Lucy', 'their-story'); ?>" />
-                    <p class="their-story-help-text"><?php echo esc_html__('Shown on the contributor form. If left blank, the story title is used.', 'their-story'); ?></p>
-                </div>
-                <div class="their-story-form-field">
-                    <label for="contribution-relation-label" class="their-story-label">
-                        <?php echo esc_html__('Relationship phrase (optional)', 'their-story'); ?>
-                    </label>
-                    <input type="text" id="contribution-relation-label" name="contribution_relation_label" class="their-story-input" maxlength="120" placeholder="<?php echo esc_attr__('e.g. family member or friend', 'their-story'); ?>" />
-                </div>
-            </div>
-            <div class="their-story-form-actions">
-                <button type="submit" class="their-story-btn their-story-btn-primary">
-                    <?php echo esc_html__('Create Story', 'their-story'); ?>
-                </button>
-                <button type="button" id="cancel-story-btn" class="their-story-btn their-story-btn-secondary">
-                    <?php echo esc_html__('Cancel', 'their-story'); ?>
-                </button>
-            </div>
-        </form>
-    </div>
-    
+
     <div class="their-story-list">
         <?php if (empty($stories)) : ?>
             <div class="their-story-empty">
@@ -97,11 +63,10 @@ if (!defined('ABSPATH')) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($stories as $story) : 
-                            $unique_link = get_post_meta($story->ID, '_story_unique_link', true);
-                            $is_password_protected = post_password_required($story->ID);
-                            $story_url = get_permalink($story->ID);
-                            $their_story = new Their_Story();
+                        <?php foreach ($stories as $story) :
+                            $unique_link  = get_post_meta($story->ID, '_story_unique_link', true);
+                            $story_url    = get_permalink($story->ID);
+                            $their_story  = new Their_Story();
                             $obfuscated_url = $their_story->get_story_url_from_link($unique_link);
                         ?>
                             <tr>
@@ -169,3 +134,152 @@ if (!defined('ABSPATH')) {
         </a>
     </div>
 </div>
+
+<!-- Create Story Wizard Modal -->
+<div id="ts-wizard-modal" class="ts-wizard-modal" aria-modal="true" role="dialog" aria-labelledby="ts-wizard-title" hidden>
+    <div class="ts-wizard-backdrop"></div>
+    <div class="ts-wizard-dialog">
+
+        <button type="button" class="ts-wizard-close" aria-label="<?php esc_attr_e('Close', 'their-story'); ?>">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+
+        <!-- Step indicator -->
+        <div class="ts-wizard-steps" aria-hidden="true">
+            <div class="ts-step ts-step--active" data-step="1">
+                <div class="ts-step-circle">1</div>
+                <span class="ts-step-label"><?php esc_html_e('Terms', 'their-story'); ?></span>
+            </div>
+            <div class="ts-step-connector"></div>
+            <div class="ts-step" data-step="2">
+                <div class="ts-step-circle">2</div>
+                <span class="ts-step-label"><?php esc_html_e('Your Story', 'their-story'); ?></span>
+            </div>
+            <div class="ts-step-connector"></div>
+            <div class="ts-step" data-step="3">
+                <div class="ts-step-circle">3</div>
+                <span class="ts-step-label"><?php esc_html_e('Choose &amp; Pay', 'their-story'); ?></span>
+            </div>
+        </div>
+
+        <!-- Step 1: Terms & Conditions -->
+        <div class="ts-wizard-step" id="ts-step-1">
+            <h2 class="ts-wizard-title" id="ts-wizard-title"><?php esc_html_e('Terms &amp; Conditions', 'their-story'); ?></h2>
+            <p class="ts-wizard-lede"><?php esc_html_e('Please read and accept our terms before creating your story.', 'their-story'); ?></p>
+
+            <div class="ts-terms-scroll">
+                <p><?php esc_html_e('By creating a story with Their Story you agree to the following:', 'their-story'); ?></p>
+                <ul>
+                    <li><?php esc_html_e('Payment is required before your story page is created.', 'their-story'); ?></li>
+                    <li><?php esc_html_e('Your story page will be live once payment is confirmed.', 'their-story'); ?></li>
+                    <li><?php esc_html_e('The message limit you select determines the size of your printed book.', 'their-story'); ?></li>
+                    <li><?php esc_html_e('All submitted contributions are subject to moderation before appearing on your story page.', 'their-story'); ?></li>
+                    <li><?php esc_html_e('When you close your story, the Their Story team will begin preparing your book for print.', 'their-story'); ?></li>
+                    <li><?php esc_html_e('All sales are final. Please contact us if you have any questions before purchasing.', 'their-story'); ?></li>
+                </ul>
+            </div>
+
+            <label class="ts-checkbox-label">
+                <input type="checkbox" id="ts-terms-accept" />
+                <span><?php esc_html_e('I have read and agree to the Terms &amp; Conditions.', 'their-story'); ?></span>
+            </label>
+
+            <div class="ts-wizard-footer">
+                <button type="button" class="their-story-btn their-story-btn-primary ts-wizard-next" id="ts-next-1" disabled>
+                    <?php esc_html_e('Next: Story Details', 'their-story'); ?>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16" style="margin-left:6px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: Story Details -->
+        <div class="ts-wizard-step" id="ts-step-2" hidden>
+            <h2 class="ts-wizard-title"><?php esc_html_e('Story Details', 'their-story'); ?></h2>
+            <p class="ts-wizard-lede"><?php esc_html_e('Tell us about the story you\'re creating.', 'their-story'); ?></p>
+
+            <div class="their-story-form-fields">
+                <div class="their-story-form-field">
+                    <label for="ts-story-title" class="their-story-label">
+                        <?php esc_html_e('Story Title', 'their-story'); ?> <span class="ts-required" aria-hidden="true">*</span>
+                    </label>
+                    <input type="text" id="ts-story-title" class="their-story-input" maxlength="200"
+                           placeholder="<?php esc_attr_e('e.g. Celebrating Lucy\'s 50th', 'their-story'); ?>" required />
+                </div>
+
+                <div class="their-story-form-field">
+                    <label for="ts-subject-name" class="their-story-label">
+                        <?php esc_html_e('First name of the person stories are about', 'their-story'); ?>
+                    </label>
+                    <input type="text" id="ts-subject-name" class="their-story-input" maxlength="120"
+                           placeholder="<?php esc_attr_e('e.g. Lucy', 'their-story'); ?>" />
+                    <p class="their-story-help-text"><?php esc_html_e('Shown on the contribution form. Defaults to the story title if left blank.', 'their-story'); ?></p>
+                </div>
+
+                <div class="their-story-form-field">
+                    <label for="ts-relation-label" class="their-story-label">
+                        <?php esc_html_e('Relationship phrase', 'their-story'); ?>
+                    </label>
+                    <input type="text" id="ts-relation-label" class="their-story-input" maxlength="120"
+                           placeholder="<?php esc_attr_e('e.g. family member or friend', 'their-story'); ?>" />
+                </div>
+
+                <div class="their-story-form-field">
+                    <label for="ts-story-password" class="their-story-label">
+                        <?php esc_html_e('Password (optional)', 'their-story'); ?>
+                    </label>
+                    <input type="password" id="ts-story-password" class="their-story-input"
+                           placeholder="<?php esc_attr_e('Leave blank for no password', 'their-story'); ?>" />
+                    <p class="their-story-help-text"><?php esc_html_e('Restrict who can view and contribute to your story page.', 'their-story'); ?></p>
+                </div>
+            </div>
+
+            <div class="ts-wizard-footer ts-wizard-footer--split">
+                <button type="button" class="their-story-btn their-story-btn-secondary ts-wizard-back" id="ts-back-2">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16" style="margin-right:6px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    <?php esc_html_e('Back', 'their-story'); ?>
+                </button>
+                <button type="button" class="their-story-btn their-story-btn-primary ts-wizard-next" id="ts-next-2">
+                    <?php esc_html_e('Next: Choose &amp; Pay', 'their-story'); ?>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16" style="margin-left:6px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 3: Product Selection -->
+        <div class="ts-wizard-step" id="ts-step-3" hidden>
+            <h2 class="ts-wizard-title"><?php esc_html_e('Choose Your Book', 'their-story'); ?></h2>
+            <p class="ts-wizard-lede"><?php esc_html_e('Select the book style and size that suits your story.', 'their-story'); ?></p>
+
+            <div id="ts-products-container">
+                <div class="ts-products-loading">
+                    <div class="ts-spinner"></div>
+                    <span><?php esc_html_e('Loading options&hellip;', 'their-story'); ?></span>
+                </div>
+            </div>
+
+            <div class="ts-wizard-footer ts-wizard-footer--split">
+                <button type="button" class="their-story-btn their-story-btn-secondary ts-wizard-back" id="ts-back-3">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16" style="margin-right:6px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    <?php esc_html_e('Back', 'their-story'); ?>
+                </button>
+                <button type="button" class="their-story-btn their-story-btn-primary" id="ts-purchase-btn" disabled>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16" style="margin-right:6px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    <?php esc_html_e('Proceed to Checkout', 'their-story'); ?>
+                </button>
+            </div>
+        </div>
+
+    </div><!-- /.ts-wizard-dialog -->
+</div><!-- /#ts-wizard-modal -->
