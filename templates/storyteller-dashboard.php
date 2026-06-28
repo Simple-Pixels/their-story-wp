@@ -171,14 +171,11 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
 
             <div class="ts-terms-scroll">
                 <p><?php esc_html_e('By creating a story with Their Story you agree to the following:', 'their-story'); ?></p>
-                <ul>
-                    <li><?php esc_html_e('Payment is required before your story page is created.', 'their-story'); ?></li>
-                    <li><?php esc_html_e('Your story page will be live once payment is confirmed.', 'their-story'); ?></li>
-                    <li><?php esc_html_e('The message limit you select determines the size of your printed book.', 'their-story'); ?></li>
-                    <li><?php esc_html_e('All submitted contributions are subject to moderation before appearing on your story page.', 'their-story'); ?></li>
-                    <li><?php esc_html_e('When you close your story, the Their Story team will begin preparing your book for print.', 'their-story'); ?></li>
-                    <li><?php esc_html_e('All sales are final. Please contact us if you have any questions before purchasing.', 'their-story'); ?></li>
-                </ul>
+                <p><?php esc_html_e('Payment is required before your story page is created.', 'their-story'); ?></p>
+                <p><?php esc_html_e('Your story page will be live once payment is confirmed.', 'their-story'); ?></p>
+                <p><?php esc_html_e('All submitted contributions are subject to moderation before appearing on your story page.', 'their-story'); ?></p>
+                <p><?php esc_html_e('When you close your story, the Their Story team will begin preparing your book for print.', 'their-story'); ?></p>
+                <p><?php esc_html_e('All sales are final. Please contact us if you have any questions before purchasing.', 'their-story'); ?></p>
             </div>
 
             <label class="ts-checkbox-label">

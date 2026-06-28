@@ -699,6 +699,59 @@ body.ts-wizard-open {
     line-height: 1.4;
 }
 
+/* Wizard button overrides — ensure pink/pill styling inside the modal */
+.ts-wizard-dialog .their-story-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.65rem 1.35rem;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.25;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    text-decoration: none;
+}
+
+.ts-wizard-dialog .their-story-btn-primary {
+    background-color: #e6b3a1;
+    color: #000000;
+    border-color: #e6b3a1;
+}
+
+.ts-wizard-dialog .their-story-btn-primary:hover {
+    background-color: #d49a87;
+    border-color: #d49a87;
+}
+
+.ts-wizard-dialog .their-story-btn-primary:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(230, 179, 161, 0.45);
+}
+
+.ts-wizard-dialog .their-story-btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ts-wizard-dialog .their-story-btn-secondary {
+    background-color: #ffffff;
+    color: #000000;
+    border-color: #e6b3a1;
+}
+
+.ts-wizard-dialog .their-story-btn-secondary:hover {
+    background-color: #fff8f5;
+}
+
+.ts-wizard-dialog .their-story-btn-secondary:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(230, 179, 161, 0.45);
+}
+
 /* Mobile adjustments */
 @media (max-width: 480px) {
     .ts-wizard-dialog {
