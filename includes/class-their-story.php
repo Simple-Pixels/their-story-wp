@@ -38,6 +38,9 @@ class Their_Story {
         add_filter('the_content', array($this, 'add_story_page_content'), 20);
         add_filter('post_password_required', array($this, 'bypass_password_for_owner'), 10, 2);
         
+        add_filter('wp_robots', array($this, 'noindex_story_pages'));
+        add_filter('wpseo_robots', array($this, 'noindex_story_pages_yoast'));
+        add_filter('rank_math/frontend/robots', array($this, 'noindex_story_pages_rankmath'));
         add_action('template_redirect', array($this, 'handle_begin_checkout'));
         add_action('wp_ajax_their_story_get_products', array($this, 'ajax_get_products'));
         add_action('wp_ajax_their_story_prepare_checkout', array($this, 'ajax_prepare_checkout'));
@@ -2026,6 +2029,43 @@ class Their_Story {
         
         fclose($output);
         exit;
+    }
+
+    // -------------------------------------------------------------------------
+    // Noindex story pages
+    // -------------------------------------------------------------------------
+
+    private function is_story_page() {
+        if (!is_singular('page')) {
+            return false;
+        }
+        global $post;
+        return $post && get_post_meta($post->ID, '_storyteller_id', true);
+    }
+
+    /** wp_robots filter (WordPress 5.7+) */
+    public function noindex_story_pages($robots) {
+        if ($this->is_story_page()) {
+            $robots['noindex']  = true;
+            $robots['nofollow'] = false;
+        }
+        return $robots;
+    }
+
+    /** Yoast SEO */
+    public function noindex_story_pages_yoast($robots) {
+        if ($this->is_story_page()) {
+            return 'noindex, follow';
+        }
+        return $robots;
+    }
+
+    /** Rank Math */
+    public function noindex_story_pages_rankmath($robots) {
+        if ($this->is_story_page()) {
+            $robots['index'] = 'noindex';
+        }
+        return $robots;
     }
 
     // -------------------------------------------------------------------------
