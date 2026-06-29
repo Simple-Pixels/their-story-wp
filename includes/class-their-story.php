@@ -38,6 +38,7 @@ class Their_Story {
         add_filter('wp_robots', array($this, 'noindex_story_pages'));
         add_filter('wpseo_robots', array($this, 'noindex_story_pages_yoast'));
         add_filter('rank_math/frontend/robots', array($this, 'noindex_story_pages_rankmath'));
+        add_filter('wpseo_exclude_from_sitemap_by_post_ids', array($this, 'exclude_story_pages_from_yoast_sitemap'));
         add_action('template_redirect', array($this, 'handle_begin_checkout'));
         add_action('wp_ajax_their_story_get_products', array($this, 'ajax_get_products'));
         add_action('wp_ajax_their_story_prepare_checkout', array($this, 'ajax_prepare_checkout'));
@@ -2148,6 +2149,24 @@ class Their_Story {
             return 'noindex, follow';
         }
         return $robots;
+    }
+
+    /** Yoast sitemap exclusion */
+    public function exclude_story_pages_from_yoast_sitemap($excluded_ids) {
+        $story_ids = get_posts(array(
+            'post_type'      => 'page',
+            'post_status'    => 'publish',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+            'meta_query'     => array(
+                array(
+                    'key'     => '_storyteller_id',
+                    'compare' => 'EXISTS',
+                ),
+            ),
+        ));
+        return array_merge((array) $excluded_ids, $story_ids);
     }
 
     /** Rank Math */
