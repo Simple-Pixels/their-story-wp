@@ -78,24 +78,10 @@ $contribution_inviter = $storyteller ? $storyteller->display_name : __('the orga
     <section class="their-story-form-section their-story-flow-section">
         <div class="their-story-notice-closed">
             <p><?php echo esc_html__('This story has been closed. No new messages can be added.', 'their-story'); ?></p>
+            <?php if ($is_storyteller) : ?>
+            <p><?php echo esc_html__("Your book has been closed and Grant has been notified. He'll guide you through the next steps of your order. If you have any questions please don't hesitate to reach out!", 'their-story'); ?></p>
+            <?php endif; ?>
         </div>
-        <?php if ($is_storyteller) : ?>
-        <div class="their-story-shop-section">
-            <p><?php echo esc_html__('Next step — add your messages to a book', 'their-story'); ?></p>
-            <?php
-            $message_count = count($approved_submissions);
-            $book_closed_url = $their_story->get_book_closed_url(
-                array(
-                    'story' => $story_id,
-                    'messages' => $message_count,
-                )
-            );
-            ?>
-            <a href="<?php echo esc_url($book_closed_url); ?>" class="their-story-btn their-story-btn-primary">
-                <?php echo esc_html__('Shop now', 'their-story'); ?>
-            </a>
-        </div>
-        <?php endif; ?>
     </section>
     <?php endif; ?>
 
