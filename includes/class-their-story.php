@@ -44,6 +44,9 @@ class Their_Story {
 
         if (class_exists('WooCommerce')) {
             add_filter('woocommerce_prevent_admin_access', array($this, 'allow_storyteller_admin_access'));
+            add_filter('woocommerce_thankyou_order_received_text', '__return_empty_string');
+            add_action('woocommerce_thankyou', array($this, 'their_story_thankyou_content'), 5);
+            add_action('wp_head', array($this, 'their_story_thankyou_styles'));
             add_filter('woocommerce_cart_item_name', array($this, 'add_story_name_to_cart_item'), 10, 3);
             add_action('woocommerce_checkout_create_order_line_item', array($this, 'save_story_id_to_order_item'), 10, 4);
             add_action('woocommerce_payment_complete', array($this, 'create_story_on_payment'), 10, 1);
@@ -1327,7 +1330,7 @@ class Their_Story {
             $storyteller_email,
             admin_url('admin.php?page=their-story-admin')
         );
-        wp_mail('info@theirstory.com.au', $admin_subject, $admin_message);
+        wp_mail('support@sharetheirstory.com.au', $admin_subject, $admin_message);
 
         wp_send_json_success(array('message' => __('Story closed. The Their Story team has been notified.', 'their-story')));
     }
@@ -2016,6 +2019,106 @@ class Their_Story {
         
         fclose($output);
         exit;
+    }
+
+    // -------------------------------------------------------------------------
+    // WooCommerce thank-you page
+    // -------------------------------------------------------------------------
+
+    public function their_story_thankyou_content($order_id) {
+        $order = wc_get_order($order_id);
+        if (!$order || !$order->get_meta('_their_story_created')) {
+            return;
+        }
+
+        $dashboard_url = admin_url('admin.php?page=their-story-dashboard');
+        ?>
+        <div class="ts-thankyou-header">
+            <h1 class="ts-thankyou-title"><?php esc_html_e('Thank you! Your story has been created.', 'their-story'); ?></h1>
+            <a href="<?php echo esc_url($dashboard_url); ?>" class="ts-thankyou-btn">
+                <?php esc_html_e('Start your journey', 'their-story'); ?>
+            </a>
+            <p class="ts-thankyou-support">
+                <?php esc_html_e('For any questions please email', 'their-story'); ?>
+                <a href="mailto:support@sharetheirstory.com.au">support@sharetheirstory.com.au</a>
+            </p>
+        </div>
+        <?php
+    }
+
+    public function their_story_thankyou_styles() {
+        if (!is_wc_endpoint_url('order-received')) {
+            return;
+        }
+        ?>
+        <style>
+        /* Their Story — order confirmation page */
+        .woocommerce-order {
+            text-align: center;
+            max-width: 640px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .ts-thankyou-header {
+            padding: 2rem 0 1.5rem;
+        }
+        .ts-thankyou-title {
+            font-size: clamp(1.5rem, 4vw, 2.25rem);
+            font-weight: 700;
+            margin: 0 0 1.5rem;
+            line-height: 1.2;
+        }
+        .ts-thankyou-btn {
+            display: inline-block;
+            padding: 0.875rem 2.25rem;
+            background-color: #e6b3a1;
+            color: #000000;
+            font-size: 1.125rem;
+            font-weight: 600;
+            border-radius: 9999px;
+            text-decoration: none;
+            transition: background-color 0.2s ease;
+            margin-bottom: 1.25rem;
+        }
+        .ts-thankyou-btn:hover {
+            background-color: #d49a87;
+            color: #000000;
+        }
+        .ts-thankyou-support {
+            font-size: 0.9375rem;
+            color: rgba(0,0,0,0.6);
+            margin: 0 0 2rem;
+        }
+        .ts-thankyou-support a {
+            color: inherit;
+            text-decoration: underline;
+            text-underline-offset: 0.15em;
+        }
+        /* Order overview & details — centered */
+        .woocommerce-order-overview,
+        .woocommerce-order-details,
+        .woocommerce-order-details__title {
+            text-align: center;
+        }
+        .woocommerce-order-overview {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.25rem 1.5rem;
+            list-style: none;
+            padding: 0;
+            margin: 0 0 2rem;
+        }
+        .woocommerce-order-overview li {
+            border-right: none !important;
+            padding-right: 0 !important;
+        }
+        /* Hide billing/shipping address blocks */
+        .woocommerce-customer-details {
+            display: none !important;
+        }
+        </style>
+        <?php
     }
 
     // -------------------------------------------------------------------------
