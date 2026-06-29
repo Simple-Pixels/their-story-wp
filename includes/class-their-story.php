@@ -14,16 +14,13 @@ class Their_Story {
         add_action('init', array($this, 'add_storyteller_role'));
         add_action('init', array($this, 'register_story_submission_post_type'));
         add_action('init', array($this, 'add_rewrite_rules'));
-        add_action('init', array($this, 'register_book_closed_shortcode'), 5);
         add_filter('query_vars', array($this, 'add_query_vars'));
         add_action('template_redirect', array($this, 'handle_story_link_redirect'));
-        add_action('template_redirect', array($this, 'handle_book_closed_cookie'));
         add_action('template_redirect', array($this, 'handle_csv_export'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
         add_filter('admin_body_class', array($this, 'storyteller_dashboard_body_class'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_assets'));
         add_filter('body_class', array($this, 'story_page_body_class'));
-        add_filter('body_class', array($this, 'book_closed_body_class'));
         add_action('wp_ajax_their_story_create_story', array($this, 'ajax_create_story'));
         add_action('wp_ajax_their_story_delete_story', array($this, 'ajax_delete_story'));
         add_action('wp_ajax_their_story_update_password', array($this, 'ajax_update_password'));
@@ -747,16 +744,6 @@ class Their_Story {
 
     public function enqueue_frontend_assets() {
         if (is_page()) {
-            if ($this->is_book_closed_page_view()) {
-                $bc = THEIR_STORY_PLUGIN_DIR . 'assets/css/book-closed.css';
-                wp_enqueue_style(
-                    'their-story-book-closed',
-                    THEIR_STORY_PLUGIN_URL . 'assets/css/book-closed.css',
-                    array(),
-                    file_exists($bc) ? filemtime($bc) : THEIR_STORY_VERSION
-                );
-                return;
-            }
             global $post;
             if (!$post) {
                 return;
@@ -2098,39 +2085,74 @@ class Their_Story {
             if (!$product->is_type('variable')) {
                 continue;
             }
-            $variations = array();
-            foreach ($product->get_available_variations() as $v) {
-                $var = wc_get_product($v['variation_id']);
-                if (!$var) {
-                    continue;
-                }
-                $attr_labels = array();
+
+            $raw_variations = $product->get_available_variations();
+            if (empty($raw_variations)) {
+                continue;
+            }
+
+            // Build per-attribute groups (key → label, ordered options)
+            $attr_groups = array();
+            foreach ($raw_variations as $v) {
                 foreach ($v['attributes'] as $attr_key => $attr_value) {
                     if ($attr_value === '') {
                         continue;
                     }
-                    $taxonomy = str_replace('attribute_', '', $attr_key);
-                    $term     = get_term_by('slug', $attr_value, $taxonomy);
-                    $attr_labels[] = $term ? $term->name : ucwords(str_replace(array('-', '_'), ' ', $attr_value));
+                    if (!isset($attr_groups[$attr_key])) {
+                        $taxonomy    = str_replace('attribute_', '', $attr_key);
+                        $attr_obj_id = wc_attribute_taxonomy_id_by_name($taxonomy);
+                        $attr_obj    = $attr_obj_id ? wc_get_attribute($attr_obj_id) : null;
+                        $attr_groups[$attr_key] = array(
+                            'key'     => $attr_key,
+                            'label'   => $attr_obj ? $attr_obj->name : ucwords(str_replace(array('-', '_'), ' ', $taxonomy)),
+                            'options' => array(),
+                        );
+                    }
+                    if (!array_key_exists($attr_value, $attr_groups[$attr_key]['options'])) {
+                        $taxonomy = str_replace('attribute_', '', $attr_key);
+                        $term     = get_term_by('slug', $attr_value, $taxonomy);
+                        $attr_groups[$attr_key]['options'][$attr_value] = $term
+                            ? $term->name
+                            : ucwords(str_replace(array('-', '_'), ' ', $attr_value));
+                    }
                 }
-                $variations[] = array(
-                    'id'          => $v['variation_id'],
-                    'price'       => $var->get_price(),
-                    'price_html'  => $var->get_price_html(),
-                    'label'       => implode(' / ', $attr_labels) ?: $var->get_name(),
-                    'description' => $var->get_description(),
-                    'attributes'  => $v['attributes'],
+            }
+
+            // Convert options maps to indexed arrays
+            $attr_groups_out = array();
+            foreach ($attr_groups as $group) {
+                $opts = array();
+                foreach ($group['options'] as $slug => $label) {
+                    $opts[] = array('slug' => $slug, 'label' => $label);
+                }
+                $attr_groups_out[] = array(
+                    'key'     => $group['key'],
+                    'label'   => $group['label'],
+                    'options' => $opts,
                 );
             }
-            if (empty($variations)) {
-                continue;
+
+            // Slim variation list — only need id, price_html, and attributes map
+            $variations = array();
+            foreach ($raw_variations as $v) {
+                $var = wc_get_product($v['variation_id']);
+                if (!$var) {
+                    continue;
+                }
+                $variations[] = array(
+                    'id'         => $v['variation_id'],
+                    'price_html' => $var->get_price_html(),
+                    'attributes' => $v['attributes'],
+                );
             }
+
             $result[] = array(
-                'id'          => $product->get_id(),
-                'name'        => $product->get_name(),
-                'description' => wp_strip_all_tags($product->get_short_description()),
-                'image'       => wp_get_attachment_image_url($product->get_image_id(), 'medium') ?: '',
-                'variations'  => $variations,
+                'id'               => $product->get_id(),
+                'name'             => $product->get_name(),
+                'description'      => wp_strip_all_tags($product->get_short_description()),
+                'image'            => wp_get_attachment_image_url($product->get_image_id(), 'medium') ?: '',
+                'attribute_groups' => $attr_groups_out,
+                'variations'       => $variations,
             );
         }
 
