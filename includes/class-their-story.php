@@ -42,6 +42,7 @@ class Their_Story {
         add_action('template_redirect', array($this, 'handle_begin_checkout'));
         add_action('wp_ajax_their_story_get_products', array($this, 'ajax_get_products'));
         add_action('wp_ajax_their_story_prepare_checkout', array($this, 'ajax_prepare_checkout'));
+        add_action('wp_ajax_their_story_prepare_reorder', array($this, 'ajax_prepare_reorder'));
 
         if (class_exists('WooCommerce')) {
             add_filter('woocommerce_prevent_admin_access', array($this, 'allow_storyteller_admin_access'));
@@ -729,6 +730,7 @@ class Their_Story {
             'reopenNonce' => wp_create_nonce('their_story_reopen_story'),
             'getProductsNonce' => wp_create_nonce('their_story_get_products'),
             'prepareCheckoutNonce' => wp_create_nonce('their_story_prepare_checkout'),
+            'prepareReorderNonce' => wp_create_nonce('their_story_prepare_reorder'),
         ));
     }
     
@@ -2033,11 +2035,17 @@ class Their_Story {
         }
 
         $dashboard_url = admin_url('admin.php?page=their-story-dashboard');
+        $is_reorder    = (bool) $order->get_meta('_their_story_reorder');
         ?>
         <div class="ts-thankyou-header">
-            <h1 class="ts-thankyou-title"><?php esc_html_e('Thank you! Your story has been created.', 'their-story'); ?></h1>
+            <?php if ($is_reorder) : ?>
+                <h1 class="ts-thankyou-title"><?php esc_html_e('Thank you! Your reorder has been received.', 'their-story'); ?></h1>
+                <p class="ts-thankyou-lede"><?php esc_html_e('The Their Story team has been notified and will be in touch shortly.', 'their-story'); ?></p>
+            <?php else : ?>
+                <h1 class="ts-thankyou-title"><?php esc_html_e('Thank you! Your story has been created.', 'their-story'); ?></h1>
+            <?php endif; ?>
             <a href="<?php echo esc_url($dashboard_url); ?>" class="ts-thankyou-btn">
-                <?php esc_html_e('Start your journey', 'their-story'); ?>
+                <?php esc_html_e('Go to my dashboard', 'their-story'); ?>
             </a>
             <p class="ts-thankyou-support">
                 <?php esc_html_e('For any questions please email', 'their-story'); ?>
@@ -2325,6 +2333,51 @@ class Their_Story {
         ));
     }
 
+    public function ajax_prepare_reorder() {
+        check_ajax_referer('their_story_prepare_reorder', 'nonce');
+
+        $user = wp_get_current_user();
+        if (!in_array('storyteller', (array) $user->roles, true)) {
+            wp_send_json_error(array('message' => __('No permission.', 'their-story')));
+        }
+
+        $story_id = intval($_POST['story_id'] ?? 0);
+        $qty      = max(1, intval($_POST['qty'] ?? 1));
+
+        if (!$story_id) {
+            wp_send_json_error(array('message' => __('Invalid story.', 'their-story')));
+        }
+
+        // Verify storyteller owns this story
+        $storyteller_id = intval(get_post_meta($story_id, '_storyteller_id', true));
+        if ($storyteller_id !== $user->ID) {
+            wp_send_json_error(array('message' => __('No permission.', 'their-story')));
+        }
+
+        $variation_id = intval(get_post_meta($story_id, '_their_story_variation_id', true));
+        $product_id   = intval(get_post_meta($story_id, '_their_story_product_id', true));
+
+        if (!$variation_id || !$product_id) {
+            wp_send_json_error(array('message' => __('Original order details not found. Please contact support.', 'their-story')));
+        }
+
+        if (!class_exists('WooCommerce') || !wc_get_product($variation_id)) {
+            wp_send_json_error(array('message' => __('Product no longer available.', 'their-story')));
+        }
+
+        update_user_meta($user->ID, '_their_story_pending_reorder', array(
+            'story_id'     => $story_id,
+            'variation_id' => $variation_id,
+            'product_id'   => $product_id,
+            'qty'          => $qty,
+            'created_at'   => time(),
+        ));
+
+        wp_send_json_success(array(
+            'redirect_url' => add_query_arg('their_story_begin_checkout', '1', home_url('/')),
+        ));
+    }
+
     /**
      * Handles the begin-checkout redirect: adds product to WC cart then redirects to checkout.
      */
@@ -2339,6 +2392,54 @@ class Their_Story {
             exit;
         }
 
+        if (!class_exists('WooCommerce')) {
+            wp_safe_redirect(admin_url('admin.php?page=their-story-dashboard'));
+            exit;
+        }
+
+        // Check for reorder first
+        $reorder = get_user_meta($user->ID, '_their_story_pending_reorder', true);
+        if (!empty($reorder) && is_array($reorder)) {
+            if (!empty($reorder['created_at']) && (time() - intval($reorder['created_at'])) > 3600) {
+                delete_user_meta($user->ID, '_their_story_pending_reorder');
+                wp_safe_redirect(admin_url('admin.php?page=their-story-dashboard&their_story_error=expired'));
+                exit;
+            }
+
+            delete_user_meta($user->ID, '_their_story_pending_reorder');
+
+            $variation = wc_get_product($reorder['variation_id']);
+            $var_attrs = array();
+            if ($variation) {
+                foreach ($variation->get_variation_attributes() as $key => $value) {
+                    $var_attrs[$key] = $value;
+                }
+            }
+
+            WC()->cart->empty_cart();
+
+            $cart_key = WC()->cart->add_to_cart(
+                $reorder['product_id'],
+                intval($reorder['qty']),
+                $reorder['variation_id'],
+                $var_attrs,
+                array(
+                    'their_story_pending' => array(
+                        'reorder_story_id' => $reorder['story_id'],
+                    ),
+                )
+            );
+
+            if (!$cart_key) {
+                wp_safe_redirect(admin_url('admin.php?page=their-story-dashboard&their_story_error=cart'));
+                exit;
+            }
+
+            wp_safe_redirect(wc_get_checkout_url());
+            exit;
+        }
+
+        // New story checkout
         $pending = get_user_meta($user->ID, '_their_story_pending_creation', true);
         if (empty($pending) || !is_array($pending) || empty($pending['title'])) {
             wp_safe_redirect(admin_url('admin.php?page=their-story-dashboard'));
@@ -2353,11 +2454,6 @@ class Their_Story {
         }
 
         delete_user_meta($user->ID, '_their_story_pending_creation');
-
-        if (!class_exists('WooCommerce')) {
-            wp_safe_redirect(admin_url('admin.php?page=their-story-dashboard'));
-            exit;
-        }
 
         WC()->cart->empty_cart();
 
@@ -2404,7 +2500,7 @@ class Their_Story {
             return;
         }
 
-        // Prevent double creation
+        // Prevent double-processing
         if ($order->get_meta('_their_story_created')) {
             return;
         }
@@ -2416,7 +2512,41 @@ class Their_Story {
             }
 
             $pending = json_decode($pending_json, true);
-            if (!is_array($pending) || empty($pending['title'])) {
+            if (!is_array($pending)) {
+                continue;
+            }
+
+            // --- Reorder: existing story, just link the order ---
+            if (!empty($pending['reorder_story_id'])) {
+                $story_id    = intval($pending['reorder_story_id']);
+                $story_title = get_the_title($story_id);
+
+                $item->add_meta_data('_their_story_id', $story_id, true);
+                $item->save();
+
+                $order->update_meta_data('_their_story_created', '1');
+                $order->update_meta_data('_their_story_id', $story_id);
+                $order->update_meta_data('_their_story_reorder', '1');
+                $order->save();
+
+                // Notify support of reorder
+                wp_mail(
+                    'support@sharetheirstory.com.au',
+                    sprintf(__('Reorder placed for story: %s', 'their-story'), $story_title),
+                    sprintf(
+                        __("A reorder has been placed.\n\nStory: %s\nStory ID: %d\nOrder ID: %d\nQty: %d", 'their-story'),
+                        $story_title,
+                        $story_id,
+                        $order_id,
+                        $item->get_quantity()
+                    )
+                );
+
+                break;
+            }
+
+            // --- New story creation ---
+            if (empty($pending['title'])) {
                 continue;
             }
 
@@ -2450,6 +2580,16 @@ class Their_Story {
             }
             if (!empty($pending['relation_label'])) {
                 update_post_meta($page_id, '_their_story_contribution_relation_label', $pending['relation_label']);
+            }
+
+            // Save the purchased variation so reorders can look it up
+            $variation_id = $item->get_variation_id();
+            $product_id   = $item->get_product_id();
+            if ($variation_id) {
+                update_post_meta($page_id, '_their_story_variation_id', $variation_id);
+            }
+            if ($product_id) {
+                update_post_meta($page_id, '_their_story_product_id', $product_id);
             }
 
             // Link story back to the order item and order

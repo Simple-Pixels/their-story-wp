@@ -64,10 +64,12 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
                     </thead>
                     <tbody>
                         <?php foreach ($stories as $story) :
-                            $unique_link  = get_post_meta($story->ID, '_story_unique_link', true);
-                            $story_url    = get_permalink($story->ID);
-                            $their_story  = new Their_Story();
+                            $unique_link    = get_post_meta($story->ID, '_story_unique_link', true);
+                            $story_url      = get_permalink($story->ID);
+                            $their_story    = new Their_Story();
                             $obfuscated_url = $their_story->get_story_url_from_link($unique_link);
+                            $is_closed      = Their_Story::story_is_closed($story->ID);
+                            $has_variation  = (bool) get_post_meta($story->ID, '_their_story_variation_id', true);
                         ?>
                             <tr>
                                 <td>
@@ -110,6 +112,13 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                             </svg>
                                         </button>
+                                        <?php if ($is_closed && $has_variation) : ?>
+                                        <button type="button" class="their-story-action-btn their-story-reorder-btn" data-story-id="<?php echo esc_attr($story->ID); ?>" data-story-title="<?php echo esc_attr($story->post_title); ?>" title="<?php echo esc_attr__('Reorder', 'their-story'); ?>">
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                            </svg>
+                                        </button>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
@@ -280,3 +289,44 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
 
     </div><!-- /.ts-wizard-dialog -->
 </div><!-- /#ts-wizard-modal -->
+
+<!-- Reorder Modal -->
+<div id="ts-reorder-modal" class="ts-wizard-modal" aria-modal="true" role="dialog" aria-labelledby="ts-reorder-title" hidden>
+    <div class="ts-wizard-backdrop"></div>
+    <div class="ts-wizard-dialog" style="max-width:440px;">
+
+        <button type="button" class="ts-wizard-close ts-reorder-close" aria-label="<?php esc_attr_e('Close', 'their-story'); ?>">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+
+        <div class="ts-wizard-content ts-wizard-step" id="ts-reorder-content">
+            <h2 id="ts-reorder-title" class="ts-wizard-title"><?php esc_html_e('Reorder', 'their-story'); ?></h2>
+            <p class="ts-wizard-lede" id="ts-reorder-lede"></p>
+
+            <div class="ts-reorder-details" id="ts-reorder-details"></div>
+
+            <div class="ts-reorder-qty-row">
+                <label class="ts-attr-label" for="ts-reorder-qty"><?php esc_html_e('Quantity', 'their-story'); ?></label>
+                <div class="ts-qty-stepper">
+                    <button type="button" class="ts-qty-btn" id="ts-qty-minus" aria-label="<?php esc_attr_e('Decrease quantity', 'their-story'); ?>">&#8722;</button>
+                    <input type="number" id="ts-reorder-qty" class="ts-qty-input" value="1" min="1" max="99" readonly>
+                    <button type="button" class="ts-qty-btn" id="ts-qty-plus" aria-label="<?php esc_attr_e('Increase quantity', 'their-story'); ?>">&#43;</button>
+                </div>
+            </div>
+
+            <p id="ts-reorder-error" class="ts-reorder-error" hidden></p>
+        </div>
+
+        <div class="ts-wizard-footer">
+            <button type="button" class="their-story-btn their-story-btn-primary" id="ts-reorder-submit-btn" style="width:100%;">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16" style="margin-right:6px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                <?php esc_html_e('Proceed to Checkout', 'their-story'); ?>
+            </button>
+        </div>
+
+    </div><!-- /.ts-wizard-dialog -->
+</div><!-- /#ts-reorder-modal -->

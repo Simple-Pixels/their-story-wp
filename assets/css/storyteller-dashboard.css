@@ -775,3 +775,78 @@ body.ts-wizard-open {
         min-width: 20px;
     }
 }
+
+/* Reorder modal */
+.ts-reorder-qty-row {
+    margin-top: 1.5rem;
+}
+
+.ts-qty-stepper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-top: 0.5rem;
+    border: 1.5px solid #e6b3a1;
+    border-radius: 9999px;
+    overflow: hidden;
+    width: fit-content;
+}
+
+.ts-qty-btn {
+    background: #fff;
+    border: none;
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+    cursor: pointer;
+    color: #c07a5e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+    flex-shrink: 0;
+}
+
+.ts-qty-btn:hover {
+    background: #faf4f0;
+}
+
+.ts-qty-input {
+    width: 48px;
+    text-align: center;
+    border: none;
+    border-left: 1.5px solid #e6b3a1;
+    border-right: 1.5px solid #e6b3a1;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #3a2a20;
+    background: #fff;
+    -moz-appearance: textfield;
+    padding: 0;
+    height: 40px;
+}
+
+.ts-qty-input::-webkit-inner-spin-button,
+.ts-qty-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+}
+
+.ts-reorder-error {
+    margin-top: 1rem;
+    color: #c0392b;
+    font-size: 0.875rem;
+}
+
+/* Reorder action button colour */
+.their-story-reorder-btn {
+    color: #e6b3a1;
+}
+
+.their-story-reorder-btn:hover {
+    color: #c07a5e;
+}
+
+.ts-thankyou-lede {
+    color: #6b5a50;
+    margin-bottom: 1rem;
+}
