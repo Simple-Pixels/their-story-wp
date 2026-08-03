@@ -733,6 +733,93 @@
         }
 
         // -----------------------------------------------------------------------
+        // Reorder modal
+        // -----------------------------------------------------------------------
+
+        var reorderModal     = document.getElementById('ts-reorder-modal');
+        var reorderLede      = document.getElementById('ts-reorder-lede');
+        var reorderDetails   = document.getElementById('ts-reorder-details');
+        var reorderQtyInput  = document.getElementById('ts-reorder-qty');
+        var reorderSubmitBtn = document.getElementById('ts-reorder-submit-btn');
+        var reorderError     = document.getElementById('ts-reorder-error');
+        var activeReorderStoryId = null;
+
+        function openReorderModal(storyId, storyTitle) {
+            activeReorderStoryId = storyId;
+            reorderLede.textContent = 'Reordering copies of “' + storyTitle + '”.';
+            reorderDetails.innerHTML = '<p style="color:#888;font-size:0.875rem;">Same book format as your original order.</p>';
+            reorderQtyInput.value = 1;
+            if (reorderError) { reorderError.hidden = true; reorderError.textContent = ''; }
+            reorderSubmitBtn.disabled = false;
+            reorderModal.removeAttribute('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeReorderModal() {
+            reorderModal.setAttribute('hidden', '');
+            document.body.style.overflow = '';
+            activeReorderStoryId = null;
+        }
+
+        if (reorderModal) {
+            document.querySelectorAll('.their-story-reorder-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    openReorderModal(this.dataset.storyId, this.dataset.storyTitle || 'your story');
+                });
+            });
+
+            reorderModal.querySelector('.ts-reorder-close').addEventListener('click', closeReorderModal);
+            reorderModal.querySelector('.ts-wizard-backdrop').addEventListener('click', closeReorderModal);
+
+            document.addEventListener('keydown', function(ev) {
+                if (ev.key === 'Escape' && !reorderModal.hasAttribute('hidden')) closeReorderModal();
+            });
+
+            document.getElementById('ts-qty-minus').addEventListener('click', function() {
+                var v = parseInt(reorderQtyInput.value, 10);
+                if (v > 1) reorderQtyInput.value = v - 1;
+            });
+
+            document.getElementById('ts-qty-plus').addEventListener('click', function() {
+                var v = parseInt(reorderQtyInput.value, 10);
+                if (v < 99) reorderQtyInput.value = v + 1;
+            });
+
+            reorderSubmitBtn.addEventListener('click', function() {
+                if (!activeReorderStoryId) return;
+                reorderSubmitBtn.disabled = true;
+                if (reorderError) { reorderError.hidden = true; reorderError.textContent = ''; }
+
+                var fd = new FormData();
+                fd.append('action', 'their_story_prepare_reorder');
+                fd.append('nonce', theirStoryAdmin.prepareReorderNonce);
+                fd.append('story_id', activeReorderStoryId);
+                fd.append('qty', reorderQtyInput.value);
+
+                fetch(theirStoryAdmin.ajaxUrl, { method: 'POST', body: fd })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success) {
+                            window.location.href = data.data.redirect_url;
+                        } else {
+                            if (reorderError) {
+                                reorderError.textContent = data.data.message || 'An error occurred. Please try again.';
+                                reorderError.hidden = false;
+                            }
+                            reorderSubmitBtn.disabled = false;
+                        }
+                    })
+                    .catch(function() {
+                        if (reorderError) {
+                            reorderError.textContent = 'An error occurred. Please try again.';
+                            reorderError.hidden = false;
+                        }
+                        reorderSubmitBtn.disabled = false;
+                    });
+            });
+        }
+
+        // -----------------------------------------------------------------------
         // Helpers
         // -----------------------------------------------------------------------
 
