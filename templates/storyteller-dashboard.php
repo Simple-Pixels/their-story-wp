@@ -57,9 +57,9 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
                     <thead>
                         <tr>
                             <th><?php echo esc_html__('Title', 'their-story'); ?></th>
+                            <th><?php echo esc_html__('Actions', 'their-story'); ?></th>
                             <th><?php echo esc_html__('Unique Link', 'their-story'); ?></th>
                             <th><?php echo esc_html__('Created', 'their-story'); ?></th>
-                            <th><?php echo esc_html__('Actions', 'their-story'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -78,21 +78,6 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
                                             <?php echo esc_html($story->post_title); ?>
                                         </a>
                                     </div>
-                                </td>
-                                <td>
-                                    <?php if ($unique_link && $obfuscated_url) : ?>
-                                        <div class="their-story-link-group">
-                                            <code class="their-story-code"><?php echo esc_html($obfuscated_url); ?></code>
-                                            <button type="button" class="copy-link-btn their-story-btn-small" data-link="<?php echo esc_attr($obfuscated_url); ?>">
-                                                <?php echo esc_html__('Copy', 'their-story'); ?>
-                                            </button>
-                                        </div>
-                                    <?php else : ?>
-                                        <span class="their-story-muted"><?php echo esc_html__('Not generated yet', 'their-story'); ?></span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="their-story-muted">
-                                    <?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($story->post_date))); ?>
                                 </td>
                                 <td>
                                     <div class="their-story-actions-inline">
@@ -120,6 +105,21 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
                                         </button>
                                         <?php endif; ?>
                                     </div>
+                                </td>
+                                <td>
+                                    <?php if ($unique_link && $obfuscated_url) : ?>
+                                        <div class="their-story-link-group">
+                                            <code class="their-story-code"><?php echo esc_html($obfuscated_url); ?></code>
+                                            <button type="button" class="copy-link-btn their-story-btn-small" data-link="<?php echo esc_attr($obfuscated_url); ?>">
+                                                <?php echo esc_html__('Copy', 'their-story'); ?>
+                                            </button>
+                                        </div>
+                                    <?php else : ?>
+                                        <span class="their-story-muted"><?php echo esc_html__('Not generated yet', 'their-story'); ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="their-story-muted">
+                                    <?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($story->post_date))); ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
