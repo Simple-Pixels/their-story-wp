@@ -158,62 +158,42 @@
 
         function renderProducts(products) {
             if (!productsWrap) return;
-
-            if (products.length === 1) {
-                // Single product — go straight to attribute pickers
-                productsWrap.innerHTML = '';
-                renderAttributePickers(products[0], productsWrap);
-            } else {
-                // Multiple products — show selector, then pickers below
-                var html = '<div class="ts-product-selector">';
-                products.forEach(function(p) {
-                    html += '<button type="button" class="ts-product-pick-btn" data-product-index="' + products.indexOf(p) + '">';
-                    if (p.image) html += '<img src="' + escAttr(p.image) + '" alt="" />';
-                    html += '<span>' + escHtml(p.name) + '</span></button>';
-                });
-                html += '</div><div id="ts-attr-pickers"></div>';
-                productsWrap.innerHTML = html;
-
-                productsWrap.querySelectorAll('.ts-product-pick-btn').forEach(function(btn) {
-                    btn.addEventListener('click', function() {
-                        productsWrap.querySelectorAll('.ts-product-pick-btn').forEach(function(b) {
-                            b.classList.remove('ts-product-pick-btn--selected');
-                        });
-                        this.classList.add('ts-product-pick-btn--selected');
-                        var idx = parseInt(this.getAttribute('data-product-index'), 10);
-                        var pickerWrap = document.getElementById('ts-attr-pickers');
-                        if (pickerWrap) {
-                            pickerWrap.innerHTML = '';
-                            renderAttributePickers(products[idx], pickerWrap);
-                        }
-                    });
-                });
-            }
+            // Always render the first (or only) product as cover cards
+            productsWrap.innerHTML = '';
+            renderCoverCards(products[0], productsWrap);
         }
 
-        function renderAttributePickers(product, container) {
-            var groups    = product.attribute_groups || [];
-            var selections = {};
+        function renderCoverCards(product, container) {
+            var variations = product.variations || [];
+            if (!variations.length) {
+                container.innerHTML = '<p class="ts-products-error">No covers available.</p>';
+                return;
+            }
 
             var html = '';
-
             if (product.description) {
                 html += '<p class="ts-product-desc-top">' + escHtml(product.description) + '</p>';
             }
-
-            groups.forEach(function(group) {
-                html += '<div class="ts-attr-group">';
-                html += '<p class="ts-attr-label">' + escHtml(group.label) + '</p>';
-                html += '<div class="ts-attr-options" data-attr-key="' + escAttr(group.key) + '">';
-                group.options.forEach(function(opt) {
-                    html += '<button type="button" class="ts-attr-btn"'
-                          + ' data-attr-key="' + escAttr(group.key) + '"'
-                          + ' data-attr-value="' + escAttr(opt.slug) + '">'
-                          + escHtml(opt.label) + '</button>';
-                });
-                html += '</div></div>';
+            html += '<p class="ts-attr-label">Choose your cover</p>';
+            html += '<div class="ts-cover-grid">';
+            variations.forEach(function(v, i) {
+                // Derive a display label from the variation attributes (first value found)
+                var label = '';
+                var attrKeys = Object.keys(v.attributes);
+                if (attrKeys.length) {
+                    var raw = v.attributes[attrKeys[0]];
+                    label = raw ? raw.replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); }) : 'Cover ' + (i + 1);
+                } else {
+                    label = 'Cover ' + (i + 1);
+                }
+                html += '<button type="button" class="ts-cover-card" data-variation-id="' + escAttr(v.id) + '" data-price-html="' + escAttr(v.price_html) + '">';
+                if (v.image) {
+                    html += '<img class="ts-cover-card__img" src="' + escAttr(v.image) + '" alt="' + escAttr(label) + '" loading="lazy" />';
+                }
+                html += '<span class="ts-cover-card__label">' + escHtml(label) + '</span>';
+                html += '</button>';
             });
-
+            html += '</div>';
             html += '<div class="ts-price-summary" id="ts-price-summary" hidden>'
                   + '<span class="ts-price-label">Total:</span>'
                   + '<span class="ts-price-value" id="ts-price-value"></span>'
@@ -221,65 +201,25 @@
 
             container.innerHTML = html;
 
-            container.querySelectorAll('.ts-attr-btn').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    var attrKey = this.getAttribute('data-attr-key');
-                    selections[attrKey] = this.getAttribute('data-attr-value');
-
-                    // Highlight within this group
-                    container.querySelectorAll('.ts-attr-btn[data-attr-key="' + attrKey + '"]').forEach(function(b) {
-                        b.classList.remove('ts-attr-btn--selected');
+            container.querySelectorAll('.ts-cover-card').forEach(function(card) {
+                card.addEventListener('click', function() {
+                    container.querySelectorAll('.ts-cover-card').forEach(function(c) {
+                        c.classList.remove('ts-cover-card--selected');
                     });
-                    this.classList.add('ts-attr-btn--selected');
+                    this.classList.add('ts-cover-card--selected');
 
-                    tryMatchVariation(product, selections, container);
+                    selectedProduct   = product.id;
+                    selectedVariation = parseInt(this.getAttribute('data-variation-id'), 10);
+                    if (purchaseBtn) purchaseBtn.disabled = false;
+
+                    var summary  = document.getElementById('ts-price-summary');
+                    var priceEl  = document.getElementById('ts-price-value');
+                    if (summary && priceEl) {
+                        priceEl.innerHTML = this.getAttribute('data-price-html');
+                        summary.removeAttribute('hidden');
+                    }
                 });
             });
-        }
-
-        function tryMatchVariation(product, selections, container) {
-            var totalGroups   = (product.attribute_groups || []).length;
-            var selectedCount = Object.keys(selections).length;
-
-            var summary  = document.getElementById('ts-price-summary');
-            var priceEl  = document.getElementById('ts-price-value');
-
-            if (selectedCount < totalGroups) {
-                selectedVariation = null;
-                if (purchaseBtn) purchaseBtn.disabled = true;
-                if (summary) summary.setAttribute('hidden', '');
-                return;
-            }
-
-            // Find the variation that matches all selected attributes
-            var match = null;
-            product.variations.forEach(function(v) {
-                if (match) return;
-                var isMatch = true;
-                for (var attrKey in selections) {
-                    var varAttrVal = v.attributes[attrKey];
-                    // Empty string means "any" in WC
-                    if (varAttrVal !== '' && varAttrVal !== selections[attrKey]) {
-                        isMatch = false;
-                        break;
-                    }
-                }
-                if (isMatch) match = v;
-            });
-
-            if (match) {
-                selectedProduct   = product.id;
-                selectedVariation = match.id;
-                if (purchaseBtn) purchaseBtn.disabled = false;
-                if (summary) {
-                    summary.removeAttribute('hidden');
-                    if (priceEl) priceEl.innerHTML = match.price_html;
-                }
-            } else {
-                selectedVariation = null;
-                if (purchaseBtn) purchaseBtn.disabled = true;
-                if (summary) summary.setAttribute('hidden', '');
-            }
         }
 
         // -----------------------------------------------------------------------
@@ -289,7 +229,7 @@
         if (purchaseBtn) {
             purchaseBtn.addEventListener('click', function() {
                 if (!selectedProduct || !selectedVariation) {
-                    alert('Please select a book size to continue.');
+                    alert('Please select a book cover to continue.');
                     return;
                 }
 

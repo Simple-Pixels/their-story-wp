@@ -40,6 +40,7 @@ class Their_Story {
         add_filter('rank_math/frontend/robots', array($this, 'noindex_story_pages_rankmath'));
         add_filter('wpseo_exclude_from_sitemap_by_post_ids', array($this, 'exclude_story_pages_from_yoast_sitemap'));
         add_action('template_redirect', array($this, 'handle_begin_checkout'));
+        add_action('template_redirect', array($this, 'handle_contributor_thankyou'));
         add_action('wp_ajax_their_story_get_products', array($this, 'ajax_get_products'));
         add_action('wp_ajax_their_story_prepare_checkout', array($this, 'ajax_prepare_checkout'));
         add_action('wp_ajax_their_story_prepare_reorder', array($this, 'ajax_prepare_reorder'));
@@ -749,6 +750,18 @@ class Their_Story {
     }
 
     public function enqueue_frontend_assets() {
+        // Also enqueue on the contributor thank-you virtual page
+        if (isset($_GET['their_story_thankyou'])) {
+            $css_file = THEIR_STORY_PLUGIN_DIR . 'assets/css/frontend.css';
+            wp_enqueue_style(
+                'their-story-frontend',
+                THEIR_STORY_PLUGIN_URL . 'assets/css/frontend.css',
+                array(),
+                file_exists($css_file) ? filemtime($css_file) : THEIR_STORY_VERSION
+            );
+            return;
+        }
+
         if (is_page()) {
             global $post;
             if (!$post) {
@@ -814,6 +827,7 @@ class Their_Story {
                     'storyClosedMessage' => $story_closed
                         ? __('This story has been closed. No new messages can be added.', 'their-story')
                         : '',
+                    'contributorThankyouUrl' => add_query_arg('their_story_thankyou', '1', home_url('/')),
                 ));
             }
         }
@@ -1335,7 +1349,7 @@ class Their_Story {
         );
         wp_mail('support@sharetheirstory.com.au', $admin_subject, $admin_message);
 
-        wp_send_json_success(array('message' => __('Story closed. The Their Story team has been notified.', 'their-story')));
+        wp_send_json_success(array('message' => __('Story closed. The Share Their Story team has been notified.', 'their-story')));
     }
     
     public function ajax_reopen_story() {
@@ -2040,7 +2054,7 @@ class Their_Story {
         <div class="ts-thankyou-header">
             <?php if ($is_reorder) : ?>
                 <h1 class="ts-thankyou-title"><?php esc_html_e('Thank you! Your reorder has been received.', 'their-story'); ?></h1>
-                <p class="ts-thankyou-lede"><?php esc_html_e('The Their Story team has been notified and will be in touch shortly.', 'their-story'); ?></p>
+                <p class="ts-thankyou-lede"><?php esc_html_e('The Share Their Story team has been notified and will be in touch shortly.', 'their-story'); ?></p>
             <?php else : ?>
                 <h1 class="ts-thankyou-title"><?php esc_html_e('Thank you! Your story has been created.', 'their-story'); ?></h1>
             <?php endif; ?>
@@ -2262,17 +2276,23 @@ class Their_Story {
                 );
             }
 
-            // Slim variation list — only need id, price_html, and attributes map
+            // Slim variation list — id, price_html, attributes map, and variation image
             $variations = array();
             foreach ($raw_variations as $v) {
                 $var = wc_get_product($v['variation_id']);
                 if (!$var) {
                     continue;
                 }
+                // Use variation image if set, fall back to parent product image
+                $var_image_id = $var->get_image_id();
+                $var_image    = $var_image_id
+                    ? wp_get_attachment_image_url($var_image_id, 'large')
+                    : wp_get_attachment_image_url($product->get_image_id(), 'large');
                 $variations[] = array(
                     'id'         => $v['variation_id'],
                     'price_html' => $var->get_price_html(),
                     'attributes' => $v['attributes'],
+                    'image'      => $var_image ?: '',
                 );
             }
 
@@ -2331,6 +2351,17 @@ class Their_Story {
         wp_send_json_success(array(
             'redirect_url' => add_query_arg('their_story_begin_checkout', '1', home_url('/')),
         ));
+    }
+
+    public function handle_contributor_thankyou() {
+        if (!isset($_GET['their_story_thankyou'])) {
+            return;
+        }
+        $subject      = sanitize_text_field(wp_unslash($_GET['subject'] ?? ''));
+        $about_url    = apply_filters('their_story_about_url', home_url('/about/'));
+        $register_url = apply_filters('their_story_register_url', wp_registration_url());
+        include THEIR_STORY_PLUGIN_DIR . 'templates/contributor-thankyou.php';
+        exit;
     }
 
     public function ajax_prepare_reorder() {
@@ -2610,7 +2641,7 @@ class Their_Story {
                 $pending['title']
             );
             $message = sprintf(
-                __("Hi %s,\n\nYour story \"%s\" has been created and is ready to share!\n\nShare this link with friends and family so they can contribute:\n%s\n\nManage your story from your dashboard:\n%s\n\nThank you,\nThe Their Story Team", 'their-story'),
+                __("Hi %s,\n\nYour story \"%s\" has been created and is ready to share!\n\nShare this link with friends and family so they can contribute:\n%s\n\nManage your story from your dashboard:\n%s\n\nThank you,\nThe Share Their Story Team", 'their-story'),
                 $storyteller->display_name,
                 $pending['title'],
                 $story_url,

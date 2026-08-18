@@ -72,6 +72,23 @@ $contribution_inviter = $storyteller ? $storyteller->display_name : __('the orga
         </div>
     </header>
 
+    <?php if ($is_storyteller && !$is_story_closed) : ?>
+    <div class="their-story-owner-notice">
+        <p>
+            <?php
+            echo wp_kses(
+                sprintf(
+                    /* translators: %s: subject name */
+                    __('<strong>You\'re viewing your story page.</strong> This is what contributors will see when you send them the link. Feel free to add your own story below if you\'d like.', 'their-story'),
+                    esc_html($contribution_subject)
+                ),
+                array('strong' => array())
+            );
+            ?>
+        </p>
+    </div>
+    <?php endif; ?>
+
     <?php if (!$is_story_closed) : ?>
         <?php include THEIR_STORY_PLUGIN_DIR . 'templates/contribution-form.php'; ?>
     <?php else : ?>
@@ -143,12 +160,13 @@ $contribution_inviter = $storyteller ? $storyteller->display_name : __('the orga
     </section>
     <?php endif; ?>
 
+    <?php if ($is_storyteller || $can_moderate) : ?>
     <section class="their-story-messages-section their-story-flow-section" aria-labelledby="their-story-messages-heading">
         <h2 id="their-story-messages-heading" class="their-story-section-title"><?php echo esc_html__('Messages', 'their-story'); ?></h2>
         <p class="their-story-section-lede"><?php echo esc_html__('All approved messages will appear here', 'their-story'); ?></p>
         <?php if (empty($approved_submissions)) : ?>
             <div class="their-story-empty">
-                <p><?php echo esc_html__('No messages yet. Be the first to share.', 'their-story'); ?></p>
+                <p><?php echo esc_html__('No messages yet.', 'their-story'); ?></p>
             </div>
         <?php else : ?>
             <div class="their-story-messages-list">
@@ -206,6 +224,7 @@ $contribution_inviter = $storyteller ? $storyteller->display_name : __('the orga
             </div>
         <?php endif; ?>
     </section>
+    <?php endif; ?>
 
     <div class="their-story-page-actions">
         <button type="button" class="their-story-btn their-story-btn-outline" id="their-story-open-share-modal">

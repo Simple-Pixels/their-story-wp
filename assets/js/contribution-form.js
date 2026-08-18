@@ -146,20 +146,50 @@
             var forward = !!opts.forward;
             currentScreen = screen;
             if (!wizard) return;
+
+            var flow = getYesScreens();
+            var currentIdx = flow.indexOf(screen);
+            var nonFlowScreens = ['no_confirm', 'uncertain', 'no_thanks'];
+
             wizard.querySelectorAll('[data-cf-screen]').forEach(function(el) {
-                var isActive = el.getAttribute('data-cf-screen') === screen;
-                if (isActive) show(el);
-                else hide(el);
-                el.classList.toggle('their-story-cf-step-active', isActive);
-                el.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+                var s = el.getAttribute('data-cf-screen');
+                var idxInFlow = flow.indexOf(s);
+                var isActive = s === screen;
+                var isCompleted = idxInFlow >= 0 && idxInFlow < currentIdx;
+                var isNonFlow = nonFlowScreens.indexOf(s) !== -1;
+
+                if (isActive) {
+                    show(el);
+                    el.classList.add('their-story-cf-step-active');
+                    el.classList.remove('their-story-cf-step--completed');
+                    el.setAttribute('aria-hidden', 'false');
+                } else if (isCompleted) {
+                    show(el);
+                    el.classList.remove('their-story-cf-step-active');
+                    el.classList.add('their-story-cf-step--completed');
+                    el.setAttribute('aria-hidden', 'false');
+                } else if (isNonFlow && !isActive) {
+                    hide(el);
+                    el.classList.remove('their-story-cf-step-active', 'their-story-cf-step--completed');
+                    el.setAttribute('aria-hidden', 'true');
+                } else {
+                    hide(el);
+                    el.classList.remove('their-story-cf-step-active', 'their-story-cf-step--completed');
+                    el.setAttribute('aria-hidden', 'true');
+                }
             });
+
             syncNav();
             updateProgress();
             var active = wizard.querySelector('.their-story-cf-step-active');
             if (forward && active) {
                 playStepEnter(active);
             }
+            // Scroll active step into view smoothly
             if (active) {
+                setTimeout(function() {
+                    active.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 50);
                 var focusTarget = active.querySelector('input:not([type="file"]), textarea, select, button:not(.' + CF_HIDE + ')');
                 if (!focusTarget) {
                     focusTarget = active.querySelector('button[type="button"]:not(.' + CF_HIDE + ')');
@@ -661,11 +691,11 @@
                     .then(function(r) { return r.json(); })
                     .then(function(response) {
                         if (response.success) {
-                            setStatus('success', response.data.message || 'Submitted.');
                             closeConfirmModal();
-                            form.reset();
-                            resetWizardAfterSuccess();
-                            setTimeout(function() { location.reload(); }, 2000);
+                            var thankyouUrl = (typeof theirStoryFrontend !== 'undefined' && theirStoryFrontend.contributorThankyouUrl) || home_url;
+                            var subject = (cfg && cfg.subjectName) ? cfg.subjectName : '';
+                            var redirect = thankyouUrl + (thankyouUrl.indexOf('?') !== -1 ? '&' : '?') + 'subject=' + encodeURIComponent(subject);
+                            window.location.href = redirect;
                         } else {
                             setStatus('error', (response.data && response.data.message) || 'Error submitting.');
                             finalSubmitBtn.disabled = false;

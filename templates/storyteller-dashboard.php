@@ -135,7 +135,7 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
         </a>
         <a
             class="their-story-help-btn"
-            href="<?php echo esc_url(apply_filters('their_story_help_url', 'https://theirstory.kinsta.cloud')); ?>"
+            href="<?php echo esc_url(apply_filters('their_story_help_url', home_url('/contact-us/'))); ?>"
             target="_blank"
             rel="noopener noreferrer"
         >
@@ -179,11 +179,11 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
             <p class="ts-wizard-lede"><?php esc_html_e('Please read and accept our terms before creating your story.', 'their-story'); ?></p>
 
             <div class="ts-terms-scroll">
-                <p><?php esc_html_e('By creating a story with Their Story you agree to the following:', 'their-story'); ?></p>
+                <p><?php esc_html_e('By creating a story with Share Their Story you agree to the following:', 'their-story'); ?></p>
                 <p><?php esc_html_e('Payment is required before your story page is created.', 'their-story'); ?></p>
                 <p><?php esc_html_e('Your story page will be live once payment is confirmed.', 'their-story'); ?></p>
                 <p><?php esc_html_e('All submitted contributions are subject to moderation before appearing on your story page.', 'their-story'); ?></p>
-                <p><?php esc_html_e('When you close your story, the Their Story team will begin preparing your book for print.', 'their-story'); ?></p>
+                <p><?php esc_html_e('When you close your story, the Share Their Story team will begin preparing your book for print.', 'their-story'); ?></p>
                 <p><?php esc_html_e('All sales are final. Please contact us if you have any questions before purchasing.', 'their-story'); ?></p>
             </div>
 

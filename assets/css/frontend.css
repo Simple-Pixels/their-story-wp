@@ -1207,3 +1207,78 @@
     justify-content: flex-end;
     margin-top: 1.25rem;
 }
+
+/* Completed wizard steps — shown stacked above active step */
+.their-story-cf-step--completed {
+    opacity: 0.55;
+    pointer-events: none;
+    position: relative;
+    padding-bottom: 1rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid #e8ddd9;
+}
+
+.their-story-cf-step--completed input,
+.their-story-cf-step--completed textarea,
+.their-story-cf-step--completed select,
+.their-story-cf-step--completed button {
+    pointer-events: none;
+}
+
+/* Contributor thank-you page */
+.their-story-contributor-thankyou {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 60vh;
+    padding: 4rem 1.5rem;
+}
+
+.their-story-contributor-thankyou__inner {
+    max-width: 600px;
+    width: 100%;
+    text-align: center;
+}
+
+.their-story-contributor-thankyou__icon {
+    color: #e6b3a1;
+    margin-bottom: 1.5rem;
+}
+
+.their-story-contributor-thankyou__title {
+    font-size: 1.5rem;
+    line-height: 1.4;
+    color: #3a2a20;
+    margin-bottom: 1rem;
+}
+
+.their-story-contributor-thankyou__body {
+    color: #6b5a50;
+    margin-bottom: 1.5rem;
+    line-height: 1.7;
+}
+
+.their-story-contributor-thankyou__cta-label {
+    color: #3a2a20;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+.their-story-contributor-thankyou__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+/* Storyteller owner notice on story page */
+.their-story-owner-notice {
+    background: #faf4f0;
+    border: 1.5px solid #e6b3a1;
+    border-radius: 8px;
+    padding: 0.875rem 1.125rem;
+    margin-bottom: 1.5rem;
+    color: #3a2a20;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}

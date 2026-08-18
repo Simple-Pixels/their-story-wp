@@ -850,3 +850,119 @@ body.ts-wizard-open {
     color: #6b5a50;
     margin-bottom: 1rem;
 }
+
+/* Cover image card picker */
+.ts-cover-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.875rem;
+    margin-top: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.ts-cover-card {
+    background: #fff;
+    border: 2px solid #e8ddd9;
+    border-radius: 10px;
+    padding: 0;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.ts-cover-card:hover {
+    border-color: #e6b3a1;
+    box-shadow: 0 2px 8px rgba(230,179,161,0.25);
+}
+
+.ts-cover-card--selected {
+    border-color: #e6b3a1;
+    box-shadow: 0 0 0 3px rgba(230,179,161,0.35);
+}
+
+.ts-cover-card__img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    display: block;
+}
+
+.ts-cover-card__label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #3a2a20;
+    padding: 0.5rem 0.25rem;
+    text-transform: capitalize;
+}
+
+@media (max-width: 480px) {
+    .ts-cover-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ---- Mobile responsive ---- */
+@media (max-width: 640px) {
+    /* Story table scrolls horizontally rather than overflowing */
+    body.their-story-storyteller-screen .their-story-dashboard .their-story-table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Dashboard header: stack heading + create button */
+    body.their-story-storyteller-screen .their-story-dashboard .their-story-actions {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    body.their-story-storyteller-screen .their-story-dashboard #create-story-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Wizard modal fills screen on small phones */
+    .ts-wizard-dialog {
+        max-height: 95dvh;
+        overflow-y: auto;
+        border-radius: 16px 16px 0 0;
+        margin: auto 0 0;
+        padding: 1.25rem 1rem;
+    }
+
+    .ts-wizard-modal {
+        align-items: flex-end;
+    }
+
+    /* Cover card grid: 1 column below 480px already handled; ensure images don't stretch oddly */
+    .ts-cover-card__img {
+        aspect-ratio: 3 / 2;
+    }
+
+    /* Reorder modal */
+    #ts-reorder-modal .ts-wizard-dialog {
+        max-width: 100%;
+    }
+
+    /* Wizard footer buttons stack */
+    .ts-wizard-footer--split {
+        flex-direction: column-reverse;
+        gap: 0.5rem;
+    }
+
+    .ts-wizard-footer--split .their-story-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 640px) {
+    /* Hide link URL text on mobile — Copy button is enough */
+    body.their-story-storyteller-screen .their-story-dashboard .their-story-code {
+        display: none;
+    }
+}
