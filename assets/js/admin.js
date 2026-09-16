@@ -820,6 +820,79 @@
         }
 
         // -----------------------------------------------------------------------
+        // Help modal
+        // -----------------------------------------------------------------------
+
+        var helpBtn    = document.getElementById('ts-help-btn');
+        var helpModal  = document.getElementById('ts-help-modal');
+        var helpClose  = helpModal ? helpModal.querySelector('.ts-help-close') : null;
+        var helpBackdrop = helpModal ? helpModal.querySelector('.ts-help-backdrop') : null;
+        var helpSubmit = document.getElementById('ts-help-submit');
+        var helpError  = document.getElementById('ts-help-error');
+        var helpSuccess = document.getElementById('ts-help-success');
+
+        function openHelpModal() {
+            if (!helpModal) return;
+            helpModal.hidden = false;
+            helpModal.setAttribute('aria-hidden', 'false');
+            if (helpError) { helpError.hidden = true; helpError.textContent = ''; }
+            if (helpSuccess) helpSuccess.hidden = true;
+            if (helpSubmit) helpSubmit.disabled = false;
+        }
+
+        function closeHelpModal() {
+            if (!helpModal) return;
+            helpModal.hidden = true;
+            helpModal.setAttribute('aria-hidden', 'true');
+        }
+
+        if (helpBtn) helpBtn.addEventListener('click', openHelpModal);
+        if (helpClose) helpClose.addEventListener('click', closeHelpModal);
+        if (helpBackdrop) helpBackdrop.addEventListener('click', closeHelpModal);
+
+        if (helpSubmit) {
+            helpSubmit.addEventListener('click', function() {
+                var name    = document.getElementById('ts-help-name') ? document.getElementById('ts-help-name').value.trim() : '';
+                var email   = document.getElementById('ts-help-email') ? document.getElementById('ts-help-email').value.trim() : '';
+                var message = document.getElementById('ts-help-message') ? document.getElementById('ts-help-message').value.trim() : '';
+
+                if (!name || !email || !message) {
+                    if (helpError) { helpError.textContent = 'Please fill in all fields.'; helpError.hidden = false; }
+                    return;
+                }
+
+                helpSubmit.disabled = true;
+                if (helpError) { helpError.hidden = true; helpError.textContent = ''; }
+
+                var fd = new FormData();
+                fd.append('action', 'their_story_help_request');
+                fd.append('nonce', theirStoryAdmin.helpNonce);
+                fd.append('name', name);
+                fd.append('email', email);
+                fd.append('message', message);
+
+                fetch(theirStoryAdmin.ajaxUrl, { method: 'POST', body: fd })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success) {
+                            if (helpSuccess) helpSuccess.hidden = false;
+                            helpSubmit.textContent = 'Sent!';
+                        } else {
+                            if (helpError) {
+                                helpError.textContent = (data.data && data.data.message) || 'An error occurred. Please try again.';
+                                helpError.hidden = false;
+                            }
+                            helpSubmit.disabled = false;
+                        }
+                    })
+                    .catch(function() {
+                        if (helpError) { helpError.textContent = 'An error occurred. Please try again.'; helpError.hidden = false; }
+                        helpSubmit.disabled = false;
+                    });
+            });
+        }
+
+        // -----------------------------------------------------------------------
         // Helpers
         // -----------------------------------------------------------------------
 

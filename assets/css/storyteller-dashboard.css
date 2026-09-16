@@ -850,3 +850,59 @@ body.ts-wizard-open {
     color: #6b5a50;
     margin-bottom: 1rem;
 }
+
+.their-story-subsection-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--their-story-brand-text);
+    margin: 1.5rem 0 0.75rem;
+}
+
+/* Portal heading */
+.their-story-portal-heading {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--their-story-brand-text);
+    margin: 0.5rem 0 0;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+/* Welcome blurb */
+.their-story-welcome-blurb {
+    background: #faf4f0;
+    border: 1px solid #e8d8ce;
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--their-story-brand-text);
+    line-height: 1.6;
+}
+
+.their-story-welcome-blurb p {
+    margin: 0 0 0.5rem;
+}
+
+.their-story-welcome-blurb p:last-child {
+    margin-bottom: 0;
+}
+
+.their-story-welcome-example {
+    background: #fff;
+    border-left: 3px solid var(--their-story-brand-primary, #c07a5e);
+    border-radius: 0 6px 6px 0;
+    padding: 0.75rem 1rem;
+    margin-top: 0.75rem;
+    font-style: italic;
+    color: #6b5a50;
+}
+
+/* Help success message */
+.ts-help-success {
+    color: #2e7d32;
+    font-size: 0.9rem;
+    margin-top: 0.75rem;
+    text-align: center;
+}

@@ -4,6 +4,84 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+function their_story_render_story_table($stories, $their_story_obj) {
+    ob_start();
+    ?>
+    <table class="their-story-table">
+        <thead>
+            <tr>
+                <th><?php echo esc_html__('Title', 'their-story'); ?></th>
+                <th><?php echo esc_html__('Actions', 'their-story'); ?></th>
+                <th><?php echo esc_html__('Unique Link', 'their-story'); ?></th>
+                <th><?php echo esc_html__('Created', 'their-story'); ?></th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($stories as $story) :
+                $unique_link    = get_post_meta($story->ID, '_story_unique_link', true);
+                $story_url      = get_permalink($story->ID);
+                $obfuscated_url = $their_story_obj->get_story_url_from_link($unique_link);
+                $is_closed      = Their_Story::story_is_closed($story->ID);
+                $has_variation  = (bool) get_post_meta($story->ID, '_their_story_variation_id', true);
+            ?>
+                <tr>
+                    <td>
+                        <div class="their-story-table-cell">
+                            <a href="<?php echo esc_url($story_url); ?>" target="_blank" class="their-story-link">
+                                <?php echo esc_html($story->post_title); ?>
+                            </a>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="their-story-actions-inline">
+                            <a href="<?php echo esc_url($story_url); ?>" target="_blank" class="their-story-action-btn" title="<?php echo esc_attr__('View Story', 'their-story'); ?>">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                            </a>
+                            <button type="button" class="their-story-action-btn their-story-password-btn" data-story-id="<?php echo esc_attr($story->ID); ?>" data-story-title="<?php echo esc_attr($story->post_title); ?>" title="<?php echo esc_attr__('Change Password', 'their-story'); ?>">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                </svg>
+                            </button>
+                            <button type="button" class="their-story-action-btn their-story-delete-btn" data-story-id="<?php echo esc_attr($story->ID); ?>" data-story-title="<?php echo esc_attr($story->post_title); ?>" title="<?php echo esc_attr__('Delete Story', 'their-story'); ?>">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                            <?php if ($is_closed && $has_variation) : ?>
+                            <button type="button" class="their-story-action-btn their-story-reorder-btn" data-story-id="<?php echo esc_attr($story->ID); ?>" data-story-title="<?php echo esc_attr($story->post_title); ?>" title="<?php echo esc_attr__('Reorder', 'their-story'); ?>">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                            </button>
+                            <?php endif; ?>
+                        </div>
+                    </td>
+                    <td>
+                        <?php if ($unique_link && $obfuscated_url) : ?>
+                            <div class="their-story-link-group">
+                                <code class="their-story-code"><?php echo esc_html($obfuscated_url); ?></code>
+                                <button type="button" class="copy-link-btn their-story-btn-small" data-link="<?php echo esc_attr($obfuscated_url); ?>">
+                                    <?php echo esc_html__('Copy', 'their-story'); ?>
+                                </button>
+                            </div>
+                        <?php else : ?>
+                            <span class="their-story-muted"><?php echo esc_html__('Not generated yet', 'their-story'); ?></span>
+                        <?php endif; ?>
+                    </td>
+                    <td class="their-story-muted">
+                        <?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($story->post_date))); ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+    <?php
+    return ob_get_clean();
+}
+
 $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_story_error']) : '';
 ?>
 
@@ -17,6 +95,7 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
                 decoding="async"
             />
         </a>
+        <h1 class="their-story-portal-heading"><?php esc_html_e('Customer Portal', 'their-story'); ?></h1>
     </div>
 
     <?php if ($checkout_error === 'cart') : ?>
@@ -29,10 +108,29 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
         </div>
     <?php endif; ?>
 
+    <div class="their-story-welcome-blurb">
+        <p><?php esc_html_e('Welcome to Share Their Story.', 'their-story'); ?></p>
+        <p><?php esc_html_e('Copy and paste the link below into communications to your chosen contributors.', 'their-story'); ?></p>
+        <p class="their-story-welcome-example">
+            <strong><?php esc_html_e('An example of an SMS/email you might send your contributors:', 'their-story'); ?></strong><br>
+            <?php esc_html_e('Hi there, I have decided to create a storybook about &lt;&lt;loved one name&gt;&gt; and I would love it if you could contribute some stories to their book via this Share Their Story link.', 'their-story'); ?>
+        </p>
+    </div>
+
     <div class="their-story-actions">
         <div class="their-story-actions-text">
-            <h2 class="their-story-section-title"><?php echo esc_html__('Your Stories', 'their-story'); ?></h2>
-            <p class="their-story-section-lede"><?php echo esc_html__('Edit or manage your stories', 'their-story'); ?></p>
+            <h2 class="their-story-section-title">
+                <?php
+                echo wp_kses(
+                    sprintf(
+                        /* translators: %s: customer display name */
+                        __('Stories created by <strong>%s</strong>', 'their-story'),
+                        esc_html($current_user->display_name)
+                    ),
+                    array('strong' => array())
+                );
+                ?>
+            </h2>
         </div>
         <button type="button" id="create-story-btn" class="their-story-btn their-story-btn-primary">
             <svg class="their-story-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,92 +140,50 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
         </button>
     </div>
 
+    <?php
+    $active_stories = array();
+    $closed_stories = array();
+    $their_story_obj = new Their_Story();
+    foreach ($stories as $story) {
+        if (Their_Story::story_is_closed($story->ID)) {
+            $closed_stories[] = $story;
+        } else {
+            $active_stories[] = $story;
+        }
+    }
+    ?>
+
+    <?php if (empty($stories)) : ?>
     <div class="their-story-list">
-        <?php if (empty($stories)) : ?>
-            <div class="their-story-empty">
-                <svg class="their-story-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-                <p class="their-story-empty-text"><?php echo esc_html__('You haven\'t created any stories yet.', 'their-story'); ?></p>
-                <p class="their-story-empty-subtext"><?php echo esc_html__('Click "Create New Story" to get started!', 'their-story'); ?></p>
-            </div>
-        <?php else : ?>
-            <div class="their-story-table-wrapper">
-                <table class="their-story-table">
-                    <thead>
-                        <tr>
-                            <th><?php echo esc_html__('Title', 'their-story'); ?></th>
-                            <th><?php echo esc_html__('Unique Link', 'their-story'); ?></th>
-                            <th><?php echo esc_html__('Created', 'their-story'); ?></th>
-                            <th><?php echo esc_html__('Actions', 'their-story'); ?></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($stories as $story) :
-                            $unique_link    = get_post_meta($story->ID, '_story_unique_link', true);
-                            $story_url      = get_permalink($story->ID);
-                            $their_story    = new Their_Story();
-                            $obfuscated_url = $their_story->get_story_url_from_link($unique_link);
-                            $is_closed      = Their_Story::story_is_closed($story->ID);
-                            $has_variation  = (bool) get_post_meta($story->ID, '_their_story_variation_id', true);
-                        ?>
-                            <tr>
-                                <td>
-                                    <div class="their-story-table-cell">
-                                        <a href="<?php echo esc_url($story_url); ?>" target="_blank" class="their-story-link">
-                                            <?php echo esc_html($story->post_title); ?>
-                                        </a>
-                                    </div>
-                                </td>
-                                <td>
-                                    <?php if ($unique_link && $obfuscated_url) : ?>
-                                        <div class="their-story-link-group">
-                                            <code class="their-story-code"><?php echo esc_html($obfuscated_url); ?></code>
-                                            <button type="button" class="copy-link-btn their-story-btn-small" data-link="<?php echo esc_attr($obfuscated_url); ?>">
-                                                <?php echo esc_html__('Copy', 'their-story'); ?>
-                                            </button>
-                                        </div>
-                                    <?php else : ?>
-                                        <span class="their-story-muted"><?php echo esc_html__('Not generated yet', 'their-story'); ?></span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="their-story-muted">
-                                    <?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($story->post_date))); ?>
-                                </td>
-                                <td>
-                                    <div class="their-story-actions-inline">
-                                        <a href="<?php echo esc_url($story_url); ?>" target="_blank" class="their-story-action-btn" title="<?php echo esc_attr__('View Story', 'their-story'); ?>">
-                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                            </svg>
-                                        </a>
-                                        <button type="button" class="their-story-action-btn their-story-password-btn" data-story-id="<?php echo esc_attr($story->ID); ?>" data-story-title="<?php echo esc_attr($story->post_title); ?>" title="<?php echo esc_attr__('Change Password', 'their-story'); ?>">
-                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                                            </svg>
-                                        </button>
-                                        <button type="button" class="their-story-action-btn their-story-delete-btn" data-story-id="<?php echo esc_attr($story->ID); ?>" data-story-title="<?php echo esc_attr($story->post_title); ?>" title="<?php echo esc_attr__('Delete Story', 'their-story'); ?>">
-                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                            </svg>
-                                        </button>
-                                        <?php if ($is_closed && $has_variation) : ?>
-                                        <button type="button" class="their-story-action-btn their-story-reorder-btn" data-story-id="<?php echo esc_attr($story->ID); ?>" data-story-title="<?php echo esc_attr($story->post_title); ?>" title="<?php echo esc_attr__('Reorder', 'their-story'); ?>">
-                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="18" height="18">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                            </svg>
-                                        </button>
-                                        <?php endif; ?>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        <?php endif; ?>
+        <div class="their-story-empty">
+            <svg class="their-story-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <p class="their-story-empty-text"><?php echo esc_html__('You haven\'t created any stories yet.', 'their-story'); ?></p>
+            <p class="their-story-empty-subtext"><?php echo esc_html__('Click "Create New Story" to get started!', 'their-story'); ?></p>
+        </div>
     </div>
+    <?php else : ?>
+
+    <?php if (!empty($active_stories)) : ?>
+    <div class="their-story-list">
+        <h3 class="their-story-subsection-title"><?php echo esc_html__('Currently Open', 'their-story'); ?></h3>
+        <div class="their-story-table-wrapper">
+            <?php echo their_story_render_story_table($active_stories, $their_story_obj); ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if (!empty($closed_stories)) : ?>
+    <div class="their-story-list">
+        <h3 class="their-story-subsection-title"><?php echo esc_html__('Archived Stories', 'their-story'); ?></h3>
+        <div class="their-story-table-wrapper">
+            <?php echo their_story_render_story_table($closed_stories, $their_story_obj); ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php endif; ?>
 
     <div class="their-story-dashboard-footer">
         <a class="their-story-logout-btn" href="<?php echo esc_url(wp_logout_url(home_url('/'))); ?>">
@@ -135,12 +191,52 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
         </a>
         <a
             class="their-story-help-btn"
-            href="<?php echo esc_url(apply_filters('their_story_help_url', 'https://theirstory.kinsta.cloud')); ?>"
+            href="https://theirstory.kinsta.cloud/my-account/"
             target="_blank"
             rel="noopener noreferrer"
         >
-            <?php esc_html_e('Get help', 'their-story'); ?>
+            <?php esc_html_e('View Purchases', 'their-story'); ?>
         </a>
+        <button type="button" class="their-story-help-btn" id="ts-help-btn">
+            <?php esc_html_e('Get help', 'their-story'); ?>
+        </button>
+    </div>
+</div>
+
+<!-- Help / Contact Modal -->
+<div id="ts-help-modal" class="ts-wizard-modal" aria-modal="true" role="dialog" aria-labelledby="ts-help-modal-title" hidden>
+    <div class="ts-wizard-backdrop ts-help-backdrop"></div>
+    <div class="ts-wizard-dialog" style="max-width:480px;">
+        <button type="button" class="ts-wizard-close ts-help-close" aria-label="<?php esc_attr_e('Close', 'their-story'); ?>">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+        <div class="ts-wizard-step" id="ts-help-form-wrap">
+            <h2 id="ts-help-modal-title" class="ts-wizard-title"><?php esc_html_e('Need Assistance?', 'their-story'); ?></h2>
+            <p class="ts-wizard-lede"><?php esc_html_e('Send us a message and we\'ll get back to you shortly.', 'their-story'); ?></p>
+            <div class="their-story-form-fields">
+                <div class="their-story-form-field">
+                    <label for="ts-help-name" class="their-story-label"><?php esc_html_e('Name', 'their-story'); ?></label>
+                    <input type="text" id="ts-help-name" class="their-story-input" value="<?php echo esc_attr($current_user->display_name); ?>" />
+                </div>
+                <div class="their-story-form-field">
+                    <label for="ts-help-email" class="their-story-label"><?php esc_html_e('Email', 'their-story'); ?></label>
+                    <input type="email" id="ts-help-email" class="their-story-input" value="<?php echo esc_attr($current_user->user_email); ?>" />
+                </div>
+                <div class="their-story-form-field">
+                    <label for="ts-help-message" class="their-story-label"><?php esc_html_e('Message', 'their-story'); ?></label>
+                    <textarea id="ts-help-message" class="their-story-input" rows="5" placeholder="<?php esc_attr_e('How can we help?', 'their-story'); ?>"></textarea>
+                </div>
+            </div>
+            <p id="ts-help-error" class="ts-reorder-error" hidden></p>
+            <p id="ts-help-success" class="ts-help-success" hidden><?php esc_html_e('Your message has been sent. We\'ll be in touch soon!', 'their-story'); ?></p>
+        </div>
+        <div class="ts-wizard-footer">
+            <button type="button" class="their-story-btn their-story-btn-primary" id="ts-help-submit" style="width:100%;">
+                <?php esc_html_e('Send Message', 'their-story'); ?>
+            </button>
+        </div>
     </div>
 </div>
 

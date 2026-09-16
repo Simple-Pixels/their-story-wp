@@ -43,6 +43,7 @@ class Their_Story {
         add_action('wp_ajax_their_story_get_products', array($this, 'ajax_get_products'));
         add_action('wp_ajax_their_story_prepare_checkout', array($this, 'ajax_prepare_checkout'));
         add_action('wp_ajax_their_story_prepare_reorder', array($this, 'ajax_prepare_reorder'));
+        add_action('wp_ajax_their_story_help_request', array($this, 'ajax_help_request'));
 
         if (class_exists('WooCommerce')) {
             add_filter('woocommerce_prevent_admin_access', array($this, 'allow_storyteller_admin_access'));
@@ -731,6 +732,7 @@ class Their_Story {
             'getProductsNonce' => wp_create_nonce('their_story_get_products'),
             'prepareCheckoutNonce' => wp_create_nonce('their_story_prepare_checkout'),
             'prepareReorderNonce' => wp_create_nonce('their_story_prepare_reorder'),
+            'helpNonce' => wp_create_nonce('their_story_help_request'),
         ));
     }
     
@@ -1333,7 +1335,7 @@ class Their_Story {
             $storyteller_email,
             admin_url('admin.php?page=their-story-admin')
         );
-        wp_mail('support@sharetheirstory.com.au', $admin_subject, $admin_message);
+        wp_mail('grant@sharetheirstory.com.au', $admin_subject, $admin_message);
 
         wp_send_json_success(array('message' => __('Story closed. The Their Story team has been notified.', 'their-story')));
     }
@@ -2189,6 +2191,36 @@ class Their_Story {
     // Purchase-first workflow
     // -------------------------------------------------------------------------
 
+    public function ajax_help_request() {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'their_story_help_request')) {
+            wp_send_json_error(array('message' => __('Security check failed.', 'their-story')));
+        }
+
+        if (!is_user_logged_in()) {
+            wp_send_json_error(array('message' => __('You must be logged in.', 'their-story')));
+        }
+
+        $name    = sanitize_text_field(wp_unslash($_POST['name'] ?? ''));
+        $email   = sanitize_email(wp_unslash($_POST['email'] ?? ''));
+        $message = sanitize_textarea_field(wp_unslash($_POST['message'] ?? ''));
+
+        if (!$name || !$email || !$message) {
+            wp_send_json_error(array('message' => __('Please fill in all fields.', 'their-story')));
+        }
+
+        if (!is_email($email)) {
+            wp_send_json_error(array('message' => __('Please enter a valid email address.', 'their-story')));
+        }
+
+        $subject = sprintf('Customer help request from %s', $name);
+        $body    = sprintf("Name: %s\nEmail: %s\n\nMessage:\n%s", $name, $email, $message);
+        $headers = array('Reply-To: ' . $name . ' <' . $email . '>');
+
+        wp_mail('grant@sharetheirstory.com.au', $subject, $body, $headers);
+
+        wp_send_json_success(array('message' => __('Your message has been sent. We\'ll be in touch soon!', 'their-story')));
+    }
+
     /**
      * Returns available WC variable products + their variations for the creation wizard.
      */
@@ -2531,7 +2563,7 @@ class Their_Story {
 
                 // Notify support of reorder
                 wp_mail(
-                    'support@sharetheirstory.com.au',
+                    'grant@sharetheirstory.com.au',
                     sprintf(__('Reorder placed for story: %s', 'their-story'), $story_title),
                     sprintf(
                         __("A reorder has been placed.\n\nStory: %s\nStory ID: %d\nOrder ID: %d\nQty: %d", 'their-story'),
