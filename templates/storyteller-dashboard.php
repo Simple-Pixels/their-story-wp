@@ -89,7 +89,7 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
     <div class="their-story-brand-header">
         <a href="<?php echo esc_url(home_url('/')); ?>" class="their-story-brand-logo-link" rel="home">
             <img
-                src="<?php echo esc_url('https://theirstory.kinsta.cloud/wp-content/uploads/2025/12/Their-Story-Temp-Logo.png'); ?>"
+                src="<?php echo esc_url('https://theirstory.kinsta.cloud/wp-content/uploads/2025/12/TS001-Logo-Main-RGB.png'); ?>"
                 alt="<?php echo esc_attr(get_bloginfo('name')); ?>"
                 class="their-story-brand-logo"
                 decoding="async"
@@ -109,13 +109,15 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
     <?php endif; ?>
 
     <div class="their-story-welcome-blurb">
-        <p><?php esc_html_e('Welcome to Share Their Story.', 'their-story'); ?></p>
+        <p class="their-story-welcome-heading"><?php esc_html_e('Welcome to Share Their Story.', 'their-story'); ?></p>
         <p><?php esc_html_e('Copy and paste the link below into communications to your chosen contributors.', 'their-story'); ?></p>
-        <p class="their-story-welcome-example">
-            <strong><?php esc_html_e('An example of an SMS/email you might send your contributors:', 'their-story'); ?></strong><br>
-            <?php esc_html_e('Hi there, I have decided to create a storybook about &lt;&lt;loved one name&gt;&gt; and I would love it if you could contribute some stories to their book via this Share Their Story link.', 'their-story'); ?>
-        </p>
+        <div class="their-story-welcome-message-wrap">
+            <p class="their-story-welcome-message-label"><?php esc_html_e('Example message to send contributors:', 'their-story'); ?></p>
+            <p class="their-story-welcome-message" id="ts-contributor-message"><?php esc_html_e('Hi there, I have decided to create a storybook about <<loved one name>> and I would love it if you could contribute some stories to their book via this Share Their Story link.', 'their-story'); ?></p>
+            <button type="button" class="their-story-btn their-story-btn-outline their-story-btn-copy-message" id="ts-copy-message-btn"><?php esc_html_e('Copy message', 'their-story'); ?></button>
+        </div>
     </div>
+    <hr class="their-story-section-divider" />
 
     <div class="their-story-actions">
         <div class="their-story-actions-text">

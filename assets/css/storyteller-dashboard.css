@@ -858,6 +858,51 @@ body.ts-wizard-open {
     margin: 1.5rem 0 0.75rem;
 }
 
+/* Cover card grid */
+.ts-cover-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.ts-cover-card {
+    background: none;
+    border: 2px solid #e8d8ce;
+    border-radius: 10px;
+    padding: 0.5rem;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ts-cover-card:hover {
+    border-color: #c07a5e;
+}
+
+.ts-cover-card--selected {
+    border-color: #c07a5e;
+    box-shadow: 0 0 0 3px rgba(192, 122, 94, 0.25);
+}
+
+.ts-cover-card__img {
+    width: 100%;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    border-radius: 6px;
+    display: block;
+}
+
+.ts-cover-card__label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--their-story-brand-text);
+}
+
 /* Portal heading */
 .their-story-portal-heading {
     text-align: center;
@@ -865,8 +910,6 @@ body.ts-wizard-open {
     font-weight: 600;
     color: var(--their-story-brand-text);
     margin: 0.5rem 0 0;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
 }
 
 /* Welcome blurb */
@@ -875,7 +918,7 @@ body.ts-wizard-open {
     border: 1px solid #e8d8ce;
     border-radius: 10px;
     padding: 1.25rem 1.5rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0;
     font-size: 0.9rem;
     color: var(--their-story-brand-text);
     line-height: 1.6;
@@ -889,14 +932,45 @@ body.ts-wizard-open {
     margin-bottom: 0;
 }
 
-.their-story-welcome-example {
-    background: #fff;
-    border-left: 3px solid var(--their-story-brand-primary, #c07a5e);
-    border-radius: 0 6px 6px 0;
-    padding: 0.75rem 1rem;
+.their-story-welcome-heading {
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.their-story-welcome-message-wrap {
     margin-top: 0.75rem;
-    font-style: italic;
-    color: #6b5a50;
+    background: #fff;
+    border: 1px solid #e8d8ce;
+    border-radius: 8px;
+    padding: 0.875rem 1rem;
+}
+
+.their-story-welcome-message-label {
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #9a7a6e;
+    margin: 0 0 0.4rem !important;
+}
+
+.their-story-welcome-message {
+    color: #4a3a34;
+    margin: 0 0 0.75rem !important;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.their-story-btn-copy-message {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.75rem;
+}
+
+.their-story-section-divider {
+    border: none;
+    border-top: 1px solid #e8d8ce;
+    margin: 1.5rem 0;
 }
 
 /* Help success message */
