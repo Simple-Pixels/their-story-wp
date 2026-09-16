@@ -120,7 +120,7 @@ body.their-story-storyteller-screen .their-story-brand-logo-link:focus {
 }
 
 body.their-story-storyteller-screen .their-story-brand-logo {
-    max-width: min(280px, 85vw);
+    max-width: min(360px, 90vw);
     height: auto;
     width: auto;
     display: block;
@@ -399,7 +399,7 @@ body.ts-wizard-open {
     background: #ffffff;
     border-radius: 16px;
     width: 100%;
-    max-width: 600px;
+    max-width: 760px;
     max-height: 90vh;
     overflow-y: auto;
     padding: 2rem;
@@ -776,6 +776,87 @@ body.ts-wizard-open {
     }
 }
 
+/* Responsive dashboard table */
+@media (max-width: 640px) {
+    /* Wrap the dashboard content with side padding */
+    .their-story-dashboard {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    /* Stack the header row (title + Create button) */
+    .their-story-actions {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    #create-story-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Make the table scroll horizontally if needed */
+    .their-story-table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Hide Created column header and cells on mobile */
+    .ts-col-created {
+        display: none;
+    }
+
+    /* Hide the URL text in the Unique Link column — keep only the Copy button */
+    .ts-col-link .their-story-code {
+        display: none;
+    }
+
+    /* When the URL is hidden, the "Not generated yet" text can stay as-is;
+       hide the column header label since it's now copy-button-only */
+    .ts-col-link {
+        white-space: nowrap;
+    }
+
+    /* Footer buttons stack vertically */
+    .their-story-dashboard-footer {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .their-story-dashboard-footer > * {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
+
+    /* Wizard slides up from bottom on mobile */
+    .ts-wizard-modal {
+        align-items: flex-end;
+    }
+
+    .ts-wizard-dialog {
+        border-radius: 16px 16px 0 0;
+        max-height: 92vh;
+    }
+
+    /* Cover cards: 2 columns on mobile instead of 3 */
+    .ts-cover-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* Wizard footer buttons stack */
+    .ts-wizard-footer--split {
+        flex-direction: column-reverse;
+        gap: 0.5rem;
+    }
+
+    .ts-wizard-footer--split > * {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
 /* Reorder modal */
 .ts-reorder-qty-row {
     margin-top: 1.5rem;
@@ -914,10 +995,6 @@ body.ts-wizard-open {
 
 /* Welcome blurb */
 .their-story-welcome-blurb {
-    background: #faf4f0;
-    border: 1px solid #e8d8ce;
-    border-radius: 10px;
-    padding: 1.25rem 1.5rem;
     margin-bottom: 0;
     font-size: 0.9rem;
     color: var(--their-story-brand-text);
@@ -925,7 +1002,7 @@ body.ts-wizard-open {
 }
 
 .their-story-welcome-blurb p {
-    margin: 0 0 0.5rem;
+    margin: 0 0 0.6rem;
 }
 
 .their-story-welcome-blurb p:last-child {
@@ -938,33 +1015,62 @@ body.ts-wizard-open {
     margin-bottom: 0.5rem !important;
 }
 
+/* Expandable example message */
 .their-story-welcome-message-wrap {
     margin-top: 0.75rem;
-    background: #fff;
+    background: #faf4f0;
     border: 1px solid #e8d8ce;
     border-radius: 8px;
-    padding: 0.875rem 1rem;
+    overflow: hidden;
 }
 
-.their-story-welcome-message-label {
+.their-story-welcome-message-summary {
+    cursor: pointer;
+    padding: 0.75rem 1rem;
     font-weight: 600;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: #9a7a6e;
-    margin: 0 0 0.4rem !important;
+    font-size: 0.85rem;
+    color: #6b5a50;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    user-select: none;
+}
+
+.their-story-welcome-message-summary::-webkit-details-marker {
+    display: none;
+}
+
+.their-story-welcome-message-summary::before {
+    content: '▶';
+    font-size: 0.65rem;
+    transition: transform 0.15s;
+    color: #c07a5e;
+    flex-shrink: 0;
+}
+
+.their-story-welcome-message-wrap[open] .their-story-welcome-message-summary::before {
+    transform: rotate(90deg);
+}
+
+.their-story-welcome-message-wrap[open] .their-story-welcome-message-summary {
+    border-bottom: 1px solid #e8d8ce;
 }
 
 .their-story-welcome-message {
     color: #4a3a34;
-    margin: 0 0 0.75rem !important;
+    margin: 0 !important;
     font-size: 0.9rem;
     line-height: 1.6;
+    padding: 0.75rem 1rem;
+    background: #fff;
 }
 
 .their-story-btn-copy-message {
     font-size: 0.8rem;
     padding: 0.3rem 0.75rem;
+    margin: 0.75rem 1rem 1rem;
+    display: inline-block;
 }
 
 .their-story-section-divider {

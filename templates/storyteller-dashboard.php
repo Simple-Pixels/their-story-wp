@@ -12,8 +12,8 @@ function their_story_render_story_table($stories, $their_story_obj) {
             <tr>
                 <th><?php echo esc_html__('Title', 'their-story'); ?></th>
                 <th><?php echo esc_html__('Actions', 'their-story'); ?></th>
-                <th><?php echo esc_html__('Unique Link', 'their-story'); ?></th>
-                <th><?php echo esc_html__('Created', 'their-story'); ?></th>
+                <th class="ts-col-link"><?php echo esc_html__('Unique Link', 'their-story'); ?></th>
+                <th class="ts-col-created"><?php echo esc_html__('Created', 'their-story'); ?></th>
             </tr>
         </thead>
         <tbody>
@@ -59,7 +59,7 @@ function their_story_render_story_table($stories, $their_story_obj) {
                             <?php endif; ?>
                         </div>
                     </td>
-                    <td>
+                    <td class="ts-col-link">
                         <?php if ($unique_link && $obfuscated_url) : ?>
                             <div class="their-story-link-group">
                                 <code class="their-story-code"><?php echo esc_html($obfuscated_url); ?></code>
@@ -71,8 +71,8 @@ function their_story_render_story_table($stories, $their_story_obj) {
                             <span class="their-story-muted"><?php echo esc_html__('Not generated yet', 'their-story'); ?></span>
                         <?php endif; ?>
                     </td>
-                    <td class="their-story-muted">
-                        <?php echo esc_html(date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($story->post_date))); ?>
+                    <td class="ts-col-created their-story-muted">
+                        <?php echo esc_html(date_i18n(get_option('date_format'), strtotime($story->post_date))); ?>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -110,12 +110,13 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
 
     <div class="their-story-welcome-blurb">
         <p class="their-story-welcome-heading"><?php esc_html_e('Welcome to Share Their Story.', 'their-story'); ?></p>
-        <p><?php esc_html_e('Copy and paste the link below into communications to your chosen contributors.', 'their-story'); ?></p>
-        <div class="their-story-welcome-message-wrap">
-            <p class="their-story-welcome-message-label"><?php esc_html_e('Example message to send contributors:', 'their-story'); ?></p>
-            <p class="their-story-welcome-message" id="ts-contributor-message"><?php esc_html_e('Hi there, I have decided to create a storybook about <<loved one name>> and I would love it if you could contribute some stories to their book via this Share Their Story link.', 'their-story'); ?></p>
+        <p><?php esc_html_e('This is your dashboard, where you can create, manage and order your stories. To get started, click "Create New Story" above. Once your story is created, you\'ll receive a unique link you can share with chosen contributors — friends and family who can add their own memories and stories. When you\'re ready, close your story and the Share Their Story team will begin preparing your book for print.', 'their-story'); ?></p>
+        <p><?php esc_html_e('Copy and paste your unique story link into an SMS or email to your contributors.', 'their-story'); ?></p>
+        <details class="their-story-welcome-message-wrap">
+            <summary class="their-story-welcome-message-summary"><?php esc_html_e('Example message to send contributors', 'their-story'); ?></summary>
+            <p class="their-story-welcome-message" id="ts-contributor-message"><?php esc_html_e('Hi there, I have decided to create a storybook about [insert your loved one\'s name] and I would love it if you could contribute some stories to their book via this Share Their Story link [insert link from below].', 'their-story'); ?></p>
             <button type="button" class="their-story-btn their-story-btn-outline their-story-btn-copy-message" id="ts-copy-message-btn"><?php esc_html_e('Copy message', 'their-story'); ?></button>
-        </div>
+        </details>
     </div>
     <hr class="their-story-section-divider" />
 

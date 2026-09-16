@@ -180,7 +180,7 @@
                     ? firstAttrVal.replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); })
                     : ('Cover ' + (i + 1));
 
-                html += '<button type="button" class="ts-cover-card" data-variation-id="' + escAttr(String(v.id)) + '" data-price-html="' + escAttr(v.price_html) + '">';
+                html += '<button type="button" class="ts-cover-card" data-variation-id="' + escAttr(String(v.id)) + '" data-price="' + escAttr(String(v.price || 0)) + '" data-price-html="' + escAttr(v.price_html) + '">';
                 if (v.image) {
                     html += '<img class="ts-cover-card__img" src="' + escAttr(v.image) + '" alt="' + escAttr(label) + '" />';
                 }
@@ -211,7 +211,13 @@
                     var priceEl = document.getElementById('ts-price-value');
                     if (summary) {
                         summary.removeAttribute('hidden');
-                        if (priceEl) priceEl.innerHTML = this.getAttribute('data-price-html');
+                        if (priceEl) {
+                            var basePrice = parseFloat(this.getAttribute('data-price')) || 0;
+                            var setupFee  = (theirStoryAdmin && theirStoryAdmin.setupFee) ? parseFloat(theirStoryAdmin.setupFee) : 0;
+                            var currency  = (theirStoryAdmin && theirStoryAdmin.currencySymbol) ? theirStoryAdmin.currencySymbol : '$';
+                            var total     = basePrice + setupFee;
+                            priceEl.textContent = currency + total.toFixed(2);
+                        }
                     }
                 });
             });

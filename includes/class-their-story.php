@@ -801,6 +801,8 @@ class Their_Story {
             'prepareCheckoutNonce' => wp_create_nonce('their_story_prepare_checkout'),
             'prepareReorderNonce' => wp_create_nonce('their_story_prepare_reorder'),
             'helpNonce' => wp_create_nonce('their_story_help_request'),
+            'setupFee' => floatval(get_option('their_story_setup_fee', 300)),
+            'currencySymbol' => function_exists('get_woocommerce_currency_symbol') ? get_woocommerce_currency_symbol() : '$',
         ));
     }
     
@@ -2411,6 +2413,7 @@ class Their_Story {
                     : wp_get_attachment_image_url($product->get_image_id(), 'large');
                 $variations[] = array(
                     'id'         => $v['variation_id'],
+                    'price'      => floatval($var->get_price()),
                     'price_html' => $var->get_price_html(),
                     'attributes' => $v['attributes'],
                     'image'      => $var_image ?: '',
