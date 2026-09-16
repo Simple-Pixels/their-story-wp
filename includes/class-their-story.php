@@ -9,6 +9,7 @@ class Their_Story {
     public function init() {
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_action('admin_menu', array($this, 'remove_admin_menu_items'), 999);
+        add_action('admin_init', array($this, 'register_settings'));
         add_action('pre_get_posts', array($this, 'exclude_story_pages_from_admin_pages_list'));
         add_filter('login_redirect', array($this, 'redirect_after_login'), 10, 3);
         add_action('init', array($this, 'add_storyteller_role'));
@@ -44,6 +45,8 @@ class Their_Story {
         add_action('wp_ajax_their_story_prepare_checkout', array($this, 'ajax_prepare_checkout'));
         add_action('wp_ajax_their_story_prepare_reorder', array($this, 'ajax_prepare_reorder'));
         add_action('wp_ajax_their_story_help_request', array($this, 'ajax_help_request'));
+        add_action('woocommerce_before_calculate_totals', array($this, 'apply_setup_fee_to_cart'), 10, 1);
+        add_filter('woocommerce_get_item_data', array($this, 'hide_setup_fee_cart_item_data'), 10, 2);
 
         if (class_exists('WooCommerce')) {
             add_filter('woocommerce_prevent_admin_access', array($this, 'allow_storyteller_admin_access'));
@@ -286,7 +289,71 @@ class Their_Story {
                 'their-story-story-pages',
                 array($this, 'render_story_pages_list')
             );
+
+            add_submenu_page(
+                'their-story-admin',
+                __('Settings', 'their-story'),
+                __('Settings', 'their-story'),
+                'manage_options',
+                'their-story-settings',
+                array($this, 'render_settings_page')
+            );
         }
+    }
+
+    public function register_settings() {
+        register_setting('their_story_settings_group', 'their_story_setup_fee', array(
+            'type'              => 'number',
+            'sanitize_callback' => function($val) { return max(0, floatval($val)); },
+            'default'           => 300,
+        ));
+
+        add_settings_section(
+            'their_story_pricing_section',
+            __('Pricing', 'their-story'),
+            null,
+            'their-story-settings'
+        );
+
+        add_settings_field(
+            'their_story_setup_fee',
+            __('Initial setup fee ($)', 'their-story'),
+            array($this, 'render_setup_fee_field'),
+            'their-story-settings',
+            'their_story_pricing_section'
+        );
+    }
+
+    public function render_setup_fee_field() {
+        $value = floatval(get_option('their_story_setup_fee', 300));
+        ?>
+        <input
+            type="number"
+            name="their_story_setup_fee"
+            id="their_story_setup_fee"
+            value="<?php echo esc_attr($value); ?>"
+            min="0"
+            step="0.01"
+            style="width:120px;"
+        />
+        <p class="description"><?php esc_html_e('Added to the product price on a customer\'s first story purchase. Set to 0 to disable.', 'their-story'); ?></p>
+        <?php
+    }
+
+    public function render_settings_page() {
+        if (!current_user_can('manage_options')) return;
+        ?>
+        <div class="wrap">
+            <h1><?php esc_html_e('Share Their Story — Settings', 'their-story'); ?></h1>
+            <form method="post" action="options.php">
+                <?php
+                settings_fields('their_story_settings_group');
+                do_settings_sections('their-story-settings');
+                submit_button();
+                ?>
+            </form>
+        </div>
+        <?php
     }
 
 
@@ -2191,6 +2258,29 @@ class Their_Story {
     // Purchase-first workflow
     // -------------------------------------------------------------------------
 
+    public function apply_setup_fee_to_cart($cart) {
+        if (is_admin() && !defined('DOING_AJAX')) return;
+
+        $setup_fee = floatval(get_option('their_story_setup_fee', 300));
+        if ($setup_fee <= 0) return;
+
+        foreach ($cart->get_cart() as $item) {
+            if (!empty($item['their_story_setup_fee'])) {
+                $product = $item['data'];
+                $product->set_price(floatval($product->get_price()) + $setup_fee);
+            }
+        }
+    }
+
+    public function hide_setup_fee_cart_item_data($item_data, $cart_item) {
+        foreach ($item_data as $key => $row) {
+            if (isset($row['key']) && $row['key'] === 'their_story_setup_fee') {
+                unset($item_data[$key]);
+            }
+        }
+        return array_values($item_data);
+    }
+
     public function ajax_help_request() {
         if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'their_story_help_request')) {
             wp_send_json_error(array('message' => __('Security check failed.', 'their-story')));
@@ -2510,6 +2600,7 @@ class Their_Story {
                     'relation_label' => $pending['relation_label'],
                     'storyteller_id' => $pending['storyteller_id'],
                 ),
+                'their_story_setup_fee' => true,
             )
         );
 
