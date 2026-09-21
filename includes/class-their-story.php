@@ -55,12 +55,13 @@ class Their_Story {
             add_filter('woocommerce_prevent_admin_access', array($this, 'allow_storyteller_admin_access'));
             add_filter('woocommerce_thankyou_order_received_text', '__return_empty_string');
             add_action('woocommerce_thankyou', array($this, 'their_story_thankyou_content'), 5);
-            add_action('woocommerce_order_details_after_order_table', array($this, 'their_story_order_cta'), 10, 1);
             add_action('wp_head', array($this, 'their_story_thankyou_styles'));
             add_filter('woocommerce_cart_item_name', array($this, 'add_story_name_to_cart_item'), 10, 3);
             add_action('woocommerce_checkout_create_order_line_item', array($this, 'save_story_id_to_order_item'), 10, 4);
             add_action('woocommerce_payment_complete', array($this, 'create_story_on_payment'), 10, 1);
             add_action('woocommerce_order_status_processing', array($this, 'create_story_on_payment'), 10, 1);
+            add_action('woocommerce_order_status_on-hold', array($this, 'create_story_on_payment'), 10, 1);
+            add_action('woocommerce_order_status_completed', array($this, 'create_story_on_payment'), 10, 1);
             add_action('woocommerce_email_order_details', array($this, 'add_story_details_to_email'), 20, 4);
         }
     }
@@ -370,6 +371,23 @@ class Their_Story {
             'default'           => 300,
         ));
 
+        // Customer portal content
+        register_setting('their_story_settings_group', 'their_story_welcome_heading', array(
+            'type'              => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'default'           => 'Welcome to Share Their Story.',
+        ));
+        register_setting('their_story_settings_group', 'their_story_welcome_body', array(
+            'type'              => 'string',
+            'sanitize_callback' => 'sanitize_textarea_field',
+            'default'           => "This is your dashboard, where you can create, manage and order your stories. To get started, click \"Create New Story\" above. Once your story is created, you'll receive a unique link you can share with chosen contributors — friends and family who can add their own memories and stories. When you're ready, close your story and the Share Their Story team will begin preparing your book for print.\n\nCopy and paste your unique story link into an SMS or email to your contributors.",
+        ));
+        register_setting('their_story_settings_group', 'their_story_contributor_message', array(
+            'type'              => 'string',
+            'sanitize_callback' => 'sanitize_textarea_field',
+            'default'           => "Hi there, I have decided to create a storybook about [insert your loved one's name] and I would love it if you could contribute some stories to their book via this Share Their Story link [insert link from below].",
+        ));
+
         // Notifications
         register_setting('their_story_settings_group', 'their_story_admin_email', array(
             'type'              => 'string',
@@ -400,9 +418,15 @@ class Their_Story {
         ));
 
         // --- Sections ---
-        add_settings_section('their_story_pricing_section',   __('Pricing', 'their-story'),       null, 'their-story-settings');
-        add_settings_section('their_story_email_section',     __('Email Notifications', 'their-story'), null, 'their-story-settings');
-        add_settings_section('their_story_urls_section',      __('URLs', 'their-story'),           null, 'their-story-settings');
+        add_settings_section('their_story_portal_section',   __('Customer Portal Content', 'their-story'), null, 'their-story-settings');
+        add_settings_section('their_story_pricing_section',  __('Pricing', 'their-story'),                 null, 'their-story-settings');
+        add_settings_section('their_story_email_section',    __('Email Notifications', 'their-story'),     null, 'their-story-settings');
+        add_settings_section('their_story_urls_section',     __('URLs', 'their-story'),                    null, 'their-story-settings');
+
+        // Portal content fields
+        add_settings_field('their_story_welcome_heading',      __('Welcome heading', 'their-story'),          array($this, 'render_welcome_heading_field'),      'their-story-settings', 'their_story_portal_section');
+        add_settings_field('their_story_welcome_body',         __('Welcome body text', 'their-story'),         array($this, 'render_welcome_body_field'),         'their-story-settings', 'their_story_portal_section');
+        add_settings_field('their_story_contributor_message',  __('Example contributor message', 'their-story'), array($this, 'render_contributor_message_field'), 'their-story-settings', 'their_story_portal_section');
 
         // Pricing fields
         add_settings_field('their_story_setup_fee', __('Initial setup fee ($)', 'their-story'), array($this, 'render_setup_fee_field'), 'their-story-settings', 'their_story_pricing_section');
@@ -415,6 +439,32 @@ class Their_Story {
         add_settings_field('their_story_about_url',         __('About page URL', 'their-story'),            array($this, 'render_about_url_field'),         'their-story-settings', 'their_story_urls_section');
         add_settings_field('their_story_what_is_this_url',  __('"What is this?" URL', 'their-story'),        array($this, 'render_what_is_this_url_field'),  'their-story-settings', 'their_story_urls_section');
         add_settings_field('their_story_purchases_url',     __('View Purchases URL', 'their-story'),         array($this, 'render_purchases_url_field'),     'their-story-settings', 'their_story_urls_section');
+    }
+
+    public function render_welcome_heading_field() {
+        $value = get_option('their_story_welcome_heading', 'Welcome to Share Their Story.');
+        ?>
+        <input type="text" name="their_story_welcome_heading" id="their_story_welcome_heading" value="<?php echo esc_attr($value); ?>" class="large-text" />
+        <p class="description"><?php esc_html_e('Large bold heading shown at the top of the customer portal welcome section.', 'their-story'); ?></p>
+        <?php
+    }
+
+    public function render_welcome_body_field() {
+        $default = "This is your dashboard, where you can create, manage and order your stories. To get started, click \"Create New Story\" above. Once your story is created, you'll receive a unique link you can share with chosen contributors — friends and family who can add their own memories and stories. When you're ready, close your story and the Share Their Story team will begin preparing your book for print.\n\nCopy and paste your unique story link into an SMS or email to your contributors.";
+        $value = get_option('their_story_welcome_body', $default);
+        ?>
+        <textarea name="their_story_welcome_body" id="their_story_welcome_body" class="large-text" rows="6"><?php echo esc_textarea($value); ?></textarea>
+        <p class="description"><?php esc_html_e('Body text shown under the welcome heading. Use a blank line to create a new paragraph.', 'their-story'); ?></p>
+        <?php
+    }
+
+    public function render_contributor_message_field() {
+        $default = "Hi there, I have decided to create a storybook about [insert your loved one's name] and I would love it if you could contribute some stories to their book via this Share Their Story link [insert link from below].";
+        $value = get_option('their_story_contributor_message', $default);
+        ?>
+        <textarea name="their_story_contributor_message" id="their_story_contributor_message" class="large-text" rows="4"><?php echo esc_textarea($value); ?></textarea>
+        <p class="description"><?php esc_html_e('The copyable example message shown inside the "Example message to send contributors" expandable section.', 'their-story'); ?></p>
+        <?php
     }
 
     public function render_setup_fee_field() {
@@ -2262,53 +2312,37 @@ class Their_Story {
 
         $dashboard_url = admin_url('admin.php?page=their-story-dashboard');
         $is_reorder    = (bool) $order->get_meta('_their_story_reorder');
+
+        $story_id    = intval($order->get_meta('_their_story_id'));
+        $story_url   = null;
+        if ($story_id && !$is_reorder) {
+            $unique_link = get_post_meta($story_id, '_story_unique_link', true);
+            $story_url   = $unique_link ? $this->get_story_url_from_link($unique_link) : get_permalink($story_id);
+            if (!$story_url) $story_url = get_permalink($story_id);
+        }
         ?>
         <div class="ts-thankyou-header">
             <?php if ($is_reorder) : ?>
                 <h1 class="ts-thankyou-title"><?php esc_html_e('Thank you! Your reorder has been received.', 'their-story'); ?></h1>
                 <p class="ts-thankyou-lede"><?php esc_html_e('The Share Their Story team has been notified and will be in touch shortly.', 'their-story'); ?></p>
+                <a href="<?php echo esc_url($dashboard_url); ?>" class="ts-thankyou-btn">
+                    <?php esc_html_e('Go to my dashboard', 'their-story'); ?>
+                </a>
             <?php else : ?>
                 <h1 class="ts-thankyou-title"><?php esc_html_e('Thank you! Your story has been created.', 'their-story'); ?></h1>
+                <?php if ($story_url) : ?>
+                    <a href="<?php echo esc_url($story_url); ?>" class="ts-thankyou-btn">
+                        <?php esc_html_e('View &amp; share your story', 'their-story'); ?>
+                    </a>
+                <?php endif; ?>
+                <a href="<?php echo esc_url($dashboard_url); ?>" class="ts-thankyou-btn ts-thankyou-btn--secondary">
+                    <?php esc_html_e('Go to my dashboard', 'their-story'); ?>
+                </a>
             <?php endif; ?>
-            <a href="<?php echo esc_url($dashboard_url); ?>" class="ts-thankyou-btn">
-                <?php esc_html_e('Go to my dashboard', 'their-story'); ?>
-            </a>
             <p class="ts-thankyou-support">
                 <?php esc_html_e('For any questions please email', 'their-story'); ?>
                 <a href="mailto:support@sharetheirstory.com.au">support@sharetheirstory.com.au</a>
             </p>
-        </div>
-        <?php
-    }
-
-    public function their_story_order_cta($order) {
-        if (!$order) return;
-
-        $story_id = intval($order->get_meta('_their_story_id'));
-        if (!$story_id) return;
-
-        $is_reorder = (bool) $order->get_meta('_their_story_reorder');
-
-        $unique_link = get_post_meta($story_id, '_story_unique_link', true);
-        $story_url   = $unique_link ? $this->get_story_url_from_link($unique_link) : get_permalink($story_id);
-        if (!$story_url) $story_url = get_permalink($story_id);
-
-        $story_title = preg_replace('/^Protected:\s*/i', '', get_the_title($story_id));
-        ?>
-        <div class="ts-order-story-cta">
-            <p class="ts-order-story-thanks"><?php esc_html_e('Thank you for your purchase!', 'their-story'); ?></p>
-            <?php if (!$is_reorder && $story_url) : ?>
-                <p class="ts-order-story-label">
-                    <?php echo esc_html(
-                        $story_title
-                            ? sprintf(__('Your story "%s" is ready to collect memories.', 'their-story'), $story_title)
-                            : __('Your story is ready to collect memories.', 'their-story')
-                    ); ?>
-                </p>
-                <a href="<?php echo esc_url($story_url); ?>" class="ts-thankyou-btn ts-order-story-btn">
-                    <?php esc_html_e('View &amp; share your story', 'their-story'); ?>
-                </a>
-            <?php endif; ?>
         </div>
         <?php
     }
@@ -2351,6 +2385,16 @@ class Their_Story {
             background-color: #d49a87;
             color: #000000;
         }
+        .ts-thankyou-btn--secondary {
+            background-color: transparent;
+            border: 2px solid #e6b3a1;
+            color: #000000;
+            margin-top: 0.5rem;
+        }
+        .ts-thankyou-btn--secondary:hover {
+            background-color: #f9ede8;
+            color: #000000;
+        }
         .ts-thankyou-support {
             font-size: 0.9375rem;
             color: rgba(0,0,0,0.6);
@@ -2383,25 +2427,6 @@ class Their_Story {
         /* Hide billing/shipping address blocks */
         .woocommerce-customer-details {
             display: none !important;
-        }
-        /* Story CTA after order table */
-        .ts-order-story-cta {
-            text-align: center;
-            padding: 2rem 0 0.5rem;
-            border-top: 1px solid rgba(0,0,0,0.1);
-            margin-top: 1.5rem;
-        }
-        .ts-order-story-thanks {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin: 0 0 0.5rem;
-        }
-        .ts-order-story-label {
-            color: rgba(0,0,0,0.65);
-            margin: 0 0 1.25rem;
-        }
-        .ts-order-story-btn {
-            margin-bottom: 0;
         }
         </style>
         <?php

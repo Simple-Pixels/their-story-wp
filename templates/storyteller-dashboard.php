@@ -108,13 +108,20 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
         </div>
     <?php endif; ?>
 
+    <?php
+    $welcome_heading = get_option('their_story_welcome_heading', 'Welcome to Share Their Story.');
+    $welcome_body    = get_option('their_story_welcome_body', "This is your dashboard, where you can create, manage and order your stories. To get started, click \"Create New Story\" above. Once your story is created, you'll receive a unique link you can share with chosen contributors — friends and family who can add their own memories and stories. When you're ready, close your story and the Share Their Story team will begin preparing your book for print.\n\nCopy and paste your unique story link into an SMS or email to your contributors.");
+    $contributor_msg = get_option('their_story_contributor_message', "Hi there, I have decided to create a storybook about [insert your loved one's name] and I would love it if you could contribute some stories to their book via this Share Their Story link [insert link from below].");
+    $welcome_paras   = array_filter(array_map('trim', explode("\n\n", $welcome_body)));
+    ?>
     <div class="their-story-welcome-blurb">
-        <p class="their-story-welcome-heading"><?php esc_html_e('Welcome to Share Their Story.', 'their-story'); ?></p>
-        <p><?php esc_html_e('This is your dashboard, where you can create, manage and order your stories. To get started, click "Create New Story" above. Once your story is created, you\'ll receive a unique link you can share with chosen contributors — friends and family who can add their own memories and stories. When you\'re ready, close your story and the Share Their Story team will begin preparing your book for print.', 'their-story'); ?></p>
-        <p><?php esc_html_e('Copy and paste your unique story link into an SMS or email to your contributors.', 'their-story'); ?></p>
+        <p class="their-story-welcome-heading"><?php echo esc_html($welcome_heading); ?></p>
+        <?php foreach ($welcome_paras as $para) : ?>
+            <p><?php echo esc_html($para); ?></p>
+        <?php endforeach; ?>
         <details class="their-story-welcome-message-wrap">
             <summary class="their-story-welcome-message-summary"><?php esc_html_e('Example message to send contributors', 'their-story'); ?></summary>
-            <p class="their-story-welcome-message" id="ts-contributor-message"><?php esc_html_e('Hi there, I have decided to create a storybook about [insert your loved one\'s name] and I would love it if you could contribute some stories to their book via this Share Their Story link [insert link from below].', 'their-story'); ?></p>
+            <p class="their-story-welcome-message" id="ts-contributor-message"><?php echo esc_html($contributor_msg); ?></p>
             <button type="button" class="their-story-btn their-story-btn-outline their-story-btn-copy-message" id="ts-copy-message-btn"><?php esc_html_e('Copy message', 'their-story'); ?></button>
         </details>
     </div>
