@@ -89,7 +89,7 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
     <div class="their-story-brand-header">
         <a href="<?php echo esc_url(home_url('/')); ?>" class="their-story-brand-logo-link" rel="home">
             <img
-                src="<?php echo esc_url('https://theirstory.kinsta.cloud/wp-content/uploads/2025/12/TS001-Logo-Main-RGB.png'); ?>"
+                src="<?php echo esc_url('https://simplepixels.s3.ap-southeast-2.amazonaws.com/sharetheirstory/wp-content/uploads/2025/12/TS001-Logo-Main-RGB.png'); ?>"
                 alt="<?php echo esc_attr(get_bloginfo('name')); ?>"
                 class="their-story-brand-logo"
                 decoding="async"
