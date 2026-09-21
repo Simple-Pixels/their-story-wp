@@ -2306,15 +2306,27 @@ class Their_Story {
 
     public function their_story_thankyou_content($order_id) {
         $order = wc_get_order($order_id);
-        if (!$order || !$order->get_meta('_their_story_created')) {
-            return;
+        if (!$order) return;
+
+        // Detect story order from line item meta set at checkout — before payment confirmation.
+        $is_reorder = false;
+        $has_story_item = false;
+        foreach ($order->get_items() as $item) {
+            $pending = $item->get_meta('_their_story_pending');
+            if (empty($pending)) continue;
+            $pending = is_string($pending) ? json_decode($pending, true) : $pending;
+            if (!is_array($pending)) continue;
+            $has_story_item = true;
+            if (!empty($pending['reorder_story_id'])) $is_reorder = true;
+            break;
         }
+        if (!$has_story_item) return;
 
         $dashboard_url = admin_url('admin.php?page=their-story-dashboard');
-        $is_reorder    = (bool) $order->get_meta('_their_story_reorder');
 
-        $story_id    = intval($order->get_meta('_their_story_id'));
-        $story_url   = null;
+        // Story URL — available once payment_complete has fired; may not be set yet.
+        $story_id  = intval($order->get_meta('_their_story_id'));
+        $story_url = null;
         if ($story_id && !$is_reorder) {
             $unique_link = get_post_meta($story_id, '_story_unique_link', true);
             $story_url   = $unique_link ? $this->get_story_url_from_link($unique_link) : get_permalink($story_id);
