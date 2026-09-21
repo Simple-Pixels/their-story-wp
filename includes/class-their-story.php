@@ -55,6 +55,7 @@ class Their_Story {
             add_filter('woocommerce_prevent_admin_access', array($this, 'allow_storyteller_admin_access'));
             add_filter('woocommerce_thankyou_order_received_text', '__return_empty_string');
             add_action('woocommerce_thankyou', array($this, 'their_story_thankyou_content'), 5);
+            add_action('woocommerce_order_details_after_order_table', array($this, 'their_story_order_cta'), 10, 1);
             add_action('wp_head', array($this, 'their_story_thankyou_styles'));
             add_filter('woocommerce_cart_item_name', array($this, 'add_story_name_to_cart_item'), 10, 3);
             add_action('woocommerce_checkout_create_order_line_item', array($this, 'save_story_id_to_order_item'), 10, 4);
@@ -2280,6 +2281,38 @@ class Their_Story {
         <?php
     }
 
+    public function their_story_order_cta($order) {
+        if (!$order) return;
+
+        $story_id = intval($order->get_meta('_their_story_id'));
+        if (!$story_id) return;
+
+        $is_reorder = (bool) $order->get_meta('_their_story_reorder');
+
+        $unique_link = get_post_meta($story_id, '_story_unique_link', true);
+        $story_url   = $unique_link ? $this->get_story_url_from_link($unique_link) : get_permalink($story_id);
+        if (!$story_url) $story_url = get_permalink($story_id);
+
+        $story_title = preg_replace('/^Protected:\s*/i', '', get_the_title($story_id));
+        ?>
+        <div class="ts-order-story-cta">
+            <p class="ts-order-story-thanks"><?php esc_html_e('Thank you for your purchase!', 'their-story'); ?></p>
+            <?php if (!$is_reorder && $story_url) : ?>
+                <p class="ts-order-story-label">
+                    <?php echo esc_html(
+                        $story_title
+                            ? sprintf(__('Your story "%s" is ready to collect memories.', 'their-story'), $story_title)
+                            : __('Your story is ready to collect memories.', 'their-story')
+                    ); ?>
+                </p>
+                <a href="<?php echo esc_url($story_url); ?>" class="ts-thankyou-btn ts-order-story-btn">
+                    <?php esc_html_e('View &amp; share your story', 'their-story'); ?>
+                </a>
+            <?php endif; ?>
+        </div>
+        <?php
+    }
+
     public function their_story_thankyou_styles() {
         if (!is_wc_endpoint_url('order-received')) {
             return;
@@ -2350,6 +2383,25 @@ class Their_Story {
         /* Hide billing/shipping address blocks */
         .woocommerce-customer-details {
             display: none !important;
+        }
+        /* Story CTA after order table */
+        .ts-order-story-cta {
+            text-align: center;
+            padding: 2rem 0 0.5rem;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            margin-top: 1.5rem;
+        }
+        .ts-order-story-thanks {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem;
+        }
+        .ts-order-story-label {
+            color: rgba(0,0,0,0.65);
+            margin: 0 0 1.25rem;
+        }
+        .ts-order-story-btn {
+            margin-bottom: 0;
         }
         </style>
         <?php
