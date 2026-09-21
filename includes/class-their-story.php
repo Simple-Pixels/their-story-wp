@@ -10,6 +10,8 @@ class Their_Story {
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_action('admin_menu', array($this, 'remove_admin_menu_items'), 999);
         add_action('admin_init', array($this, 'register_settings'));
+        add_action('before_delete_post', array($this, 'delete_story_submissions_on_story_delete'));
+        add_action('wp_ajax_their_story_delete_all', array($this, 'ajax_delete_all'));
         add_action('pre_get_posts', array($this, 'exclude_story_pages_from_admin_pages_list'));
         add_filter('login_redirect', array($this, 'redirect_after_login'), 10, 3);
         add_action('init', array($this, 'add_storyteller_role'));
@@ -302,42 +304,163 @@ class Their_Story {
         }
     }
 
+    public function delete_story_submissions_on_story_delete($post_id) {
+        $post = get_post($post_id);
+        if (!$post || $post->post_type !== 'page') return;
+        if (!get_post_meta($post_id, '_storyteller_id', true)) return;
+
+        $submissions = get_posts(array(
+            'post_type'      => 'story_submission',
+            'post_status'    => array('publish', 'pending', 'trash'),
+            'post_parent'    => $post_id,
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+        ));
+
+        foreach ($submissions as $sub_id) {
+            wp_delete_post($sub_id, true);
+        }
+    }
+
+    public function ajax_delete_all() {
+        check_ajax_referer('their_story_delete_all', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => 'No permission.'));
+        }
+
+        // Delete all submissions first
+        $submissions = get_posts(array(
+            'post_type'      => 'story_submission',
+            'post_status'    => array('publish', 'pending', 'trash'),
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+        ));
+        foreach ($submissions as $id) {
+            wp_delete_post($id, true);
+        }
+
+        // Delete all story pages (pages with _storyteller_id meta)
+        $stories = get_posts(array(
+            'post_type'      => 'page',
+            'post_status'    => array('publish', 'draft', 'private', 'trash'),
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'meta_key'       => '_storyteller_id',
+        ));
+        foreach ($stories as $id) {
+            wp_delete_post($id, true);
+        }
+
+        wp_send_json_success(array(
+            'message' => sprintf(
+                'Deleted %d stories and %d submissions.',
+                count($stories),
+                count($submissions)
+            ),
+        ));
+    }
+
     public function register_settings() {
+        // Pricing
         register_setting('their_story_settings_group', 'their_story_setup_fee', array(
             'type'              => 'number',
             'sanitize_callback' => function($val) { return max(0, floatval($val)); },
             'default'           => 300,
         ));
 
-        add_settings_section(
-            'their_story_pricing_section',
-            __('Pricing', 'their-story'),
-            null,
-            'their-story-settings'
-        );
+        // Notifications
+        register_setting('their_story_settings_group', 'their_story_admin_email', array(
+            'type'              => 'string',
+            'sanitize_callback' => 'sanitize_email',
+            'default'           => 'grant@sharetheirstory.com.au',
+        ));
+        register_setting('their_story_settings_group', 'their_story_support_email', array(
+            'type'              => 'string',
+            'sanitize_callback' => 'sanitize_email',
+            'default'           => 'support@sharetheirstory.com.au',
+        ));
 
-        add_settings_field(
-            'their_story_setup_fee',
-            __('Initial setup fee ($)', 'their-story'),
-            array($this, 'render_setup_fee_field'),
-            'their-story-settings',
-            'their_story_pricing_section'
-        );
+        // URLs
+        register_setting('their_story_settings_group', 'their_story_about_url', array(
+            'type'              => 'string',
+            'sanitize_callback' => 'esc_url_raw',
+            'default'           => '',
+        ));
+        register_setting('their_story_settings_group', 'their_story_what_is_this_url', array(
+            'type'              => 'string',
+            'sanitize_callback' => 'esc_url_raw',
+            'default'           => '',
+        ));
+        register_setting('their_story_settings_group', 'their_story_purchases_url', array(
+            'type'              => 'string',
+            'sanitize_callback' => 'esc_url_raw',
+            'default'           => 'https://sharetheirstory.com.au/my-account/',
+        ));
+
+        // --- Sections ---
+        add_settings_section('their_story_pricing_section',   __('Pricing', 'their-story'),       null, 'their-story-settings');
+        add_settings_section('their_story_email_section',     __('Email Notifications', 'their-story'), null, 'their-story-settings');
+        add_settings_section('their_story_urls_section',      __('URLs', 'their-story'),           null, 'their-story-settings');
+
+        // Pricing fields
+        add_settings_field('their_story_setup_fee', __('Initial setup fee ($)', 'their-story'), array($this, 'render_setup_fee_field'), 'their-story-settings', 'their_story_pricing_section');
+
+        // Email fields
+        add_settings_field('their_story_admin_email',   __('Admin notification email', 'their-story'),   array($this, 'render_admin_email_field'),   'their-story-settings', 'their_story_email_section');
+        add_settings_field('their_story_support_email', __('Support / contact email', 'their-story'),    array($this, 'render_support_email_field'), 'their-story-settings', 'their_story_email_section');
+
+        // URL fields
+        add_settings_field('their_story_about_url',         __('About page URL', 'their-story'),            array($this, 'render_about_url_field'),         'their-story-settings', 'their_story_urls_section');
+        add_settings_field('their_story_what_is_this_url',  __('"What is this?" URL', 'their-story'),        array($this, 'render_what_is_this_url_field'),  'their-story-settings', 'their_story_urls_section');
+        add_settings_field('their_story_purchases_url',     __('View Purchases URL', 'their-story'),         array($this, 'render_purchases_url_field'),     'their-story-settings', 'their_story_urls_section');
     }
 
     public function render_setup_fee_field() {
         $value = floatval(get_option('their_story_setup_fee', 300));
         ?>
-        <input
-            type="number"
-            name="their_story_setup_fee"
-            id="their_story_setup_fee"
-            value="<?php echo esc_attr($value); ?>"
-            min="0"
-            step="0.01"
-            style="width:120px;"
-        />
+        <input type="number" name="their_story_setup_fee" id="their_story_setup_fee" value="<?php echo esc_attr($value); ?>" min="0" step="0.01" style="width:120px;" />
         <p class="description"><?php esc_html_e('Added to the product price on a customer\'s first story purchase. Set to 0 to disable.', 'their-story'); ?></p>
+        <?php
+    }
+
+    public function render_admin_email_field() {
+        $value = sanitize_email(get_option('their_story_admin_email', 'grant@sharetheirstory.com.au'));
+        ?>
+        <input type="email" name="their_story_admin_email" id="their_story_admin_email" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+        <p class="description"><?php esc_html_e('Receives help requests and admin notifications from the plugin.', 'their-story'); ?></p>
+        <?php
+    }
+
+    public function render_support_email_field() {
+        $value = sanitize_email(get_option('their_story_support_email', 'support@sharetheirstory.com.au'));
+        ?>
+        <input type="email" name="their_story_support_email" id="their_story_support_email" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+        <p class="description"><?php esc_html_e('Shown to customers as the contact email for support.', 'their-story'); ?></p>
+        <?php
+    }
+
+    public function render_about_url_field() {
+        $value = esc_url(get_option('their_story_about_url', ''));
+        ?>
+        <input type="url" name="their_story_about_url" id="their_story_about_url" value="<?php echo esc_attr($value); ?>" class="regular-text" placeholder="https://sharetheirstory.com.au/about/" />
+        <p class="description"><?php esc_html_e('Used in contributor thank-you page "Learn More" button.', 'their-story'); ?></p>
+        <?php
+    }
+
+    public function render_what_is_this_url_field() {
+        $value = esc_url(get_option('their_story_what_is_this_url', ''));
+        ?>
+        <input type="url" name="their_story_what_is_this_url" id="their_story_what_is_this_url" value="<?php echo esc_attr($value); ?>" class="regular-text" placeholder="https://sharetheirstory.com.au" />
+        <p class="description"><?php esc_html_e('URL for the "What is this?" link on story pages.', 'their-story'); ?></p>
+        <?php
+    }
+
+    public function render_purchases_url_field() {
+        $value = esc_url(get_option('their_story_purchases_url', 'https://sharetheirstory.com.au/my-account/'));
+        ?>
+        <input type="url" name="their_story_purchases_url" id="their_story_purchases_url" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+        <p class="description"><?php esc_html_e('"View Purchases" link in the customer portal footer.', 'their-story'); ?></p>
         <?php
     }
 
@@ -353,6 +476,22 @@ class Their_Story {
                 submit_button();
                 ?>
             </form>
+
+            <hr style="margin:40px 0 30px;" />
+
+            <div class="their-story-danger-zone" style="border:2px solid #d63638;border-radius:4px;padding:24px;max-width:600px;">
+                <h2 style="color:#d63638;margin-top:0;"><?php esc_html_e('Danger Zone', 'their-story'); ?></h2>
+                <p><?php esc_html_e('Permanently delete every story and submission in the database. This cannot be undone.', 'their-story'); ?></p>
+                <button
+                    type="button"
+                    id="ts-delete-all-btn"
+                    class="button"
+                    style="background:#d63638;border-color:#d63638;color:#fff;font-weight:600;"
+                >
+                    <?php esc_html_e('Delete All Stories &amp; Submissions', 'their-story'); ?>
+                </button>
+                <p id="ts-delete-all-result" style="margin-top:12px;font-weight:600;display:none;"></p>
+            </div>
         </div>
         <?php
     }
@@ -801,6 +940,7 @@ class Their_Story {
             'prepareCheckoutNonce' => wp_create_nonce('their_story_prepare_checkout'),
             'prepareReorderNonce' => wp_create_nonce('their_story_prepare_reorder'),
             'helpNonce' => wp_create_nonce('their_story_help_request'),
+            'deleteAllNonce' => wp_create_nonce('their_story_delete_all'),
             'setupFee' => floatval(get_option('their_story_setup_fee', 300)),
             'currencySymbol' => function_exists('get_woocommerce_currency_symbol') ? get_woocommerce_currency_symbol() : '$',
         ));
@@ -2482,7 +2622,7 @@ class Their_Story {
             return;
         }
         $subject      = sanitize_text_field(wp_unslash($_GET['subject'] ?? ''));
-        $about_url    = apply_filters('their_story_about_url', home_url('/about/'));
+        $about_url    = apply_filters('their_story_about_url', get_option('their_story_about_url', home_url('/about/')));
         $register_url = apply_filters('their_story_register_url', wp_registration_url());
         include THEIR_STORY_PLUGIN_DIR . 'templates/contributor-thankyou.php';
         exit;

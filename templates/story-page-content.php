@@ -27,7 +27,7 @@ $obfuscated_url = $their_story->get_story_url_from_link($unique_link);
 $storyteller = $storyteller_id ? get_userdata((int) $storyteller_id) : null;
 $display_title = get_the_title($story_id);
 $display_title = preg_replace('/^Protected:\s*/i', '', $display_title);
-$what_is_this_url = apply_filters('their_story_what_is_this_url', 'https://theirstory.kinsta.cloud');
+$what_is_this_url = apply_filters('their_story_what_is_this_url', get_option('their_story_what_is_this_url', 'https://sharetheirstory.com.au'));
 
 $contribution_subject = trim((string) get_post_meta($story_id, '_their_story_contribution_subject_name', true));
 if ($contribution_subject === '') {

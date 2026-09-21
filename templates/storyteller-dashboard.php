@@ -194,7 +194,7 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
         </a>
         <a
             class="their-story-help-btn"
-            href="https://theirstory.kinsta.cloud/my-account/"
+            href="<?php echo esc_url(get_option('their_story_purchases_url', 'https://sharetheirstory.com.au/my-account/')); ?>"
             target="_blank"
             rel="noopener noreferrer"
         >

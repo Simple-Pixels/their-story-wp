@@ -865,6 +865,56 @@
         }
 
         // -----------------------------------------------------------------------
+        // Delete all stories & submissions
+        // -----------------------------------------------------------------------
+
+        var deleteAllBtn    = document.getElementById('ts-delete-all-btn');
+        var deleteAllResult = document.getElementById('ts-delete-all-result');
+
+        if (deleteAllBtn) {
+            deleteAllBtn.addEventListener('click', function() {
+                if (!confirm('WARNING: This will permanently delete ALL stories and ALL submissions from the database. This cannot be undone.\n\nAre you absolutely sure you want to continue?')) return;
+                if (!confirm('SECOND WARNING: Every story page and every contributor message will be gone forever. There is no backup.\n\nDo you still want to proceed?')) return;
+                if (!confirm('THIRD WARNING: This action is irreversible. Once deleted, the data cannot be recovered.\n\nAre you really sure?')) return;
+                if (!confirm('FINAL WARNING: Last chance to cancel. Click OK to permanently delete everything, or Cancel to abort.')) return;
+
+                deleteAllBtn.disabled = true;
+                deleteAllBtn.textContent = 'Deleting…';
+                if (deleteAllResult) { deleteAllResult.style.display = 'none'; deleteAllResult.textContent = ''; }
+
+                var fd = new FormData();
+                fd.append('action', 'their_story_delete_all');
+                fd.append('nonce', theirStoryAdmin.deleteAllNonce);
+
+                fetch(theirStoryAdmin.ajaxUrl, { method: 'POST', body: fd })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        deleteAllBtn.disabled = false;
+                        deleteAllBtn.textContent = 'Delete All Stories & Submissions';
+                        if (deleteAllResult) {
+                            deleteAllResult.style.display = 'block';
+                            if (data.success) {
+                                deleteAllResult.style.color = '#00a32a';
+                                deleteAllResult.textContent = data.data.message || 'Done.';
+                            } else {
+                                deleteAllResult.style.color = '#d63638';
+                                deleteAllResult.textContent = (data.data && data.data.message) || 'An error occurred.';
+                            }
+                        }
+                    })
+                    .catch(function() {
+                        deleteAllBtn.disabled = false;
+                        deleteAllBtn.textContent = 'Delete All Stories & Submissions';
+                        if (deleteAllResult) {
+                            deleteAllResult.style.display = 'block';
+                            deleteAllResult.style.color = '#d63638';
+                            deleteAllResult.textContent = 'An error occurred. Please try again.';
+                        }
+                    });
+            });
+        }
+
+        // -----------------------------------------------------------------------
         // Helpers
         // -----------------------------------------------------------------------
 
