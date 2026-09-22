@@ -23,7 +23,6 @@ class Their_Story {
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
         add_filter('admin_body_class', array($this, 'storyteller_dashboard_body_class'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_assets'));
-        add_action('wp_footer', array($this, 'render_logout_confirmation'));
         add_filter('body_class', array($this, 'story_page_body_class'));
         add_action('wp_ajax_their_story_create_story', array($this, 'ajax_create_story'));
         add_action('wp_ajax_their_story_delete_story', array($this, 'ajax_delete_story'));
@@ -2357,61 +2356,6 @@ class Their_Story {
                 <a href="mailto:support@sharetheirstory.com.au">support@sharetheirstory.com.au</a>
             </p>
         </div>
-        <?php
-    }
-
-    public function render_logout_confirmation() {
-        if (!is_user_logged_in()) return;
-        ?>
-        <div id="ts-logout-modal" style="display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;">
-            <div id="ts-logout-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.45);"></div>
-            <div style="position:relative;background:#fff;border-radius:12px;padding:2rem 2rem 1.5rem;max-width:360px;width:calc(100% - 2rem);text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
-                <p style="margin:0 0 1.25rem;font-size:1.1rem;font-weight:600;line-height:1.4;">Are you sure you want to log out?</p>
-                <div style="display:flex;gap:0.75rem;justify-content:center;">
-                    <a id="ts-logout-confirm" href="#" style="display:inline-block;padding:0.6rem 1.5rem;background:#e6b3a1;color:#000;font-weight:600;border-radius:9999px;text-decoration:none;font-size:0.95rem;">Log out</a>
-                    <button id="ts-logout-cancel" type="button" style="padding:0.6rem 1.5rem;background:transparent;border:2px solid #e6b3a1;color:#000;font-weight:600;border-radius:9999px;cursor:pointer;font-size:0.95rem;">Cancel</button>
-                </div>
-            </div>
-        </div>
-        <script>
-        (function() {
-            var modal    = document.getElementById('ts-logout-modal');
-            var confirm  = document.getElementById('ts-logout-confirm');
-            var cancel   = document.getElementById('ts-logout-cancel');
-            var backdrop = document.getElementById('ts-logout-backdrop');
-
-            function isLogoutUrl(href) {
-                if (!href) return false;
-                return href.indexOf('action=logout') !== -1 || href.indexOf('customer-logout') !== -1;
-            }
-
-            function openModal(href) {
-                confirm.href = href;
-                modal.style.display = 'flex';
-                document.body.style.overflow = 'hidden';
-            }
-
-            function closeModal() {
-                modal.style.display = 'none';
-                document.body.style.overflow = '';
-            }
-
-            document.addEventListener('click', function(e) {
-                var el = e.target.closest('a');
-                if (!el) return;
-                if (isLogoutUrl(el.getAttribute('href'))) {
-                    e.preventDefault();
-                    openModal(el.href);
-                }
-            });
-
-            cancel.addEventListener('click', closeModal);
-            backdrop.addEventListener('click', closeModal);
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') closeModal();
-            });
-        })();
-        </script>
         <?php
     }
 
