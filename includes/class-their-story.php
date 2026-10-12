@@ -3105,9 +3105,58 @@ class Their_Story {
                 '%story_url%'     => $story_url,
                 '%dashboard_url%' => $dashboard_url,
             );
-            $subject = str_replace(array_keys($replacements), array_values($replacements), $email_subject_tpl);
-            $message = str_replace(array_keys($replacements), array_values($replacements), $email_body_tpl);
-            wp_mail($storyteller->user_email, $subject, $message);
+            $subject      = str_replace(array_keys($replacements), array_values($replacements), $email_subject_tpl);
+            $body_text    = str_replace(array_keys($replacements), array_values($replacements), $email_body_tpl);
+
+            // Convert plain-text body to HTML paragraphs and linked URLs
+            $body_html = '';
+            foreach (explode("\n\n", $body_text) as $para) {
+                $para = trim($para);
+                if ($para === '') continue;
+                // Auto-link bare URLs
+                $para = preg_replace_callback(
+                    '#https?://[^\s]+#',
+                    function($m) {
+                        return '<a href="' . esc_attr($m[0]) . '" style="color:#c47f6a;word-break:break-all;">' . esc_html($m[0]) . '</a>';
+                    },
+                    esc_html($para)
+                );
+                $body_html .= '<p style="margin:0 0 1.2em;line-height:1.65;">' . nl2br($para) . '</p>';
+            }
+
+            $logo_url = 'https://simplepixels.s3.ap-southeast-2.amazonaws.com/sharetheirstory/wp-content/uploads/2025/12/TS001-Logo-Main-RGB.png';
+
+            $html_message = '<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . esc_html($subject) . '</title></head>
+<body style="margin:0;padding:0;background:#faf4f0;font-family:Georgia,serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#faf4f0;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;background:#ffffff;border-radius:8px;overflow:hidden;">
+
+        <!-- Header -->
+        <tr><td align="center" style="padding:36px 40px 28px;border-bottom:1px solid #f0e4dc;">
+          <img src="' . esc_attr($logo_url) . '" alt="Share Their Story" width="220" style="display:block;max-width:220px;height:auto;" />
+        </td></tr>
+
+        <!-- Body -->
+        <tr><td style="padding:36px 40px;color:#1a1a1a;font-size:16px;">
+          ' . $body_html . '
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td align="center" style="padding:24px 40px;border-top:1px solid #f0e4dc;color:#999;font-size:12px;font-family:Georgia,serif;">
+          &copy; ' . date('Y') . ' Share Their Story. All rights reserved.
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>';
+
+            $headers = array('Content-Type: text/html; charset=UTF-8');
+            wp_mail($storyteller->user_email, $subject, $html_message, $headers);
 
             // Only create one story per order
             break;
