@@ -31,7 +31,8 @@ body.their-story-storyteller-screen.spgb-gradient-active #wpwrap,
 body.their-story-storyteller-screen.spgb-gradient-active #wpcontent,
 body.their-story-storyteller-screen.spgb-gradient-active.auto-fold #wpcontent,
 body.their-story-storyteller-screen.spgb-gradient-active.folded #wpcontent,
-body.their-story-storyteller-screen.spgb-gradient-active #wpbody-content {
+body.their-story-storyteller-screen.spgb-gradient-active #wpbody-content,
+body.their-story-storyteller-screen.spgb-gradient-active .their-story-dashboard-footer {
     background-color: transparent !important;
 }
 
@@ -121,16 +122,8 @@ body.their-story-storyteller-screen .their-story-dashboard.wrap {
 body.their-story-storyteller-screen .their-story-brand-header {
     text-align: center;
     margin: 0 0 2rem;
-    padding-top: 2rem;
     padding-bottom: 2rem;
-    border-top: 1px solid #e8d8ce;
-    border-bottom: 1px solid #e8d8ce;
-}
-
-body.their-story-storyteller-screen .their-story-header-divider {
-    border: none;
-    border-top: 1px solid #e8d8ce;
-    margin: 1.5rem 0 0;
+    border-bottom: 1px solid #000000;
 }
 
 body.their-story-storyteller-screen .their-story-brand-logo-link {
