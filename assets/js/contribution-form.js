@@ -255,7 +255,9 @@
             }
             if (active) {
                 setTimeout(function() {
-                    active.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    var rect = active.getBoundingClientRect();
+                    var offset = window.pageYOffset + rect.top - 50;
+                    window.scrollTo({ top: offset, behavior: 'smooth' });
                 }, 50);
                 var focusTarget = active.querySelector('input:not([type="file"]), textarea, select, button:not(.' + CF_HIDE + ')');
                 if (!focusTarget) {

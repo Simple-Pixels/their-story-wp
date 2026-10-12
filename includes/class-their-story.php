@@ -1112,11 +1112,20 @@ class Their_Story {
     public function enqueue_frontend_assets() {
         // Also enqueue on the contributor thank-you virtual page
         if (isset($_GET['their_story_thankyou'])) {
+            wp_enqueue_style(
+                'their-story-font-inter',
+                'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+                array(),
+                null
+            );
+            wp_add_inline_style('their-story-font-inter',
+                "@font-face { font-family: 'Diolce'; src: url('https://sharetheirstory.com.au/wp-content/uploads/2026/03/Diolce-Regular.woff') format('woff'); font-weight: normal; font-style: normal; font-display: swap; }"
+            );
             $css_file = THEIR_STORY_PLUGIN_DIR . 'assets/css/frontend.css';
             wp_enqueue_style(
                 'their-story-frontend',
                 THEIR_STORY_PLUGIN_URL . 'assets/css/frontend.css',
-                array(),
+                array('their-story-font-inter'),
                 file_exists($css_file) ? filemtime($css_file) : THEIR_STORY_VERSION
             );
             return;
