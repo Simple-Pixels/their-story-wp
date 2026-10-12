@@ -557,14 +557,9 @@ class Their_Story {
         $default = '<p>Hi %name%,</p><p>Your story <strong>"%title%"</strong> has been created and is ready to share!</p><p><strong>Share this link</strong> with friends and family so they can contribute:<br>%story_url%</p><p>Manage your story from your Customer Portal:<br>%dashboard_url%</p><p>Thank you,<br><strong>The Share Their Story Team</strong></p>';
         $value = get_option('their_story_email_body', '');
         if ($value === '') $value = $default;
-        wp_editor($value, 'their_story_email_body', array(
-            'textarea_name' => 'their_story_email_body',
-            'textarea_rows' => 12,
-            'teeny'         => true,
-            'media_buttons' => false,
-        ));
         ?>
-        <p class="description"><?php esc_html_e('Available placeholders: %name% (customer name), %title% (story title), %story_url% (unique story link), %dashboard_url% (customer portal link). Placeholders work inside link URLs and text.', 'their-story'); ?></p>
+        <textarea name="their_story_email_body" id="their_story_email_body" class="large-text code" rows="12"><?php echo esc_textarea($value); ?></textarea>
+        <p class="description"><?php esc_html_e('HTML is supported. Placeholders: %name% (customer name), %title% (story title), %story_url% (story link), %dashboard_url% (customer portal link).', 'their-story'); ?></p>
         <?php
     }
 
