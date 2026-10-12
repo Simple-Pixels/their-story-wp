@@ -554,7 +554,7 @@ class Their_Story {
     }
 
     public function render_story_email_body_field() {
-        $default = '<p>Hi %name%,</p><p>Your story <strong>"%title%"</strong> has been created and is ready to share!</p><p><strong>Share this link</strong> with friends and family so they can contribute:<br><a href="%story_url%">%story_url%</a></p><p>Manage your story from your <a href="%dashboard_url%">Customer Portal</a>.</p><p>Thank you,<br><strong>The Share Their Story Team</strong></p>';
+        $default = '<p>Hi %name%,</p><p>Your story <strong>"%title%"</strong> has been created and is ready to share!</p><p><strong>Share this link</strong> with friends and family so they can contribute:<br>%story_url%</p><p>Manage your story from your Customer Portal:<br>%dashboard_url%</p><p>Thank you,<br><strong>The Share Their Story Team</strong></p>';
         $value = get_option('their_story_email_body', '');
         if ($value === '') $value = $default;
         wp_editor($value, 'their_story_email_body', array(
@@ -3102,7 +3102,7 @@ class Their_Story {
             }
             $email_body_tpl = get_option('their_story_email_body', '');
             if (empty($email_body_tpl)) {
-                $email_body_tpl = '<p>Hi %name%,</p><p>Your story <strong>"%title%"</strong> has been created and is ready to share!</p><p><strong>Share this link</strong> with friends and family so they can contribute:<br><a href="%story_url%">%story_url%</a></p><p>Manage your story from your <a href="%dashboard_url%">Customer Portal</a>.</p><p>Thank you,<br><strong>The Share Their Story Team</strong></p>';
+                $email_body_tpl = '<p>Hi %name%,</p><p>Your story <strong>"%title%"</strong> has been created and is ready to share!</p><p><strong>Share this link</strong> with friends and family so they can contribute:<br>%story_url%</p><p>Manage your story from your Customer Portal:<br>%dashboard_url%</p><p>Thank you,<br><strong>The Share Their Story Team</strong></p>';
             }
             $replacements = array(
                 '%name%'          => $storyteller->display_name,
@@ -3112,6 +3112,12 @@ class Their_Story {
             );
             $subject   = str_replace(array_keys($replacements), array_values($replacements), $email_subject_tpl);
             $body_html = str_replace(array_keys($replacements), array_values($replacements), $email_body_tpl);
+            // Auto-link any bare URLs left in the body (e.g. substituted placeholders)
+            $body_html = preg_replace(
+                '#(?<!href=["\'])https?://[^\s<]+#',
+                '<a href="$0" style="color:#c47f6a;word-break:break-all;">$0</a>',
+                $body_html
+            );
 
             $logo_url = 'https://simplepixels.s3.ap-southeast-2.amazonaws.com/sharetheirstory/wp-content/uploads/2025/12/TS001-Logo-Main-RGB.png';
 
