@@ -994,7 +994,7 @@ class Their_Story {
         if ($page !== 'their-story-dashboard') {
             return $classes;
         }
-        return $classes . ' their-story-storyteller-screen';
+        return $classes . ' their-story-storyteller-screen spgb-gradient-active';
     }
 
     public function enqueue_admin_assets($hook) {
@@ -1026,6 +1026,46 @@ class Their_Story {
                 array('their-story-admin', 'their-story-font-inter'),
                 $storyteller_ver
             );
+
+            // Enqueue the gradient background plugin on the admin dashboard screen,
+            // bypassing its is_admin() guard so the wave renders here too.
+            if (defined('SPGB_URL') && defined('SPGB_PATH') && function_exists('spgb_get_options') && function_exists('spgb_palette_vectors')) {
+                $vert = SPGB_PATH . 'assets/shaders/gradient.wp.vert';
+                $frag = SPGB_PATH . 'assets/shaders/gradient.wp.frag';
+                if (is_readable(SPGB_PATH . 'assets/css/gradient-background.css') &&
+                    is_readable(SPGB_PATH . 'assets/js/gradient-background.js') &&
+                    is_readable($vert) && is_readable($frag)) {
+
+                    $vert_source = file_get_contents($vert);
+                    $frag_source = file_get_contents($frag);
+                    if ($vert_source !== false && $frag_source !== false) {
+                        $o = spgb_get_options();
+                        $config = apply_filters('spgb_gradient_background_config', array(
+                            'vert'                 => $vert_source,
+                            'frag'                 => $frag_source,
+                            'palette'              => spgb_palette_vectors(),
+                            'timeMultiplier'       => (float) $o['time_multiplier'],
+                            'scale'                => (float) $o['scale'],
+                            'distortionIterations' => (int) $o['distortion_iterations'],
+                            'distortionIntensity'  => (float) $o['distortion_intensity'],
+                        ));
+                        wp_enqueue_style('spgb', SPGB_URL . 'assets/css/gradient-background.css', array(), SPGB_VERSION);
+                        wp_enqueue_script('spgb', SPGB_URL . 'assets/js/gradient-background.js', array(), SPGB_VERSION, true);
+                        $json = wp_json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+                        if ($json) {
+                            wp_add_inline_script('spgb', 'window.spgbGradient=' . $json . ';', 'before');
+                        }
+                        // Mark the script as a module so Three.js imports work
+                        add_filter('script_loader_tag', function($tag, $handle) {
+                            if ($handle !== 'spgb') return $tag;
+                            if (preg_match('/\stype\s*=/', $tag)) {
+                                return preg_replace('/\stype\s*=\s*([\'"])[^\'"]*\\1/', ' type="module"', $tag, 1);
+                            }
+                            return str_replace('<script ', '<script type="module" ', $tag);
+                        }, 10, 2);
+                    }
+                }
+            }
         }
         
         $js_file = THEIR_STORY_PLUGIN_DIR . 'assets/js/admin.js';

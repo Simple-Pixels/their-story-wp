@@ -1,3 +1,11 @@
+@font-face {
+    font-family: 'Diolce';
+    src: url('https://sharetheirstory.com.au/wp-content/uploads/2026/03/Diolce-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 body.their-story-storyteller-screen {
     --their-story-brand-bg: #faf4f0;
     --their-story-brand-accent: #e6b3a1;
@@ -987,10 +995,12 @@ body.ts-wizard-open {
 /* Portal heading */
 .their-story-portal-heading {
     text-align: center;
-    font-size: 1.1rem;
-    font-weight: 600;
+    font-family: 'Diolce', Georgia, 'Times New Roman', serif;
+    font-size: 2.6rem;
+    font-weight: normal;
     color: var(--their-story-brand-text);
-    margin: 0.5rem 0 0;
+    margin: 0.75rem 0 0;
+    letter-spacing: 0.01em;
 }
 
 /* Welcome blurb */

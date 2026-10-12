@@ -85,6 +85,7 @@ function their_story_render_story_table($stories, $their_story_obj) {
 $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_story_error']) : '';
 ?>
 
+<div id="wavebackground" aria-hidden="true"></div>
 <div class="wrap their-story-dashboard">
     <div class="their-story-brand-header">
         <a href="<?php echo esc_url(home_url('/')); ?>" class="their-story-brand-logo-link" rel="home">
