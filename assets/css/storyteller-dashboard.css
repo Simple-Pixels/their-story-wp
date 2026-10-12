@@ -25,6 +25,16 @@ body.their-story-storyteller-screen #wpwrap {
     min-height: 100vh;
 }
 
+/* When gradient plugin is active, let the canvas show through */
+body.their-story-storyteller-screen.spgb-gradient-active,
+body.their-story-storyteller-screen.spgb-gradient-active #wpwrap,
+body.their-story-storyteller-screen.spgb-gradient-active #wpcontent,
+body.their-story-storyteller-screen.spgb-gradient-active.auto-fold #wpcontent,
+body.their-story-storyteller-screen.spgb-gradient-active.folded #wpcontent,
+body.their-story-storyteller-screen.spgb-gradient-active #wpbody-content {
+    background-color: transparent !important;
+}
+
 body.their-story-storyteller-screen #adminmenuback,
 body.their-story-storyteller-screen #adminmenuwrap,
 body.their-story-storyteller-screen #adminmenumain {
@@ -996,11 +1006,12 @@ body.ts-wizard-open {
 .their-story-portal-heading {
     text-align: center;
     font-family: 'Diolce', Georgia, 'Times New Roman', serif;
-    font-size: 2.6rem;
+    font-size: 7.5rem;
     font-weight: normal;
     color: var(--their-story-brand-text);
     margin: 0.75rem 0 0;
     letter-spacing: 0.01em;
+    line-height: 1;
 }
 
 /* Welcome blurb */
