@@ -121,8 +121,16 @@ body.their-story-storyteller-screen .their-story-dashboard.wrap {
 body.their-story-storyteller-screen .their-story-brand-header {
     text-align: center;
     margin: 0 0 2rem;
+    padding-top: 2rem;
     padding-bottom: 2rem;
-    border-bottom: 1px solid #000000;
+    border-top: 1px solid #e8d8ce;
+    border-bottom: 1px solid #e8d8ce;
+}
+
+body.their-story-storyteller-screen .their-story-header-divider {
+    border: none;
+    border-top: 1px solid #e8d8ce;
+    margin: 1.5rem 0 0;
 }
 
 body.their-story-storyteller-screen .their-story-brand-logo-link {
@@ -1005,13 +1013,13 @@ body.ts-wizard-open {
 /* Portal heading */
 .their-story-portal-heading {
     text-align: center;
-    font-family: 'Diolce', Georgia, 'Times New Roman', serif;
-    font-size: 7.5rem;
-    font-weight: normal;
+    font-family: 'Diolce', Georgia, 'Times New Roman', serif !important;
+    font-size: 3rem !important;
+    font-weight: normal !important;
     color: var(--their-story-brand-text);
     margin: 0.75rem 0 0;
     letter-spacing: 0.01em;
-    line-height: 1;
+    line-height: 1.1;
 }
 
 /* Welcome blurb */

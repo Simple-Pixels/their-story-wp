@@ -96,6 +96,7 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
                 decoding="async"
             />
         </a>
+        <hr class="their-story-header-divider" />
         <h1 class="their-story-portal-heading"><?php esc_html_e('Customer Portal', 'their-story'); ?></h1>
     </div>
 
