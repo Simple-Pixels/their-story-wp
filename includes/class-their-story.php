@@ -554,12 +554,17 @@ class Their_Story {
     }
 
     public function render_story_email_body_field() {
-        $default = "Hi %name%,\n\nYour story \"%title%\" has been created and is ready to share!\n\nShare this link with friends and family so they can contribute:\n%story_url%\n\nManage your story from your Customer Portal:\n%dashboard_url%\n\nThank you,\nThe Share Their Story Team";
+        $default = '<p>Hi %name%,</p><p>Your story <strong>"%title%"</strong> has been created and is ready to share!</p><p><strong>Share this link</strong> with friends and family so they can contribute:<br><a href="%story_url%">%story_url%</a></p><p>Manage your story from your <a href="%dashboard_url%">Customer Portal</a>.</p><p>Thank you,<br><strong>The Share Their Story Team</strong></p>';
         $value = get_option('their_story_email_body', '');
         if ($value === '') $value = $default;
+        wp_editor($value, 'their_story_email_body', array(
+            'textarea_name' => 'their_story_email_body',
+            'textarea_rows' => 12,
+            'teeny'         => true,
+            'media_buttons' => false,
+        ));
         ?>
-        <textarea name="their_story_email_body" id="their_story_email_body" class="large-text" rows="10"><?php echo esc_textarea($value); ?></textarea>
-        <p class="description"><?php esc_html_e('Available placeholders: %name% (customer name), %title% (story title), %story_url% (unique story link), %dashboard_url% (customer portal link).', 'their-story'); ?></p>
+        <p class="description"><?php esc_html_e('Available placeholders: %name% (customer name), %title% (story title), %story_url% (unique story link), %dashboard_url% (customer portal link). Placeholders work inside link URLs and text.', 'their-story'); ?></p>
         <?php
     }
 
@@ -3097,7 +3102,7 @@ class Their_Story {
             }
             $email_body_tpl = get_option('their_story_email_body', '');
             if (empty($email_body_tpl)) {
-                $email_body_tpl = "Hi %name%,\n\nYour story \"%title%\" has been created and is ready to share!\n\nShare this link with friends and family so they can contribute:\n%story_url%\n\nManage your story from your Customer Portal:\n%dashboard_url%\n\nThank you,\nThe Share Their Story Team";
+                $email_body_tpl = '<p>Hi %name%,</p><p>Your story <strong>"%title%"</strong> has been created and is ready to share!</p><p><strong>Share this link</strong> with friends and family so they can contribute:<br><a href="%story_url%">%story_url%</a></p><p>Manage your story from your <a href="%dashboard_url%">Customer Portal</a>.</p><p>Thank you,<br><strong>The Share Their Story Team</strong></p>';
             }
             $replacements = array(
                 '%name%'          => $storyteller->display_name,
@@ -3105,24 +3110,8 @@ class Their_Story {
                 '%story_url%'     => $story_url,
                 '%dashboard_url%' => $dashboard_url,
             );
-            $subject      = str_replace(array_keys($replacements), array_values($replacements), $email_subject_tpl);
-            $body_text    = str_replace(array_keys($replacements), array_values($replacements), $email_body_tpl);
-
-            // Convert plain-text body to HTML paragraphs and linked URLs
-            $body_html = '';
-            foreach (explode("\n\n", $body_text) as $para) {
-                $para = trim($para);
-                if ($para === '') continue;
-                // Auto-link bare URLs
-                $para = preg_replace_callback(
-                    '#https?://[^\s]+#',
-                    function($m) {
-                        return '<a href="' . esc_attr($m[0]) . '" style="color:#c47f6a;word-break:break-all;">' . esc_html($m[0]) . '</a>';
-                    },
-                    esc_html($para)
-                );
-                $body_html .= '<p style="margin:0 0 1.2em;line-height:1.65;">' . nl2br($para) . '</p>';
-            }
+            $subject   = str_replace(array_keys($replacements), array_values($replacements), $email_subject_tpl);
+            $body_html = str_replace(array_keys($replacements), array_values($replacements), $email_body_tpl);
 
             $logo_url = 'https://simplepixels.s3.ap-southeast-2.amazonaws.com/sharetheirstory/wp-content/uploads/2025/12/TS001-Logo-Main-RGB.png';
 
