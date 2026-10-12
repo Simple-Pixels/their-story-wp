@@ -3119,7 +3119,7 @@ class Their_Story {
             $html_message = '<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . esc_html($subject) . '</title></head>
-<body style="margin:0;padding:0;background:#faf4f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+<body style="margin:0;padding:0;background:#faf4f0;font-family:-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#faf4f0;padding:40px 16px;">
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;background:#ffffff;border-radius:8px;overflow:hidden;">
@@ -3135,7 +3135,7 @@ class Their_Story {
         </td></tr>
 
         <!-- Footer -->
-        <tr><td align="center" style="padding:24px 40px;border-top:1px solid #f0e4dc;color:#999;font-size:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+        <tr><td align="center" style="padding:24px 40px;border-top:1px solid #f0e4dc;color:#999;font-size:12px;font-family:-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;">
           &copy; ' . date('Y') . ' Share Their Story. All rights reserved.
         </td></tr>
 
