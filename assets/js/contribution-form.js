@@ -86,6 +86,76 @@
         var extra2Choice = null;
         var thoughtsChoice = null;
 
+        // localStorage key scoped to this story so different stories don't collide
+        var storageKey = 'ts_cf_draft_' + (theirStoryFrontend.storyId || 'unknown');
+
+        function saveState() {
+            try {
+                var state = {
+                    joinIntent: joinIntent,
+                    funnyChoice: funnyChoice,
+                    extra1Choice: extra1Choice,
+                    extra2Choice: extra2Choice,
+                    thoughtsChoice: thoughtsChoice,
+                    currentScreen: currentScreen,
+                    fields: {}
+                };
+                var fieldIds = ['cf-first-name', 'cf-surname', 'cf-email', 'cf-live', 'cf-known',
+                                'cf-how-met', 'cf-one-word', 'cf-particular', 'cf-funny-text',
+                                'cf-extra1', 'cf-extra2', 'cf-thoughts'];
+                fieldIds.forEach(function(id) {
+                    var el = document.getElementById(id);
+                    if (el) state.fields[id] = el.value;
+                });
+                localStorage.setItem(storageKey, JSON.stringify(state));
+            } catch (e) { /* ignore storage errors */ }
+        }
+
+        function restoreState() {
+            try {
+                var raw = localStorage.getItem(storageKey);
+                if (!raw) return false;
+                var state = JSON.parse(raw);
+                if (!state) return false;
+
+                joinIntent = state.joinIntent || null;
+                funnyChoice = state.funnyChoice || null;
+                extra1Choice = state.extra1Choice || null;
+                extra2Choice = state.extra2Choice || null;
+                thoughtsChoice = state.thoughtsChoice || null;
+
+                if (state.fields) {
+                    Object.keys(state.fields).forEach(function(id) {
+                        var el = document.getElementById(id);
+                        if (el) el.value = state.fields[id] || '';
+                    });
+                }
+
+                // Restore aria-pressed states for choice buttons
+                ['cf-join', 'cf-funny', 'cf-extra1', 'cf-extra2', 'cf-thoughts'].forEach(function(attr) {
+                    var mapAttr = 'data-' + attr;
+                    var choiceMap = {
+                        'data-cf-join': joinIntent,
+                        'data-cf-funny': funnyChoice,
+                        'data-cf-extra1': extra1Choice,
+                        'data-cf-extra2': extra2Choice,
+                        'data-cf-thoughts': thoughtsChoice
+                    };
+                    form.querySelectorAll('[' + mapAttr + ']').forEach(function(b) {
+                        b.setAttribute('aria-pressed', b.getAttribute(mapAttr) === choiceMap[mapAttr] ? 'true' : 'false');
+                    });
+                });
+
+                return state.currentScreen || false;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function clearState() {
+            try { localStorage.removeItem(storageKey); } catch (e) { /* ignore */ }
+        }
+
         var imagesInput = document.getElementById('cf-submission-images');
         var imagesPreview = document.getElementById('cf-images-preview');
         var selectedFiles = [];
@@ -358,13 +428,19 @@
             }
             setStatus('', '');
             var next = nextScreenFrom(currentScreen);
-            if (next) goTo(next, { forward: true });
+            if (next) {
+                goTo(next, { forward: true });
+                saveState();
+            }
         }
 
         function handleBack() {
             setStatus('', '');
             var prev = prevScreenFrom(currentScreen);
-            if (prev) goTo(prev, { forward: false });
+            if (prev) {
+                goTo(prev, { forward: false });
+                saveState();
+            }
         }
 
         if (backBtn) backBtn.addEventListener('click', handleBack);
@@ -380,6 +456,7 @@
                 setStatus('', '');
                 var next = nextScreenFrom('q1');
                 if (next) goTo(next, { forward: true });
+                saveState();
             });
         });
 
@@ -424,6 +501,7 @@
                     setStatus('', '');
                     goTo('extra1', { forward: true });
                 }
+                saveState();
             });
         });
 
@@ -451,6 +529,7 @@
                     setStatus('', '');
                     goTo('thoughts', { forward: true });
                 }
+                saveState();
             });
         });
 
@@ -475,6 +554,7 @@
                     setStatus('', '');
                     goTo('thoughts', { forward: true });
                 }
+                saveState();
             });
         });
 
@@ -493,7 +573,17 @@
                     setStatus('', '');
                     goTo('images', { forward: true });
                 }
+                saveState();
             });
+        });
+
+        // Save text field contents on input so back/forward navigation preserves them
+        var persistFieldIds = ['cf-first-name', 'cf-surname', 'cf-email', 'cf-live', 'cf-known',
+                               'cf-how-met', 'cf-one-word', 'cf-particular', 'cf-funny-text',
+                               'cf-extra1', 'cf-extra2', 'cf-thoughts'];
+        persistFieldIds.forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.addEventListener('input', saveState);
         });
 
         if (imagesInput && imagesPreview) {
@@ -688,6 +778,7 @@
                     .then(function(r) { return r.json(); })
                     .then(function(response) {
                         if (response.success) {
+                            clearState();
                             closeConfirmModal();
                             var thankyouUrl = (typeof theirStoryFrontend !== 'undefined' && theirStoryFrontend.contributorThankyouUrl) || '/';
                             var subject = (cfg && cfg.subjectName) ? cfg.subjectName : '';
@@ -707,7 +798,9 @@
             });
         }
 
+        // Restore draft from localStorage, or start at q1
+        var savedScreen = restoreState();
         syncJoinAria();
-        goTo('q1', { forward: false });
+        goTo(savedScreen || 'q1', { forward: false });
     });
 })();

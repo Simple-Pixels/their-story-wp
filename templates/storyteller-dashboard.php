@@ -285,12 +285,18 @@ $checkout_error = isset($_GET['their_story_error']) ? sanitize_key($_GET['their_
             <p class="ts-wizard-lede"><?php esc_html_e('Please read and accept our terms before creating your story.', 'their-story'); ?></p>
 
             <div class="ts-terms-scroll">
-                <p><?php esc_html_e('By creating a story with Their Story you agree to the following:', 'their-story'); ?></p>
-                <p><?php esc_html_e('Payment is required before your story page is created.', 'their-story'); ?></p>
-                <p><?php esc_html_e('Your story page will be live once payment is confirmed.', 'their-story'); ?></p>
-                <p><?php esc_html_e('All submitted contributions are subject to moderation before appearing on your story page.', 'their-story'); ?></p>
-                <p><?php esc_html_e('When you close your story, the Their Story team will begin preparing your book for print.', 'their-story'); ?></p>
-                <p><?php esc_html_e('All sales are final. Please contact us if you have any questions before purchasing.', 'their-story'); ?></p>
+                <p><?php esc_html_e('By Creating a story with Share Their Story you agree to the following:', 'their-story'); ?></p>
+                <?php
+                $terms_default = "Payment is required before your story page is created.\nYour story page will be live once payment is confirmed.\nAll submitted contributions are subject to moderation before appearing on your story page.\nWhen you close your story, the Share Their Story team will begin preparing your book for print.\nAll content (stories and photos shared during this process) is owned by you as Customer. Share Their Story maintains a copy of the content for 3 months after the final book is delivered to you.\nAll sales are final. Please contact us if you have any questions before purchasing.";
+                $terms_raw = get_option('their_story_terms_content', '');
+                if (empty(trim($terms_raw))) $terms_raw = $terms_default;
+                $terms_lines = array_filter(array_map('trim', explode("\n", $terms_raw)));
+                echo '<ol>';
+                foreach ($terms_lines as $line) {
+                    echo '<li>' . esc_html($line) . '</li>';
+                }
+                echo '</ol>';
+                ?>
             </div>
 
             <label class="ts-checkbox-label">

@@ -417,10 +417,31 @@ class Their_Story {
             'default'           => 'https://sharetheirstory.com.au/my-account/',
         ));
 
+        // Terms & Conditions
+        register_setting('their_story_settings_group', 'their_story_terms_content', array(
+            'type'              => 'string',
+            'sanitize_callback' => 'sanitize_textarea_field',
+            'default'           => '',
+        ));
+
+        // Story-ready email
+        register_setting('their_story_settings_group', 'their_story_email_subject', array(
+            'type'              => 'string',
+            'sanitize_callback' => 'sanitize_text_field',
+            'default'           => '',
+        ));
+        register_setting('their_story_settings_group', 'their_story_email_body', array(
+            'type'              => 'string',
+            'sanitize_callback' => 'sanitize_textarea_field',
+            'default'           => '',
+        ));
+
         // --- Sections ---
         add_settings_section('their_story_portal_section',   __('Customer Portal Content', 'their-story'), null, 'their-story-settings');
         add_settings_section('their_story_pricing_section',  __('Pricing', 'their-story'),                 null, 'their-story-settings');
         add_settings_section('their_story_email_section',    __('Email Notifications', 'their-story'),     null, 'their-story-settings');
+        add_settings_section('their_story_story_email_section', __('Story-Ready Email', 'their-story'),    null, 'their-story-settings');
+        add_settings_section('their_story_terms_section',    __('Terms &amp; Conditions', 'their-story'),  null, 'their-story-settings');
         add_settings_section('their_story_urls_section',     __('URLs', 'their-story'),                    null, 'their-story-settings');
 
         // Portal content fields
@@ -431,9 +452,16 @@ class Their_Story {
         // Pricing fields
         add_settings_field('their_story_setup_fee', __('Initial setup fee ($)', 'their-story'), array($this, 'render_setup_fee_field'), 'their-story-settings', 'their_story_pricing_section');
 
-        // Email fields
+        // Email notification fields
         add_settings_field('their_story_admin_email',   __('Admin notification email', 'their-story'),   array($this, 'render_admin_email_field'),   'their-story-settings', 'their_story_email_section');
         add_settings_field('their_story_support_email', __('Support / contact email', 'their-story'),    array($this, 'render_support_email_field'), 'their-story-settings', 'their_story_email_section');
+
+        // Story-ready email fields
+        add_settings_field('their_story_email_subject', __('Email subject', 'their-story'),  array($this, 'render_story_email_subject_field'), 'their-story-settings', 'their_story_story_email_section');
+        add_settings_field('their_story_email_body',    __('Email body', 'their-story'),     array($this, 'render_story_email_body_field'),    'their-story-settings', 'their_story_story_email_section');
+
+        // Terms & Conditions field
+        add_settings_field('their_story_terms_content', __('Terms content', 'their-story'), array($this, 'render_terms_content_field'), 'their-story-settings', 'their_story_terms_section');
 
         // URL fields
         add_settings_field('their_story_about_url',         __('About page URL', 'their-story'),            array($this, 'render_about_url_field'),         'their-story-settings', 'their_story_urls_section');
@@ -512,6 +540,36 @@ class Their_Story {
         ?>
         <input type="url" name="their_story_purchases_url" id="their_story_purchases_url" value="<?php echo esc_attr($value); ?>" class="regular-text" />
         <p class="description"><?php esc_html_e('"View Purchases" link in the customer portal footer.', 'their-story'); ?></p>
+        <?php
+    }
+
+    public function render_story_email_subject_field() {
+        $default = 'Your story "%title%" is ready!';
+        $value = get_option('their_story_email_subject', '');
+        if ($value === '') $value = $default;
+        ?>
+        <input type="text" name="their_story_email_subject" id="their_story_email_subject" value="<?php echo esc_attr($value); ?>" class="large-text" />
+        <p class="description"><?php esc_html_e('Available placeholders: %name% (customer name), %title% (story title).', 'their-story'); ?></p>
+        <?php
+    }
+
+    public function render_story_email_body_field() {
+        $default = "Hi %name%,\n\nYour story \"%title%\" has been created and is ready to share!\n\nShare this link with friends and family so they can contribute:\n%story_url%\n\nManage your story from your Customer Portal:\n%dashboard_url%\n\nThank you,\nThe Share Their Story Team";
+        $value = get_option('their_story_email_body', '');
+        if ($value === '') $value = $default;
+        ?>
+        <textarea name="their_story_email_body" id="their_story_email_body" class="large-text" rows="10"><?php echo esc_textarea($value); ?></textarea>
+        <p class="description"><?php esc_html_e('Available placeholders: %name% (customer name), %title% (story title), %story_url% (unique story link), %dashboard_url% (customer portal link).', 'their-story'); ?></p>
+        <?php
+    }
+
+    public function render_terms_content_field() {
+        $default = "Payment is required before your story page is created.\nYour story page will be live once payment is confirmed.\nAll submitted contributions are subject to moderation before appearing on your story page.\nWhen you close your story, the Share Their Story team will begin preparing your book for print.\nAll content (stories and photos shared during this process) is owned by you as Customer. Share Their Story maintains a copy of the content for 3 months after the final book is delivered to you.\nAll sales are final. Please contact us if you have any questions before purchasing.";
+        $value = get_option('their_story_terms_content', '');
+        if ($value === '') $value = $default;
+        ?>
+        <textarea name="their_story_terms_content" id="their_story_terms_content" class="large-text" rows="10"><?php echo esc_textarea($value); ?></textarea>
+        <p class="description"><?php esc_html_e('Each line becomes a numbered list item in the Terms & Conditions popup. Leave blank to use the default terms.', 'their-story'); ?></p>
         <?php
     }
 
@@ -2338,17 +2396,12 @@ class Their_Story {
                 <h1 class="ts-thankyou-title"><?php esc_html_e('Thank you! Your reorder has been received.', 'their-story'); ?></h1>
                 <p class="ts-thankyou-lede"><?php esc_html_e('The Share Their Story team has been notified and will be in touch shortly.', 'their-story'); ?></p>
                 <a href="<?php echo esc_url($dashboard_url); ?>" class="ts-thankyou-btn">
-                    <?php esc_html_e('Go to my dashboard', 'their-story'); ?>
+                    <?php esc_html_e('Take Me To My Customer Portal', 'their-story'); ?>
                 </a>
             <?php else : ?>
                 <h1 class="ts-thankyou-title"><?php esc_html_e('Thank you! Your story has been created.', 'their-story'); ?></h1>
-                <?php if ($story_url) : ?>
-                    <a href="<?php echo esc_url($story_url); ?>" class="ts-thankyou-btn">
-                        <?php esc_html_e('View &amp; share your story', 'their-story'); ?>
-                    </a>
-                <?php endif; ?>
-                <a href="<?php echo esc_url($dashboard_url); ?>" class="ts-thankyou-btn ts-thankyou-btn--secondary">
-                    <?php esc_html_e('Go to my dashboard', 'their-story'); ?>
+                <a href="<?php echo esc_url($dashboard_url); ?>" class="ts-thankyou-btn">
+                    <?php esc_html_e('Take Me To My Customer Portal', 'their-story'); ?>
                 </a>
             <?php endif; ?>
             <p class="ts-thankyou-support">
@@ -2989,18 +3042,22 @@ class Their_Story {
             $story_url     = $this->get_story_url_from_link($unique_link);
             $dashboard_url = admin_url('admin.php?page=their-story-dashboard');
 
-            $subject = sprintf(
-                /* translators: %s: story title */
-                __('Your story "%s" is ready!', 'their-story'),
-                $pending['title']
+            $email_subject_tpl = get_option('their_story_email_subject', '');
+            if (empty($email_subject_tpl)) {
+                $email_subject_tpl = 'Your story "%title%" is ready!';
+            }
+            $email_body_tpl = get_option('their_story_email_body', '');
+            if (empty($email_body_tpl)) {
+                $email_body_tpl = "Hi %name%,\n\nYour story \"%title%\" has been created and is ready to share!\n\nShare this link with friends and family so they can contribute:\n%story_url%\n\nManage your story from your Customer Portal:\n%dashboard_url%\n\nThank you,\nThe Share Their Story Team";
+            }
+            $replacements = array(
+                '%name%'          => $storyteller->display_name,
+                '%title%'         => $pending['title'],
+                '%story_url%'     => $story_url,
+                '%dashboard_url%' => $dashboard_url,
             );
-            $message = sprintf(
-                __("Hi %s,\n\nYour story \"%s\" has been created and is ready to share!\n\nShare this link with friends and family so they can contribute:\n%s\n\nManage your story from your dashboard:\n%s\n\nThank you,\nThe Share Their Story Team", 'their-story'),
-                $storyteller->display_name,
-                $pending['title'],
-                $story_url,
-                $dashboard_url
-            );
+            $subject = str_replace(array_keys($replacements), array_values($replacements), $email_subject_tpl);
+            $message = str_replace(array_keys($replacements), array_values($replacements), $email_body_tpl);
             wp_mail($storyteller->user_email, $subject, $message);
 
             // Only create one story per order
