@@ -85,7 +85,6 @@
         var extra1Choice = null;
         var extra2Choice = null;
         var thoughtsChoice = null;
-        var imagesConfirmChoice = null;
 
         // localStorage key scoped to this story so different stories don't collide
         var storageKey = 'ts_cf_draft_' + (theirStoryFrontend.storyId || 'unknown');
@@ -98,7 +97,6 @@
                     extra1Choice: extra1Choice,
                     extra2Choice: extra2Choice,
                     thoughtsChoice: thoughtsChoice,
-                    imagesConfirmChoice: imagesConfirmChoice,
                     currentScreen: currentScreen,
                     fields: {}
                 };
@@ -125,7 +123,6 @@
                 extra1Choice = state.extra1Choice || null;
                 extra2Choice = state.extra2Choice || null;
                 thoughtsChoice = state.thoughtsChoice || null;
-                imagesConfirmChoice = state.imagesConfirmChoice || null;
 
                 if (state.fields) {
                     Object.keys(state.fields).forEach(function(id) {
@@ -135,14 +132,13 @@
                 }
 
                 // Restore aria-pressed states for choice buttons
-                ['cf-join', 'cf-extra1', 'cf-extra2', 'cf-thoughts', 'cf-images-confirm'].forEach(function(attr) {
+                ['cf-join', 'cf-extra1', 'cf-extra2', 'cf-thoughts'].forEach(function(attr) {
                     var mapAttr = 'data-' + attr;
                     var choiceMap = {
                         'data-cf-join': joinIntent,
                         'data-cf-extra1': extra1Choice,
                         'data-cf-extra2': extra2Choice,
-                        'data-cf-thoughts': thoughtsChoice,
-                        'data-cf-images-confirm': imagesConfirmChoice
+                        'data-cf-thoughts': thoughtsChoice
                     };
                     form.querySelectorAll('[' + mapAttr + ']').forEach(function(b) {
                         b.setAttribute('aria-pressed', b.getAttribute(mapAttr) === choiceMap[mapAttr] ? 'true' : 'false');
@@ -177,10 +173,7 @@
             if (thoughtsChoice === 'yes') {
                 screens.push('thoughts_text');
             }
-            screens.push('images_confirm');
-            if (imagesConfirmChoice === 'yes') {
-                screens.push('images');
-            }
+            screens.push('images');
             return screens;
         }
 
@@ -294,7 +287,7 @@
                 return;
             }
 
-            var hideFullNavScreens = ['q1', 'extra1', 'extra2', 'thoughts', 'images_confirm'];
+            var hideFullNavScreens = ['q1', 'extra1', 'extra2', 'thoughts'];
             if (hideFullNavScreens.indexOf(currentScreen) !== -1) {
                 hide(nav);
                 return;
@@ -474,21 +467,6 @@
             });
         }
 
-        form.querySelectorAll('[data-cf-images-confirm]').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                imagesConfirmChoice = btn.getAttribute('data-cf-images-confirm');
-                form.querySelectorAll('[data-cf-images-confirm]').forEach(function(b) {
-                    b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
-                });
-                setStatus('', '');
-                if (imagesConfirmChoice === 'yes') {
-                    goTo('images', { forward: true });
-                } else {
-                    openConfirmModal();
-                }
-                saveState();
-            });
-        });
 
         form.querySelectorAll('[data-cf-extra1]').forEach(function(btn) {
             btn.addEventListener('click', function() {
@@ -677,9 +655,8 @@
             extra1Choice = null;
             extra2Choice = null;
             thoughtsChoice = null;
-            imagesConfirmChoice = null;
             syncJoinAria();
-            form.querySelectorAll('[data-cf-extra1], [data-cf-extra2], [data-cf-thoughts], [data-cf-images-confirm]').forEach(function(b) {
+            form.querySelectorAll('[data-cf-extra1], [data-cf-extra2], [data-cf-thoughts]').forEach(function(b) {
                 b.setAttribute('aria-pressed', 'false');
             });
             selectedFiles = [];
