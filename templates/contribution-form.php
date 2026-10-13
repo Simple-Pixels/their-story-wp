@@ -277,7 +277,6 @@ $cf_step_progress_tpl = __('Step %1$d of %2$d', 'their-story');
         <div class="their-story-modal-body">
             <p class="their-story-modal-lede"><?php echo esc_html__('Would you like to review our FAQs before deciding?', 'their-story'); ?></p>
             <div class="their-story-modal-actions">
-                <button type="button" class="their-story-btn their-story-btn-outline" data-their-story-close-faq><?php echo esc_html__('Continue anyway', 'their-story'); ?></button>
                 <a class="their-story-btn their-story-btn-primary" href="<?php echo esc_url($faq_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html__('View FAQs', 'their-story'); ?></a>
             </div>
         </div>

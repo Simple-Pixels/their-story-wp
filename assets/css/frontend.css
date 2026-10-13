@@ -1208,19 +1208,21 @@
     margin-top: 1.25rem;
 }
 
-/* Completed wizard steps — shown stacked above active step, editable */
+/* Completed wizard steps — shown stacked above active step */
 .their-story-cf-step--completed {
-    opacity: 0.5;
+    opacity: 0.55;
+    pointer-events: none;
     position: relative;
     padding-bottom: 1rem;
     margin-bottom: 0.5rem;
     border-bottom: 1px solid #e8ddd9;
-    transition: opacity 0.2s ease;
 }
 
-.their-story-cf-step--completed:focus-within,
-.their-story-cf-step--completed:hover {
-    opacity: 0.85;
+.their-story-cf-step--completed input,
+.their-story-cf-step--completed textarea,
+.their-story-cf-step--completed select,
+.their-story-cf-step--completed button {
+    pointer-events: none;
 }
 
 /* Contributor thank-you page */

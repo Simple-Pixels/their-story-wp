@@ -307,7 +307,7 @@
             var textStepsWithNext = ['details', 'how_met', 'one_word', 'particular', 'funny_text', 'extra1_text', 'extra2_text', 'thoughts_text'];
             var onTextStep = textStepsWithNext.indexOf(currentScreen) !== -1;
 
-            hide(backBtn);
+            show(backBtn);
 
             if (onImages) {
                 show(nextBtn);
