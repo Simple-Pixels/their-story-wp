@@ -85,6 +85,7 @@
         var extra1Choice = null;
         var extra2Choice = null;
         var thoughtsChoice = null;
+        var imagesConfirmChoice = null;
 
         // localStorage key scoped to this story so different stories don't collide
         var storageKey = 'ts_cf_draft_' + (theirStoryFrontend.storyId || 'unknown');
@@ -97,6 +98,7 @@
                     extra1Choice: extra1Choice,
                     extra2Choice: extra2Choice,
                     thoughtsChoice: thoughtsChoice,
+                    imagesConfirmChoice: imagesConfirmChoice,
                     currentScreen: currentScreen,
                     fields: {}
                 };
@@ -123,6 +125,7 @@
                 extra1Choice = state.extra1Choice || null;
                 extra2Choice = state.extra2Choice || null;
                 thoughtsChoice = state.thoughtsChoice || null;
+                imagesConfirmChoice = state.imagesConfirmChoice || null;
 
                 if (state.fields) {
                     Object.keys(state.fields).forEach(function(id) {
@@ -132,14 +135,14 @@
                 }
 
                 // Restore aria-pressed states for choice buttons
-                ['cf-join', 'cf-funny', 'cf-extra1', 'cf-extra2', 'cf-thoughts'].forEach(function(attr) {
+                ['cf-join', 'cf-extra1', 'cf-extra2', 'cf-thoughts', 'cf-images-confirm'].forEach(function(attr) {
                     var mapAttr = 'data-' + attr;
                     var choiceMap = {
                         'data-cf-join': joinIntent,
-                        'data-cf-funny': funnyChoice,
                         'data-cf-extra1': extra1Choice,
                         'data-cf-extra2': extra2Choice,
-                        'data-cf-thoughts': thoughtsChoice
+                        'data-cf-thoughts': thoughtsChoice,
+                        'data-cf-images-confirm': imagesConfirmChoice
                     };
                     form.querySelectorAll('[' + mapAttr + ']').forEach(function(b) {
                         b.setAttribute('aria-pressed', b.getAttribute(mapAttr) === choiceMap[mapAttr] ? 'true' : 'false');
@@ -161,10 +164,7 @@
         var selectedFiles = [];
 
         function getYesScreens() {
-            var screens = ['q1', 'details', 'how_met', 'one_word', 'particular', 'funny'];
-            if (funnyChoice === 'yes') {
-                screens.push('funny_text');
-            }
+            var screens = ['q1', 'details', 'how_met', 'one_word', 'particular', 'funny_text'];
             screens.push('extra1');
             if (extra1Choice === 'yes') {
                 screens.push('extra1_text');
@@ -177,7 +177,10 @@
             if (thoughtsChoice === 'yes') {
                 screens.push('thoughts_text');
             }
-            screens.push('images');
+            screens.push('images_confirm');
+            if (imagesConfirmChoice === 'yes') {
+                screens.push('images');
+            }
             return screens;
         }
 
@@ -218,7 +221,7 @@
             if (!wizard) return;
             var flow = getYesScreens();
             var currentIdx = flow.indexOf(screen);
-            var nonFlowScreens = ['no_confirm', 'uncertain', 'no_thanks'];
+            var nonFlowScreens = ['no_confirm', 'no_thanks'];
 
             wizard.querySelectorAll('[data-cf-screen]').forEach(function(el) {
                 var s = el.getAttribute('data-cf-screen');
@@ -291,7 +294,7 @@
                 return;
             }
 
-            var hideFullNavScreens = ['q1', 'funny', 'extra1', 'extra2', 'thoughts'];
+            var hideFullNavScreens = ['q1', 'extra1', 'extra2', 'thoughts', 'images_confirm'];
             if (hideFullNavScreens.indexOf(currentScreen) !== -1) {
                 hide(nav);
                 return;
@@ -301,16 +304,15 @@
 
             var onImages = currentScreen === 'images';
             var onNoBranch = currentScreen === 'no_confirm';
-            var onUncertain = currentScreen === 'uncertain';
             var textStepsWithNext = ['details', 'how_met', 'one_word', 'particular', 'funny_text', 'extra1_text', 'extra2_text', 'thoughts_text'];
             var onTextStep = textStepsWithNext.indexOf(currentScreen) !== -1;
 
-            show(backBtn);
+            hide(backBtn);
 
             if (onImages) {
                 show(nextBtn);
                 nextBtn.textContent = nextLabelSubmit;
-            } else if (onNoBranch || onUncertain) {
+            } else if (onNoBranch) {
                 hide(nextBtn);
                 nextBtn.textContent = nextLabelNext;
             } else if (onTextStep) {
@@ -352,15 +354,7 @@
                         return 'Please share a particular story.';
                     }
                     return '';
-                case 'funny':
-                    if (!funnyChoice) {
-                        return 'Please answer whether you have a funny story.';
-                    }
-                    return '';
                 case 'funny_text':
-                    if (funnyChoice === 'yes' && !val('cf-funny-text')) {
-                        return 'Please enter your funny story, or go back and choose No.';
-                    }
                     return '';
                 case 'extra1':
                     if (extra1Choice !== 'yes' && extra1Choice !== 'no') {
@@ -403,7 +397,6 @@
             if (s === 'q1') {
                 if (joinIntent === 'yes') return 'details';
                 if (joinIntent === 'no') return 'no_confirm';
-                if (joinIntent === 'uncertain') return 'uncertain';
                 return null;
             }
             var flow = getYesScreens();
@@ -415,7 +408,7 @@
         }
 
         function prevScreenFrom(s) {
-            if (s === 'no_confirm' || s === 'uncertain') return 'q1';
+            if (s === 'no_confirm') return 'q1';
             var flow = getYesScreens();
             var i = flow.indexOf(s);
             if (i > 0) return flow[i - 1];
@@ -453,7 +446,12 @@
 
         form.querySelectorAll('[data-cf-join]').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                joinIntent = btn.getAttribute('data-cf-join');
+                var intent = btn.getAttribute('data-cf-join');
+                if (intent === 'uncertain') {
+                    openFaqModal();
+                    return;
+                }
+                joinIntent = intent;
                 syncJoinAria();
                 setStatus('', '');
                 var next = nextScreenFrom('q1');
@@ -476,32 +474,17 @@
             });
         }
 
-        form.querySelectorAll('[data-cf-funny]').forEach(function(btn) {
+        form.querySelectorAll('[data-cf-images-confirm]').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                funnyChoice = btn.getAttribute('data-cf-funny');
-                form.querySelectorAll('[data-cf-funny]').forEach(function(b) {
+                imagesConfirmChoice = btn.getAttribute('data-cf-images-confirm');
+                form.querySelectorAll('[data-cf-images-confirm]').forEach(function(b) {
                     b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
                 });
-                if (funnyChoice === 'yes') {
-                    setStatus('', '');
-                    goTo('funny_text', { forward: true });
+                setStatus('', '');
+                if (imagesConfirmChoice === 'yes') {
+                    goTo('images', { forward: true });
                 } else {
-                    var ft = document.getElementById('cf-funny-text');
-                    if (ft) ft.value = '';
-                    extra1Choice = null;
-                    extra2Choice = null;
-                    thoughtsChoice = null;
-                    var x1 = document.getElementById('cf-extra1');
-                    var x2 = document.getElementById('cf-extra2');
-                    var th = document.getElementById('cf-thoughts');
-                    if (x1) x1.value = '';
-                    if (x2) x2.value = '';
-                    if (th) th.value = '';
-                    form.querySelectorAll('[data-cf-extra1], [data-cf-extra2], [data-cf-thoughts]').forEach(function(b) {
-                        b.setAttribute('aria-pressed', 'false');
-                    });
-                    setStatus('', '');
-                    goTo('extra1', { forward: true });
+                    openConfirmModal();
                 }
                 saveState();
             });
@@ -665,10 +648,6 @@
             if (!d.how_met_story || !d.describe_one_word || !d.particular_story) {
                 return 'Please complete the story questions marked as required.';
             }
-            if (!funnyChoice) return 'Please answer whether you have a funny story.';
-            if (funnyChoice === 'yes' && !d.funny_story_text) {
-                return 'Please enter your funny story, or choose No.';
-            }
             if (extra1Choice !== 'yes' && extra1Choice !== 'no') {
                 return 'Please answer the first “any other stories” question.';
             }
@@ -698,13 +677,41 @@
             extra1Choice = null;
             extra2Choice = null;
             thoughtsChoice = null;
+            imagesConfirmChoice = null;
             syncJoinAria();
-            form.querySelectorAll('[data-cf-funny], [data-cf-extra1], [data-cf-extra2], [data-cf-thoughts]').forEach(function(b) {
+            form.querySelectorAll('[data-cf-extra1], [data-cf-extra2], [data-cf-thoughts], [data-cf-images-confirm]').forEach(function(b) {
                 b.setAttribute('aria-pressed', 'false');
             });
             selectedFiles = [];
             if (imagesPreview) imagesPreview.innerHTML = '';
             goTo('q1', { forward: false });
+        }
+
+        var faqModal = document.getElementById('their-story-faq-modal');
+
+        function openFaqModal() {
+            if (!faqModal) return;
+            faqModal.removeAttribute('hidden');
+            faqModal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeFaqModal() {
+            if (!faqModal) return;
+            faqModal.setAttribute('hidden', '');
+            faqModal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        }
+
+        if (faqModal) {
+            faqModal.querySelectorAll('[data-their-story-close-faq]').forEach(function(el) {
+                el.addEventListener('click', closeFaqModal);
+            });
+            document.addEventListener('keydown', function(ev) {
+                if (ev.key === 'Escape' && faqModal && !faqModal.hasAttribute('hidden')) {
+                    closeFaqModal();
+                }
+            });
         }
 
         var confirmModal = document.getElementById('their-story-submit-confirm-modal');
