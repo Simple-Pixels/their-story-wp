@@ -43,15 +43,6 @@ $cf_step_progress_tpl = __('Step %1$d of %2$d', 'their-story');
                     </div>
                 </div>
 
-                <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="no_confirm">
-                    <div class="their-story-cf-panel their-story-cf-panel-bordered">
-                        <p class="their-story-cf-question"><?php echo esc_html__('Are you sure?', 'their-story'); ?></p>
-                        <div class="their-story-cf-choice-row">
-                            <button type="button" class="their-story-btn their-story-btn-outline" id="their-story-cf-no-final"><?php echo esc_html__('Yes, I am sure', 'their-story'); ?></button>
-                            <button type="button" class="their-story-btn their-story-btn-primary" id="their-story-cf-no-more-info"><?php echo esc_html__('I would like more information', 'their-story'); ?></button>
-                        </div>
-                    </div>
-                </div>
 
                 <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="no_thanks">
                     <div class="their-story-cf-panel their-story-cf-panel-bordered">
@@ -255,6 +246,22 @@ $cf_step_progress_tpl = __('Step %1$d of %2$d', 'their-story');
             <div class="their-story-modal-actions">
                 <button type="button" class="their-story-btn their-story-btn-outline" data-their-story-close-submit-confirm><?php echo esc_html__('Go back', 'their-story'); ?></button>
                 <button type="button" class="their-story-btn their-story-btn-primary" id="their-story-cf-final-submit"><?php echo esc_html__('Submit', 'their-story'); ?></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="their-story-no-modal" class="their-story-modal" hidden aria-hidden="true">
+    <div class="their-story-modal-backdrop" tabindex="-1" data-their-story-close-no></div>
+    <div class="their-story-modal-panel" role="dialog" aria-labelledby="their-story-no-modal-title" aria-modal="true">
+        <div class="their-story-modal-header">
+            <h2 id="their-story-no-modal-title" class="their-story-modal-title"><?php echo esc_html__('Are you sure?', 'their-story'); ?></h2>
+            <button type="button" class="their-story-modal-close" data-their-story-close-no aria-label="<?php echo esc_attr__('Close', 'their-story'); ?>">&times;</button>
+        </div>
+        <div class="their-story-modal-body">
+            <div class="their-story-modal-actions">
+                <button type="button" class="their-story-btn their-story-btn-outline" id="their-story-cf-no-final"><?php echo esc_html__('Yes, I am sure', 'their-story'); ?></button>
+                <button type="button" class="their-story-btn their-story-btn-primary" id="their-story-cf-no-more-info"><?php echo esc_html__('I would like more information', 'their-story'); ?></button>
             </div>
         </div>
     </div>

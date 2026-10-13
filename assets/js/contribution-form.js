@@ -214,7 +214,7 @@
             if (!wizard) return;
             var flow = getYesScreens();
             var currentIdx = flow.indexOf(screen);
-            var nonFlowScreens = ['no_confirm', 'no_thanks'];
+            var nonFlowScreens = ['no_thanks'];
 
             wizard.querySelectorAll('[data-cf-screen]').forEach(function(el) {
                 var s = el.getAttribute('data-cf-screen');
@@ -296,7 +296,6 @@
             show(nav);
 
             var onImages = currentScreen === 'images';
-            var onNoBranch = currentScreen === 'no_confirm';
             var textStepsWithNext = ['details', 'how_met', 'one_word', 'particular', 'funny_text', 'extra1_text', 'extra2_text', 'thoughts_text'];
             var onTextStep = textStepsWithNext.indexOf(currentScreen) !== -1;
 
@@ -305,9 +304,6 @@
             if (onImages) {
                 show(nextBtn);
                 nextBtn.textContent = nextLabelSubmit;
-            } else if (onNoBranch) {
-                hide(nextBtn);
-                nextBtn.textContent = nextLabelNext;
             } else if (onTextStep) {
                 show(nextBtn);
                 nextBtn.textContent = nextLabelNext;
@@ -389,7 +385,6 @@
         function nextScreenFrom(s) {
             if (s === 'q1') {
                 if (joinIntent === 'yes') return 'details';
-                if (joinIntent === 'no') return 'no_confirm';
                 return null;
             }
             var flow = getYesScreens();
@@ -401,7 +396,6 @@
         }
 
         function prevScreenFrom(s) {
-            if (s === 'no_confirm') return 'q1';
             var flow = getYesScreens();
             var i = flow.indexOf(s);
             if (i > 0) return flow[i - 1];
@@ -444,6 +438,10 @@
                     openFaqModal();
                     return;
                 }
+                if (intent === 'no') {
+                    openNoModal();
+                    return;
+                }
                 joinIntent = intent;
                 syncJoinAria();
                 setStatus('', '');
@@ -452,21 +450,6 @@
                 saveState();
             });
         });
-
-        var noFinal = document.getElementById('their-story-cf-no-final');
-        var noMore = document.getElementById('their-story-cf-no-more-info');
-        if (noFinal) {
-            noFinal.addEventListener('click', function() {
-                goTo('no_thanks', { forward: false });
-            });
-        }
-        if (noMore) {
-            noMore.addEventListener('click', function() {
-                var u = cfg.moreInfoUrl || cfg.faqUrl || '#';
-                if (u && u !== '#') window.open(u, '_blank', 'noopener,noreferrer');
-            });
-        }
-
 
         form.querySelectorAll('[data-cf-extra1]').forEach(function(btn) {
             btn.addEventListener('click', function() {
@@ -662,6 +645,48 @@
             selectedFiles = [];
             if (imagesPreview) imagesPreview.innerHTML = '';
             goTo('q1', { forward: false });
+        }
+
+        var noModal = document.getElementById('their-story-no-modal');
+
+        function openNoModal() {
+            if (!noModal) return;
+            noModal.removeAttribute('hidden');
+            noModal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeNoModal() {
+            if (!noModal) return;
+            noModal.setAttribute('hidden', '');
+            noModal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        }
+
+        if (noModal) {
+            noModal.querySelectorAll('[data-their-story-close-no]').forEach(function(el) {
+                el.addEventListener('click', closeNoModal);
+            });
+            document.addEventListener('keydown', function(ev) {
+                if (ev.key === 'Escape' && noModal && !noModal.hasAttribute('hidden')) {
+                    closeNoModal();
+                }
+            });
+        }
+
+        var noFinal = document.getElementById('their-story-cf-no-final');
+        var noMore = document.getElementById('their-story-cf-no-more-info');
+        if (noFinal) {
+            noFinal.addEventListener('click', function() {
+                closeNoModal();
+                goTo('no_thanks', { forward: false });
+            });
+        }
+        if (noMore) {
+            noMore.addEventListener('click', function() {
+                var u = cfg.moreInfoUrl || cfg.faqUrl || '#';
+                if (u && u !== '#') window.open(u, '_blank', 'noopener,noreferrer');
+            });
         }
 
         var faqModal = document.getElementById('their-story-faq-modal');
