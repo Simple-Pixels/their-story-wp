@@ -252,7 +252,7 @@
             if (active) {
                 setTimeout(function() {
                     var rect = active.getBoundingClientRect();
-                    var offset = window.pageYOffset + rect.top - 50;
+                    var offset = window.pageYOffset + rect.top - 120;
                     window.scrollTo({ top: offset, behavior: 'smooth' });
                 }, 50);
                 var focusTarget = active.querySelector('input:not([type="file"]), textarea, select, button:not(.' + CF_HIDE + ')');
