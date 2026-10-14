@@ -583,7 +583,7 @@
                 how_met_story: val('cf-how-met'),
                 describe_one_word: val('cf-one-word'),
                 particular_story: val('cf-particular'),
-                funny_story_choice: funnyChoice,
+                funny_story_choice: val('cf-funny-text') ? 'yes' : 'no',
                 funny_story_text: val('cf-funny-text'),
                 extra_story1_choice: extra1Choice,
                 extra_story1_text: val('cf-extra1'),
