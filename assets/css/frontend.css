@@ -980,13 +980,14 @@
     color: #000000 !important;
 }
 
-.their-story-page-content .their-story-intro-what-wrap a.their-story-intro-what-link {
+.their-story-page-content .their-story-intro-what-wrap .their-story-intro-what-link {
     text-decoration: underline !important;
     color: var(--ts-muted) !important;
     font-size: 0.8125rem !important;
+    cursor: pointer;
 }
 
-.their-story-page-content a.their-story-intro-what-link:focus-visible {
+.their-story-page-content .their-story-intro-what-link:focus-visible {
     outline: 2px solid var(--ts-ring) !important;
     outline-offset: 2px !important;
     border-radius: 2px !important;

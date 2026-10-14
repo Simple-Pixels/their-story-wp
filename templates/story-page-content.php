@@ -65,9 +65,9 @@ $contribution_inviter = $storyteller ? $storyteller->display_name : __('the orga
                 </div>
             <?php endif; ?>
             <p class="their-story-intro-what-wrap">
-                <a href="<?php echo esc_url($what_is_this_url); ?>" class="their-story-intro-what-link" target="_blank" rel="noopener noreferrer">
+                <button type="button" class="their-story-intro-what-link" id="their-story-open-what-modal">
                     <?php echo esc_html__('What is this?', 'their-story'); ?>
-                </a>
+                </button>
             </p>
         </div>
     </header>
@@ -227,14 +227,44 @@ $contribution_inviter = $storyteller ? $storyteller->display_name : __('the orga
     <?php endif; ?>
 
     <div class="their-story-page-actions">
+        <?php if ($is_storyteller || $can_moderate) : ?>
         <button type="button" class="their-story-btn their-story-btn-outline" id="their-story-open-share-modal">
             <?php echo esc_html__('Share this story', 'their-story'); ?>
         </button>
+        <?php endif; ?>
         <?php if ($can_close_story && !$is_story_closed) : ?>
             <button type="button" id="close-story-btn" class="their-story-btn their-story-btn-danger">
                 <?php echo esc_html__('Close story', 'their-story'); ?>
             </button>
         <?php endif; ?>
+    </div>
+
+    <div
+        id="their-story-what-modal"
+        class="their-story-modal"
+        hidden
+        aria-hidden="true"
+    >
+        <div class="their-story-modal-backdrop" tabindex="-1" data-their-story-close-what-modal></div>
+        <div class="their-story-modal-panel" role="dialog" aria-labelledby="their-story-what-modal-title" aria-modal="true">
+            <div class="their-story-modal-header">
+                <h2 id="their-story-what-modal-title" class="their-story-modal-title"><?php esc_html_e('What is this?', 'their-story'); ?></h2>
+                <button type="button" class="their-story-modal-close" data-their-story-close-what-modal aria-label="<?php esc_attr_e('Close', 'their-story'); ?>">&times;</button>
+            </div>
+            <div class="their-story-modal-body">
+                <p><?php echo wp_kses(
+                    sprintf(
+                        __('The following process is a series of simple steps and questions that allows you to share some stories about <strong>%s</strong>; with your stories forming part of a compilation with other stories, culminating in a beautiful keepsake book.', 'their-story'),
+                        esc_html($contribution_subject)
+                    ),
+                    array('strong' => array())
+                ); ?></p>
+                <p><?php esc_html_e('If you are wanting more information before you proceed, here is a link to our Frequently Asked Questions.', 'their-story'); ?></p>
+                <div class="their-story-modal-actions">
+                    <a class="their-story-btn their-story-btn-primary" href="<?php echo esc_url($what_is_this_url); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e('View FAQs', 'their-story'); ?></a>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div

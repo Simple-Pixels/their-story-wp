@@ -1196,7 +1196,7 @@ class Their_Story {
                     'storyClosedMessage' => $story_closed
                         ? __('This story has been closed. No new messages can be added.', 'their-story')
                         : '',
-                    'contributorThankyouUrl' => add_query_arg('their_story_thankyou', '1', home_url('/')),
+                    'contributorThankyouUrl' => $this->get_contributor_thankyou_url($post),
                 ));
             }
         }
@@ -2808,13 +2808,25 @@ class Their_Story {
         ));
     }
 
+    public function get_contributor_thankyou_url($post) {
+        $unique_link = get_post_meta($post->ID, '_story_unique_link', true);
+        $share_url   = $this->get_story_url_from_link($unique_link) ?: get_permalink($post->ID);
+        return add_query_arg(array(
+            'their_story_thankyou' => '1',
+            'story_url'            => rawurlencode($share_url),
+            'story_pw'             => $post->post_password,
+        ), home_url('/'));
+    }
+
     public function handle_contributor_thankyou() {
         if (!isset($_GET['their_story_thankyou'])) {
             return;
         }
-        $subject      = sanitize_text_field(wp_unslash($_GET['subject'] ?? ''));
-        $about_url    = apply_filters('their_story_about_url', get_option('their_story_about_url', home_url('/about/')));
-        $register_url = apply_filters('their_story_register_url', wp_registration_url());
+        $subject          = sanitize_text_field(wp_unslash($_GET['subject'] ?? ''));
+        $about_url        = apply_filters('their_story_about_url', get_option('their_story_about_url', home_url('/about/')));
+        $register_url     = apply_filters('their_story_register_url', wp_registration_url());
+        $story_share_url  = isset($_GET['story_url']) ? esc_url_raw(rawurldecode(wp_unslash($_GET['story_url']))) : '';
+        $story_password   = isset($_GET['story_pw']) ? sanitize_text_field(wp_unslash($_GET['story_pw'])) : '';
         include THEIR_STORY_PLUGIN_DIR . 'templates/contributor-thankyou.php';
         exit;
     }

@@ -298,6 +298,50 @@
             });
         }
 
+        const whatModal = document.getElementById('their-story-what-modal');
+        const openWhatBtn = document.getElementById('their-story-open-what-modal');
+        let whatModalLastFocus = null;
+
+        function openWhatModal() {
+            if (!whatModal) return;
+            whatModalLastFocus = document.activeElement;
+            whatModal.removeAttribute('hidden');
+            whatModal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            var closeBtn = whatModal.querySelector('.their-story-modal-close');
+            if (closeBtn) closeBtn.focus();
+        }
+
+        function closeWhatModal() {
+            if (!whatModal || whatModal.hasAttribute('hidden')) return;
+            whatModal.setAttribute('hidden', '');
+            whatModal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            if (whatModalLastFocus && typeof whatModalLastFocus.focus === 'function') {
+                whatModalLastFocus.focus();
+            }
+        }
+
+        if (openWhatBtn && whatModal) {
+            openWhatBtn.addEventListener('click', function() {
+                openWhatModal();
+            });
+        }
+
+        if (whatModal) {
+            whatModal.querySelectorAll('[data-their-story-close-what-modal]').forEach(function(el) {
+                el.addEventListener('click', function() {
+                    closeWhatModal();
+                });
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && !whatModal.hasAttribute('hidden')) {
+                    closeWhatModal();
+                }
+            });
+        }
+
         const closeStoryBtn = document.getElementById('close-story-btn');
         if (closeStoryBtn && theirStoryFrontend.canCloseStory) {
             closeStoryBtn.addEventListener('click', function() {
