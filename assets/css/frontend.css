@@ -1233,7 +1233,7 @@
     align-items: flex-start;
     min-height: 60vh;
     padding: 4rem 1.5rem;
-    font-family: -apple-system, BlinkMacSystemFont, 'Inter', Helvetica, Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
 }
 
 .their-story-contributor-thankyou__inner {

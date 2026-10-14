@@ -65,7 +65,6 @@ get_header();
         </div>
     </div>
 </div>
-</div>
 
 <?php if (!empty($story_share_url)) : ?>
 <div
@@ -147,6 +146,7 @@ get_header();
 }());
 </script>
 <?php endif; ?>
+</div>
 
 <?php
 get_footer();

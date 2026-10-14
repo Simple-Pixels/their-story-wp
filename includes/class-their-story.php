@@ -2827,6 +2827,11 @@ class Their_Story {
         $register_url     = apply_filters('their_story_register_url', wp_registration_url());
         $story_share_url  = isset($_GET['story_url']) ? esc_url_raw(rawurldecode(wp_unslash($_GET['story_url']))) : '';
         $story_password   = isset($_GET['story_pw']) ? sanitize_text_field(wp_unslash($_GET['story_pw'])) : '';
+        add_action('wp_head', function() {
+            echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
+            echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
+            echo '<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">' . "\n";
+        }, 1);
         include THEIR_STORY_PLUGIN_DIR . 'templates/contributor-thankyou.php';
         exit;
     }
