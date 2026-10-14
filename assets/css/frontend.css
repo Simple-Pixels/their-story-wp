@@ -1233,10 +1233,11 @@
     align-items: flex-start;
     min-height: 60vh;
     padding: 4rem 1.5rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', Helvetica, Arial, sans-serif;
 }
 
 .their-story-contributor-thankyou__inner {
-    max-width: 600px;
+    max-width: 480px;
     width: 100%;
     text-align: center;
 }
@@ -1247,22 +1248,35 @@
 }
 
 .their-story-contributor-thankyou__title {
-    font-size: 1.5rem;
-    line-height: 1.4;
+    font-size: 1.25rem;
+    font-weight: 500;
+    line-height: 1.5;
     color: #3a2a20;
     margin-bottom: 1rem;
 }
 
 .their-story-contributor-thankyou__body {
+    font-size: 0.9375rem;
     color: #6b5a50;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
     line-height: 1.7;
 }
 
-.their-story-contributor-thankyou__cta-label {
+.their-story-contributor-thankyou__section {
+    margin-bottom: 0;
+}
+
+.their-story-contributor-thankyou__section-label {
+    font-size: 0.9375rem;
     color: #3a2a20;
-    font-weight: 600;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
+    line-height: 1.6;
+}
+
+.their-story-contributor-thankyou__divider {
+    border: none;
+    border-top: 1px solid #e8ddd9;
+    margin: 2rem 0;
 }
 
 .their-story-contributor-thankyou__actions {

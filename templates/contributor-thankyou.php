@@ -18,14 +18,11 @@ get_header();
         <h1 class="their-story-contributor-thankyou__title">
             <?php
             if ($subject) {
-                echo wp_kses(
-                    sprintf(
-                        /* translators: %s: honoree name */
-                        __('Thank you for your contribution of stories and memories relating to <strong>%s</strong>.', 'their-story'),
-                        esc_html($subject)
-                    ),
-                    array('strong' => array())
-                );
+                echo esc_html(sprintf(
+                    /* translators: %s: honoree name */
+                    __('Thank you for your contribution of stories and memories relating to %s.', 'their-story'),
+                    $subject
+                ));
             } else {
                 esc_html_e('Thank you for your contribution.', 'their-story');
             }
@@ -37,30 +34,34 @@ get_header();
         </p>
 
         <?php if (!empty($story_share_url)) : ?>
-        <div class="their-story-contributor-thankyou__share">
-            <p class="their-story-contributor-thankyou__share-label">
+        <div class="their-story-contributor-thankyou__section">
+            <p class="their-story-contributor-thankyou__section-label">
                 <?php esc_html_e('Know someone else who would like to contribute? Share this story with them!', 'their-story'); ?>
             </p>
-            <button type="button" class="their-story-btn their-story-btn-outline" id="their-story-ct-open-share">
-                <?php esc_html_e('Share this story', 'their-story'); ?>
-            </button>
+            <div class="their-story-contributor-thankyou__actions">
+                <button type="button" class="their-story-btn their-story-btn-outline" id="their-story-ct-open-share">
+                    <?php esc_html_e('Share this story', 'their-story'); ?>
+                </button>
+            </div>
         </div>
+        <hr class="their-story-contributor-thankyou__divider">
         <?php endif; ?>
 
-        <p class="their-story-contributor-thankyou__cta-label">
-            <?php esc_html_e('Would you be interested in creating your own storybook for someone you know or love?', 'their-story'); ?>
-        </p>
-
-        <div class="their-story-contributor-thankyou__actions">
-            <a href="<?php echo esc_url($about_url); ?>" class="their-story-btn their-story-btn-outline">
-                <?php esc_html_e('Learn More', 'their-story'); ?>
-            </a>
-            <a href="<?php echo esc_url(home_url('/')); ?>" class="their-story-btn their-story-btn-outline">
-                <?php esc_html_e('Return to Home', 'their-story'); ?>
-            </a>
-            <a href="<?php echo esc_url($register_url); ?>" class="their-story-btn their-story-btn-primary">
-                <?php esc_html_e('Create My Own Story', 'their-story'); ?>
-            </a>
+        <div class="their-story-contributor-thankyou__section">
+            <p class="their-story-contributor-thankyou__section-label">
+                <?php esc_html_e('Would you be interested in creating your own storybook for someone you know or love?', 'their-story'); ?>
+            </p>
+            <div class="their-story-contributor-thankyou__actions">
+                <a href="<?php echo esc_url($about_url); ?>" class="their-story-btn their-story-btn-outline">
+                    <?php esc_html_e('Learn More', 'their-story'); ?>
+                </a>
+                <a href="<?php echo esc_url(home_url('/')); ?>" class="their-story-btn their-story-btn-outline">
+                    <?php esc_html_e('Return to Home', 'their-story'); ?>
+                </a>
+                <a href="<?php echo esc_url($register_url); ?>" class="their-story-btn their-story-btn-primary">
+                    <?php esc_html_e('Create My Own Story', 'their-story'); ?>
+                </a>
+            </div>
         </div>
     </div>
 </div>
