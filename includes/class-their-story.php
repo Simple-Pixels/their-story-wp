@@ -436,13 +436,41 @@ class Their_Story {
             'default'           => '',
         ));
 
+        // Contribution form questions
+        $cf_questions = array(
+            'their_story_q_q1'              => 'Are you wanting to share a story about %s?',
+            'their_story_q_first_name'      => 'What is your first name?',
+            'their_story_q_surname'         => 'What is your surname?',
+            'their_story_q_email'           => 'What is your email address?',
+            'their_story_q_email_help'      => 'This is in case we need to contact you when reviewing stories, not for marketing.',
+            'their_story_q_live'            => 'Where do you live?',
+            'their_story_q_known'           => 'How long have you known %s?',
+            'their_story_q_how_met'         => 'What is the story of how you and %s met?',
+            'their_story_q_one_word'        => 'How would you describe %s in one word?',
+            'their_story_q_particular'      => 'Is there a particular story that you think of when you think of %s?',
+            'their_story_q_particular_help' => 'We are after stories of actual events you shared with your loved one, not only a tribute. Need more info? See our FAQs.',
+            'their_story_q_funny'           => 'Got a funny story about %s? (optional)',
+            'their_story_q_extra'           => 'Any other stories you would like to share?',
+            'their_story_q_thoughts'        => 'Would you like to share any other thoughts about %s?',
+            'their_story_q_thoughts_help'   => 'This one can be a tribute — your thoughts, feelings, or what you think of them.',
+            'their_story_q_images'          => 'Would you like to share any photos of %s? (optional, up to 5)',
+        );
+        foreach ($cf_questions as $key => $default) {
+            register_setting('their_story_settings_group', $key, array(
+                'type'              => 'string',
+                'sanitize_callback' => 'sanitize_text_field',
+                'default'           => '',
+            ));
+        }
+
         // --- Sections ---
-        add_settings_section('their_story_portal_section',   __('Customer Portal Content', 'their-story'), null, 'their-story-settings');
-        add_settings_section('their_story_pricing_section',  __('Pricing', 'their-story'),                 null, 'their-story-settings');
-        add_settings_section('their_story_email_section',    __('Email Notifications', 'their-story'),     null, 'their-story-settings');
-        add_settings_section('their_story_story_email_section', __('Story-Ready Email', 'their-story'),    null, 'their-story-settings');
-        add_settings_section('their_story_terms_section',    __('Terms &amp; Conditions', 'their-story'),  null, 'their-story-settings');
-        add_settings_section('their_story_urls_section',     __('URLs', 'their-story'),                    null, 'their-story-settings');
+        add_settings_section('their_story_portal_section',      __('Customer Portal Content', 'their-story'), null, 'their-story-settings');
+        add_settings_section('their_story_pricing_section',     __('Pricing', 'their-story'),                 null, 'their-story-settings');
+        add_settings_section('their_story_email_section',       __('Email Notifications', 'their-story'),     null, 'their-story-settings');
+        add_settings_section('their_story_story_email_section', __('Story-Ready Email', 'their-story'),       null, 'their-story-settings');
+        add_settings_section('their_story_terms_section',       __('Terms &amp; Conditions', 'their-story'),  null, 'their-story-settings');
+        add_settings_section('their_story_urls_section',        __('URLs', 'their-story'),                    null, 'their-story-settings');
+        add_settings_section('their_story_questions_section',   __('Form Questions', 'their-story'),           null, 'their-story-settings');
 
         // Portal content fields
         add_settings_field('their_story_welcome_heading',      __('Welcome heading', 'their-story'),          array($this, 'render_welcome_heading_field'),      'their-story-settings', 'their_story_portal_section');
@@ -467,6 +495,40 @@ class Their_Story {
         add_settings_field('their_story_about_url',         __('About page URL', 'their-story'),            array($this, 'render_about_url_field'),         'their-story-settings', 'their_story_urls_section');
         add_settings_field('their_story_what_is_this_url',  __('"What is this?" URL', 'their-story'),        array($this, 'render_what_is_this_url_field'),  'their-story-settings', 'their_story_urls_section');
         add_settings_field('their_story_purchases_url',     __('View Purchases URL', 'their-story'),         array($this, 'render_purchases_url_field'),     'their-story-settings', 'their_story_urls_section');
+
+        // Form question fields
+        $question_labels = array(
+            'their_story_q_q1'              => array(__('Opening question', 'their-story'),           'Are you wanting to share a story about %s?'),
+            'their_story_q_first_name'      => array(__('First name label', 'their-story'),           'What is your first name?'),
+            'their_story_q_surname'         => array(__('Surname label', 'their-story'),              'What is your surname?'),
+            'their_story_q_email'           => array(__('Email label', 'their-story'),                'What is your email address?'),
+            'their_story_q_email_help'      => array(__('Email help text', 'their-story'),            'This is in case we need to contact you when reviewing stories, not for marketing.'),
+            'their_story_q_live'            => array(__('Where do you live label', 'their-story'),    'Where do you live?'),
+            'their_story_q_known'           => array(__('How long known label', 'their-story'),       'How long have you known %s?'),
+            'their_story_q_how_met'         => array(__('How you met question', 'their-story'),       'What is the story of how you and %s met?'),
+            'their_story_q_one_word'        => array(__('One word question', 'their-story'),          'How would you describe %s in one word?'),
+            'their_story_q_particular'      => array(__('Particular story question', 'their-story'),  'Is there a particular story that you think of when you think of %s?'),
+            'their_story_q_particular_help' => array(__('Particular story help text', 'their-story'), 'We are after stories of actual events you shared with your loved one, not only a tribute. Need more info? See our FAQs.'),
+            'their_story_q_funny'           => array(__('Funny story label', 'their-story'),          'Got a funny story about %s? (optional)'),
+            'their_story_q_extra'           => array(__('Any other stories question', 'their-story'), 'Any other stories you would like to share?'),
+            'their_story_q_thoughts'        => array(__('Other thoughts question', 'their-story'),    'Would you like to share any other thoughts about %s?'),
+            'their_story_q_thoughts_help'   => array(__('Other thoughts help text', 'their-story'),   'This one can be a tribute — your thoughts, feelings, or what you think of them.'),
+            'their_story_q_images'          => array(__('Photos label', 'their-story'),               'Would you like to share any photos of %s? (optional, up to 5)'),
+        );
+        foreach ($question_labels as $key => $meta) {
+            add_settings_field($key, $meta[0], array($this, 'render_text_option_field'), 'their-story-settings', 'their_story_questions_section', array(
+                'option'      => $key,
+                'placeholder' => $meta[1],
+            ));
+        }
+    }
+
+    public function render_text_option_field($args) {
+        $option      = $args['option'];
+        $placeholder = $args['placeholder'] ?? '';
+        $value       = get_option($option, '');
+        echo '<input type="text" name="' . esc_attr($option) . '" id="' . esc_attr($option) . '" value="' . esc_attr($value) . '" class="large-text" placeholder="' . esc_attr($placeholder) . '" />';
+        echo '<p class="description">' . esc_html__('Leave blank to use the default shown above as placeholder.', 'their-story') . ' ' . esc_html__('Use %s as a placeholder for the honoree name where applicable.', 'their-story') . '</p>';
     }
 
     public function render_welcome_heading_field() {
@@ -578,12 +640,44 @@ class Their_Story {
         ?>
         <div class="wrap">
             <h1><?php esc_html_e('Share Their Story — Settings', 'their-story'); ?></h1>
+
             <form method="post" action="options.php">
-                <?php
-                settings_fields('their_story_settings_group');
-                do_settings_sections('their-story-settings');
-                submit_button();
-                ?>
+                <?php settings_fields('their_story_settings_group'); ?>
+
+                <nav class="nav-tab-wrapper" id="ts-settings-tabs" style="margin-bottom:0;">
+                    <a href="#ts-tab-general"   class="nav-tab"><?php esc_html_e('General', 'their-story'); ?></a>
+                    <a href="#ts-tab-content"   class="nav-tab"><?php esc_html_e('Content', 'their-story'); ?></a>
+                    <a href="#ts-tab-questions" class="nav-tab"><?php esc_html_e('Form Questions', 'their-story'); ?></a>
+                    <a href="#ts-tab-email"     class="nav-tab"><?php esc_html_e('Story Email', 'their-story'); ?></a>
+                </nav>
+
+                <div id="ts-tab-general" class="ts-settings-tab" style="padding-top:1rem;">
+                    <h2 style="margin-bottom:0;"><?php esc_html_e('Pricing', 'their-story'); ?></h2>
+                    <table class="form-table"><?php do_settings_fields('their-story-settings', 'their_story_pricing_section'); ?></table>
+                    <h2 style="margin-bottom:0;"><?php esc_html_e('Email Notifications', 'their-story'); ?></h2>
+                    <table class="form-table"><?php do_settings_fields('their-story-settings', 'their_story_email_section'); ?></table>
+                    <h2 style="margin-bottom:0;"><?php esc_html_e('URLs', 'their-story'); ?></h2>
+                    <table class="form-table"><?php do_settings_fields('their-story-settings', 'their_story_urls_section'); ?></table>
+                </div>
+
+                <div id="ts-tab-content" class="ts-settings-tab" style="padding-top:1rem;display:none;">
+                    <h2 style="margin-bottom:0;"><?php esc_html_e('Customer Portal Content', 'their-story'); ?></h2>
+                    <table class="form-table"><?php do_settings_fields('their-story-settings', 'their_story_portal_section'); ?></table>
+                    <h2 style="margin-bottom:0;"><?php esc_html_e('Terms &amp; Conditions', 'their-story'); ?></h2>
+                    <table class="form-table"><?php do_settings_fields('their-story-settings', 'their_story_terms_section'); ?></table>
+                </div>
+
+                <div id="ts-tab-questions" class="ts-settings-tab" style="padding-top:1rem;display:none;">
+                    <p class="description" style="margin-bottom:1rem;"><?php esc_html_e('Customise the wording of each step in the contributor form. Leave any field blank to use the default text shown as placeholder. Use %s where the honoree name should appear.', 'their-story'); ?></p>
+                    <table class="form-table"><?php do_settings_fields('their-story-settings', 'their_story_questions_section'); ?></table>
+                </div>
+
+                <div id="ts-tab-email" class="ts-settings-tab" style="padding-top:1rem;display:none;">
+                    <h2 style="margin-bottom:0;"><?php esc_html_e('Story-Ready Email', 'their-story'); ?></h2>
+                    <table class="form-table"><?php do_settings_fields('their-story-settings', 'their_story_story_email_section'); ?></table>
+                </div>
+
+                <?php submit_button(); ?>
             </form>
 
             <hr style="margin:40px 0 30px;" />
@@ -591,17 +685,40 @@ class Their_Story {
             <div class="their-story-danger-zone" style="border:2px solid #d63638;border-radius:4px;padding:24px;max-width:600px;">
                 <h2 style="color:#d63638;margin-top:0;"><?php esc_html_e('Danger Zone', 'their-story'); ?></h2>
                 <p><?php esc_html_e('Permanently delete every story and submission in the database. This cannot be undone.', 'their-story'); ?></p>
-                <button
-                    type="button"
-                    id="ts-delete-all-btn"
-                    class="button"
-                    style="background:#d63638;border-color:#d63638;color:#fff;font-weight:600;"
-                >
+                <button type="button" id="ts-delete-all-btn" class="button" style="background:#d63638;border-color:#d63638;color:#fff;font-weight:600;">
                     <?php esc_html_e('Delete All Stories &amp; Submissions', 'their-story'); ?>
                 </button>
                 <p id="ts-delete-all-result" style="margin-top:12px;font-weight:600;display:none;"></p>
             </div>
         </div>
+
+        <script>
+        (function () {
+            var tabs   = document.querySelectorAll('#ts-settings-tabs .nav-tab');
+            var panels = document.querySelectorAll('.ts-settings-tab');
+
+            function activate(hash) {
+                if (!hash || !document.querySelector(hash)) hash = '#ts-tab-general';
+                tabs.forEach(function (t) {
+                    t.classList.toggle('nav-tab-active', t.getAttribute('href') === hash);
+                });
+                panels.forEach(function (p) {
+                    p.style.display = ('#' + p.id) === hash ? '' : 'none';
+                });
+            }
+
+            tabs.forEach(function (t) {
+                t.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    var h = t.getAttribute('href');
+                    history.replaceState(null, '', location.pathname + location.search + h);
+                    activate(h);
+                });
+            });
+
+            activate(location.hash);
+        }());
+        </script>
         <?php
     }
 
