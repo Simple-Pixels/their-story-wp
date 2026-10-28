@@ -130,7 +130,7 @@ $cfq = array(
 
                 <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="extra1">
                     <div class="their-story-cf-block">
-                        <p class="their-story-cf-question"><?php echo esc_html($cfq['extra']); ?></p>
+                        <p class="their-story-cf-question"><?php printf(esc_html($cfq['extra']), esc_html($contribution_subject)); ?></p>
                         <div class="their-story-cf-choice-row their-story-cf-choice-row--with-inline-back">
                             <button type="button" class="their-story-btn their-story-btn-outline" data-cf-extra1="yes"><?php echo esc_html__('Yes', 'their-story'); ?></button>
                             <button type="button" class="their-story-btn their-story-btn-outline" data-cf-extra1="no"><?php echo esc_html__('No', 'their-story'); ?></button>
@@ -148,7 +148,7 @@ $cfq = array(
 
                 <div class="their-story-cf-step their-story-cf-is-hidden" data-cf-screen="extra2">
                     <div class="their-story-cf-block">
-                        <p class="their-story-cf-question"><?php echo esc_html($cfq['extra']); ?></p>
+                        <p class="their-story-cf-question"><?php printf(esc_html($cfq['extra']), esc_html($contribution_subject)); ?></p>
                         <div class="their-story-cf-choice-row their-story-cf-choice-row--with-inline-back">
                             <button type="button" class="their-story-btn their-story-btn-outline" data-cf-extra2="yes"><?php echo esc_html__('Yes', 'their-story'); ?></button>
                             <button type="button" class="their-story-btn their-story-btn-outline" data-cf-extra2="no"><?php echo esc_html__('No', 'their-story'); ?></button>
