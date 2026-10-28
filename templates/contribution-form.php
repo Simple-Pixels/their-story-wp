@@ -17,10 +17,12 @@ $more_info_url = apply_filters('their_story_more_information_url', $faq_url);
 $cf_step_progress_tpl = __('Step %1$d of %2$d', 'their-story');
 
 // Editable form question labels — fall back to defaults when option is blank.
+if ( ! function_exists('their_story_cf_q') ) :
 function their_story_cf_q($key, $default) {
     $v = get_option($key, '');
     return $v !== '' ? $v : $default;
 }
+endif;
 $cfq = array(
     'q1'              => their_story_cf_q('their_story_q_q1',              'Are you wanting to share a story about %s?'),
     'first_name'      => their_story_cf_q('their_story_q_first_name',      'What is your first name?'),
